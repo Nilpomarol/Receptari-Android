@@ -1,0 +1,12 @@
+# Store everything with LF in the repository. Development happens on Windows and CI runs
+# on Linux; without this, gradlew can end up committed with CRLF, which makes it fail on
+# Linux with a confusing "bad interpreter" error.
+* text=auto eol=lf
+
+*.bat text eol=crlf
+
+*.jar binary
+*.png binary
+*.jpg binary
+*.keystore binary
+*.jks binary

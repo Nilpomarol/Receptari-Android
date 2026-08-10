@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Receptari</string>
+
+    <string name="nav_back">Atrás</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <string name="library_title">Recetario</string>
+    <string name="library_empty_title">Todavía no hay recetas</string>
+    <string name="library_empty_body">Añade tu primera receta para empezar.</string>
+    <string name="library_add_recipe">Añadir receta</string>
+    <string name="library_search_hint">Buscar recetas</string>
+    <string name="library_search">Buscar</string>
+    <string name="library_search_close">Cerrar la búsqueda</string>
+    <string name="library_no_results_title">Sin resultados</string>
+    <string name="library_no_results_body">Prueba con otras palabras o quita los filtros.</string>
+    <string name="library_sort">Ordenar</string>
+    <string name="library_filter">Filtrar</string>
+    <string name="library_filters_clear">Quitar los filtros</string>
+    <plurals name="library_recipe_count">
+        <item quantity="one">%1$d receta</item>
+        <item quantity="many">%1$d recetas</item>
+        <item quantity="other">%1$d recetas</item>
+    </plurals>
+
+    <string name="sort_alphabetical">Alfabético</string>
+    <string name="sort_recently_added">Añadidas recientemente</string>
+    <string name="sort_recently_cooked">Cocinadas recientemente</string>
+    <string name="sort_most_cooked">Más cocinadas</string>
+    <string name="sort_highest_rated">Mejor valoradas</string>
+    <string name="sort_cooking_time">Tiempo de cocción</string>
+
+    <string name="filter_favorites">Solo favoritas</string>
+    <string name="filter_never_cooked">Nunca cocinadas</string>
+    <string name="filter_recently_cooked">Cocinadas el último mes</string>
+    <string name="filter_tags">Etiquetas</string>
+
+    <string name="detail_ingredients">Ingredientes</string>
+    <string name="detail_instructions">Preparación</string>
+    <string name="detail_notes">Notas</string>
+    <string name="detail_source">Fuente</string>
+    <string name="detail_servings">Raciones</string>
+    <string name="detail_servings_decrease">Menos raciones</string>
+    <string name="detail_servings_increase">Más raciones</string>
+    <string name="detail_servings_reset">Volver a las raciones originales</string>
+    <string name="detail_scaled_notice">Cantidades ajustadas para %1$d raciones</string>
+    <string name="detail_mark_cooked">Marcar como cocinada</string>
+    <string name="detail_marked_cooked">Marcada como cocinada</string>
+    <string name="detail_favorite_add">Añadir a favoritas</string>
+    <string name="detail_favorite_remove">Quitar de favoritas</string>
+    <string name="detail_edit">Editar</string>
+    <string name="detail_delete">Eliminar</string>
+    <string name="detail_delete_confirm_title">¿Eliminar la receta?</string>
+    <string name="detail_delete_confirm_body">Esta acción no se puede deshacer.</string>
+    <string name="detail_prep_time">Preparación</string>
+    <string name="detail_cook_time">Cocción</string>
+    <string name="detail_total_time">Total</string>
+    <string name="detail_never_cooked">Todavía no la has cocinado</string>
+    <string name="detail_rating">Valoración</string>
+    <plurals name="detail_cook_count">
+        <item quantity="one">Cocinada %1$d vez</item>
+        <item quantity="many">Cocinada %1$d veces</item>
+        <item quantity="other">Cocinada %1$d veces</item>
+    </plurals>
+    <string name="detail_last_cooked">Última vez: %1$s</string>
+    <string name="detail_not_found">No se ha encontrado la receta</string>
+
+    <string name="edit_title_new">Nueva receta</string>
+    <string name="edit_title_existing">Editar la receta</string>
+    <string name="edit_save">Guardar</string>
+    <string name="edit_field_title">Título</string>
+    <string name="edit_field_title_required">El título es obligatorio</string>
+    <string name="edit_field_prep_time">Tiempo de preparación (min)</string>
+    <string name="edit_field_cook_time">Tiempo de cocción (min)</string>
+    <string name="edit_field_total_time">Tiempo total (min)</string>
+    <string name="edit_field_servings">Raciones</string>
+    <string name="edit_field_notes">Notas personales</string>
+    <string name="edit_field_source">Fuente</string>
+    <string name="edit_field_source_url">Enlace original</string>
+    <string name="edit_field_rating">Valoración</string>
+    <string name="edit_field_tags">Etiquetas</string>
+    <string name="edit_tag_add_hint">Añadir una etiqueta</string>
+    <string name="edit_tag_add">Añadir</string>
+    <string name="edit_tag_remove">Quitar la etiqueta %1$s</string>
+    <string name="edit_section_ingredients">Ingredientes</string>
+    <string name="edit_section_instructions">Preparación</string>
+    <string name="edit_section_name_hint">Nombre de la sección (opcional)</string>
+    <string name="edit_add_section">Añadir una sección</string>
+    <string name="edit_remove_section">Eliminar la sección</string>
+    <string name="edit_add_ingredient">Añadir un ingrediente</string>
+    <string name="edit_ingredient_hint">p. ej. 200 g de harina</string>
+    <string name="edit_remove_ingredient">Eliminar el ingrediente</string>
+    <string name="edit_add_step">Añadir un paso</string>
+    <string name="edit_step_hint">Describe el paso</string>
+    <string name="edit_remove_step">Eliminar el paso</string>
+    <string name="edit_move_up">Mover arriba</string>
+    <string name="edit_move_down">Mover abajo</string>
+    <string name="edit_image_add">Añadir una imagen</string>
+    <string name="edit_image_replace">Cambiar la imagen</string>
+    <string name="edit_image_remove">Quitar la imagen</string>
+    <string name="edit_image_from_gallery">Elegir de la galería</string>
+    <string name="edit_image_from_camera">Hacer una foto</string>
+    <string name="edit_discard_title">¿Descartar los cambios?</string>
+    <string name="edit_discard_body">Se perderán los cambios que has hecho.</string>
+    <string name="edit_discard_confirm">Descartar</string>
+
+    <string name="import_title">Añadir una receta</string>
+    <string name="import_from_website">Desde un sitio web</string>
+    <string name="import_from_image">Desde una imagen</string>
+    <string name="import_from_text">Desde texto</string>
+    <string name="import_manual">Crearla manualmente</string>
+
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_system">Idioma del sistema</string>
+    <string name="settings_language_ca">Catalán</string>
+    <string name="settings_language_es">Castellano</string>
+    <string name="settings_language_en">Inglés</string>
+    <string name="settings_version">Versión %1$s</string>
+
+    <string name="common_coming_soon">Todavía no disponible</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_delete">Eliminar</string>
+    <string name="common_done">Hecho</string>
+    <string name="common_recipe_image">Imagen de la receta</string>
+    <string name="common_minutes_short">%1$d min</string>
+
+</resources>

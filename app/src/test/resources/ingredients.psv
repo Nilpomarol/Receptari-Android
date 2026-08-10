@@ -1,0 +1,76 @@
+# Ingredient parser fixture corpus.
+#
+# Format:  input | quantity | quantityMax | unit | name | note
+# Use the literal word `null` for an absent field. Blank lines and # comments ignored.
+#
+# The rule this corpus exists to protect: a line that cannot be structured is still a
+# valid ingredient. Nulls are an expected outcome, never a failure.
+
+# --- English, plain -------------------------------------------------------------
+2 tbsp olive oil | 2 | null | tbsp | olive oil | null
+500 g chicken | 500 | null | g | chicken | null
+1 onion | 1 | null | null | onion | null
+3 eggs | 3 | null | null | eggs | null
+250 ml milk | 250 | null | ml | milk | null
+1 tsp salt | 1 | null | tsp | salt | null
+2 cups flour | 2 | null | cup | flour | null
+1 lb beef | 1 | null | lb | beef | null
+
+# --- Catalan --------------------------------------------------------------------
+400 g pollastre | 400 | null | g | pollastre | null
+200 ml de nata | 200 | null | ml | nata | null
+2 cullerades d'oli d'oliva | 2 | null | tbsp | oli d'oliva | null
+1 culleradeta de sal | 1 | null | tsp | sal | null
+2 grans d'all | 2 | null | clove | all | null
+1 kg de patates | 1 | null | kg | patates | null
+3 ous | 3 | null | null | ous | null
+1 pessic de sal | 1 | null | pinch | sal | null
+2 llaunes de tomàquet | 2 | null | can | tomàquet | null
+1 tassa de sucre | 1 | null | cup | sucre | null
+
+# --- Spanish --------------------------------------------------------------------
+1 cucharada de aceite | 1 | null | tbsp | aceite | null
+500 g de harina | 500 | null | g | harina | null
+2 dientes de ajo | 2 | null | clove | ajo | null
+1 cucharadita de sal | 1 | null | tsp | sal | null
+250 ml de leche | 250 | null | ml | leche | null
+2 latas de tomate | 2 | null | can | tomate | null
+
+# --- Fractions ------------------------------------------------------------------
+1/2 cup sugar | 0.5 | null | cup | sugar | null
+½ tassa de sucre | 0.5 | null | cup | sucre | null
+1 1/2 cups flour | 1.5 | null | cup | flour | null
+1 ½ tasses de farina | 1.5 | null | cup | farina | null
+1/4 tsp pepper | 0.25 | null | tsp | pepper | null
+¾ l d'aigua | 0.75 | null | l | aigua | null
+
+# --- Decimals -------------------------------------------------------------------
+1.5 l milk | 1.5 | null | l | milk | null
+1,5 l de llet | 1.5 | null | l | llet | null
+0.5 kg sugar | 0.5 | null | kg | sugar | null
+
+# --- Ranges ---------------------------------------------------------------------
+1-2 onions | 1 | 2 | null | onions | null
+1–2 cebes | 1 | 2 | null | cebes | null
+1 a 2 cebollas | 1 | 2 | null | cebollas | null
+2 to 3 cloves | 2 | 3 | clove | null | null
+200-250 g flour | 200 | 250 | g | flour | null
+
+# --- Unit written against the number --------------------------------------------
+200g farina | 200 | null | g | farina | null
+1kg patates | 1 | null | kg | patates | null
+
+# --- Notes in parentheses -------------------------------------------------------
+1 onion (finely chopped) | 1 | null | null | onion | finely chopped
+2 cullerades d'oli (verge extra) | 2 | null | tbsp | oli | verge extra
+
+# --- Unstructurable, and still perfectly valid (PRD §3.2) ------------------------
+Sal al gust | null | null | null | Sal al gust | null
+Salt to taste | null | null | null | Salt to taste | null
+Pimienta al gusto | null | null | null | Pimienta al gusto | null
+A handful of parsley | null | null | null | A handful of parsley | null
+Un grapat de julivert | null | null | null | Un grapat de julivert | null
+Pebre negre acabat de moldre | null | null | null | Pebre negre acabat de moldre | null
+
+# --- A word that looks like a unit but is not in unit position -------------------
+2 garlic cloves | 2 | null | null | garlic cloves | null
