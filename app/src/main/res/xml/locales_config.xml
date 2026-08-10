@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Supported UI languages. Catalan is the default resource set (ADR-004).
+
+    Adding a new language must remain exactly two steps:
+      1. add res/values-XX/strings.xml
+      2. add one <locale> line here
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="ca" />
+    <locale android:name="es" />
+    <locale android:name="en" />
+</locale-config>

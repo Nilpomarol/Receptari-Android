@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Receptari</string>
+
+    <string name="nav_back">Back</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="library_title">Recipe book</string>
+    <string name="library_empty_title">No recipes yet</string>
+    <string name="library_empty_body">Add your first recipe to get started.</string>
+    <string name="library_add_recipe">Add recipe</string>
+    <string name="library_search_hint">Search recipes</string>
+    <string name="library_search">Search</string>
+    <string name="library_search_close">Close search</string>
+    <string name="library_no_results_title">No results</string>
+    <string name="library_no_results_body">Try different words, or clear the filters.</string>
+    <string name="library_sort">Sort</string>
+    <string name="library_filter">Filter</string>
+    <string name="library_filters_clear">Clear filters</string>
+    <plurals name="library_recipe_count">
+        <item quantity="one">%1$d recipe</item>
+        <item quantity="other">%1$d recipes</item>
+    </plurals>
+
+    <string name="sort_alphabetical">Alphabetical</string>
+    <string name="sort_recently_added">Recently added</string>
+    <string name="sort_recently_cooked">Recently cooked</string>
+    <string name="sort_most_cooked">Most cooked</string>
+    <string name="sort_highest_rated">Highest rated</string>
+    <string name="sort_cooking_time">Cooking time</string>
+
+    <string name="filter_favorites">Favourites only</string>
+    <string name="filter_never_cooked">Never cooked</string>
+    <string name="filter_recently_cooked">Cooked in the last month</string>
+    <string name="filter_tags">Tags</string>
+
+    <string name="detail_ingredients">Ingredients</string>
+    <string name="detail_instructions">Instructions</string>
+    <string name="detail_notes">Notes</string>
+    <string name="detail_source">Source</string>
+    <string name="detail_servings">Servings</string>
+    <string name="detail_servings_decrease">Fewer servings</string>
+    <string name="detail_servings_increase">More servings</string>
+    <string name="detail_servings_reset">Back to the original servings</string>
+    <string name="detail_scaled_notice">Quantities adjusted for %1$d servings</string>
+    <string name="detail_mark_cooked">Mark as cooked</string>
+    <string name="detail_marked_cooked">Marked as cooked</string>
+    <string name="detail_favorite_add">Add to favourites</string>
+    <string name="detail_favorite_remove">Remove from favourites</string>
+    <string name="detail_edit">Edit</string>
+    <string name="detail_delete">Delete</string>
+    <string name="detail_delete_confirm_title">Delete this recipe?</string>
+    <string name="detail_delete_confirm_body">This cannot be undone.</string>
+    <string name="detail_prep_time">Prep</string>
+    <string name="detail_cook_time">Cook</string>
+    <string name="detail_total_time">Total</string>
+    <string name="detail_never_cooked">You haven\'t cooked this yet</string>
+    <string name="detail_rating">Rating</string>
+    <plurals name="detail_cook_count">
+        <item quantity="one">Cooked %1$d time</item>
+        <item quantity="other">Cooked %1$d times</item>
+    </plurals>
+    <string name="detail_last_cooked">Last time: %1$s</string>
+    <string name="detail_not_found">Recipe not found</string>
+
+    <string name="edit_title_new">New recipe</string>
+    <string name="edit_title_existing">Edit recipe</string>
+    <string name="edit_save">Save</string>
+    <string name="edit_field_title">Title</string>
+    <string name="edit_field_title_required">A title is required</string>
+    <string name="edit_field_prep_time">Prep time (min)</string>
+    <string name="edit_field_cook_time">Cook time (min)</string>
+    <string name="edit_field_total_time">Total time (min)</string>
+    <string name="edit_field_servings">Servings</string>
+    <string name="edit_field_notes">Personal notes</string>
+    <string name="edit_field_source">Source</string>
+    <string name="edit_field_source_url">Original link</string>
+    <string name="edit_field_rating">Rating</string>
+    <string name="edit_field_tags">Tags</string>
+    <string name="edit_tag_add_hint">Add a tag</string>
+    <string name="edit_tag_add">Add</string>
+    <string name="edit_tag_remove">Remove tag %1$s</string>
+    <string name="edit_section_ingredients">Ingredients</string>
+    <string name="edit_section_instructions">Instructions</string>
+    <string name="edit_section_name_hint">Section name (optional)</string>
+    <string name="edit_add_section">Add a section</string>
+    <string name="edit_remove_section">Remove section</string>
+    <string name="edit_add_ingredient">Add an ingredient</string>
+    <string name="edit_ingredient_hint">e.g. 200 g flour</string>
+    <string name="edit_remove_ingredient">Remove ingredient</string>
+    <string name="edit_add_step">Add a step</string>
+    <string name="edit_step_hint">Describe the step</string>
+    <string name="edit_remove_step">Remove step</string>
+    <string name="edit_move_up">Move up</string>
+    <string name="edit_move_down">Move down</string>
+    <string name="edit_image_add">Add an image</string>
+    <string name="edit_image_replace">Replace image</string>
+    <string name="edit_image_remove">Remove image</string>
+    <string name="edit_image_from_gallery">Choose from gallery</string>
+    <string name="edit_image_from_camera">Take a photo</string>
+    <string name="edit_discard_title">Discard changes?</string>
+    <string name="edit_discard_body">The changes you made will be lost.</string>
+    <string name="edit_discard_confirm">Discard</string>
+
+    <string name="import_title">Add a recipe</string>
+    <string name="import_from_website">From a website</string>
+    <string name="import_from_image">From an image</string>
+    <string name="import_from_text">From text</string>
+    <string name="import_manual">Create manually</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System language</string>
+    <string name="settings_language_ca">Catalan</string>
+    <string name="settings_language_es">Spanish</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <string name="common_coming_soon">Not available yet</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_done">Done</string>
+    <string name="common_recipe_image">Recipe image</string>
+    <string name="common_minutes_short">%1$d min</string>
+
+</resources>

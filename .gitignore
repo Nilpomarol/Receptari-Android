@@ -1,0 +1,22 @@
+*.iml
+.gradle/
+.kotlin/
+.DS_Store
+
+# Build outputs — `build/` (not `/build`) so module outputs like app/build are covered too
+build/
+/captures
+.externalNativeBuild
+.cxx
+
+# Local machine configuration
+local.properties
+/.idea/
+
+# Never commit signing material or secrets
+*.jks
+*.keystore
+/keystore.properties
+
+# Room schemas ARE committed on purpose (see Docs/DATA_MODEL.md §5) — do not ignore
+# app/schemas/

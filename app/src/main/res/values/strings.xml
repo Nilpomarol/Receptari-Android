@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    DEFAULT RESOURCE SET — CATALAN (ADR-004).
+
+    Every user-visible string must be added here. Overlays live in values-es/ and
+    values-en/ and are allowed to lag behind; anything missing falls back to Catalan.
+-->
+<resources>
+    <string name="app_name">Receptari</string>
+
+    <!-- Navigation -->
+    <string name="nav_back">Enrere</string>
+    <string name="nav_settings">Configuració</string>
+
+    <!-- Library -->
+    <string name="library_title">Receptari</string>
+    <string name="library_empty_title">Encara no hi ha cap recepta</string>
+    <string name="library_empty_body">Afegeix la teva primera recepta per començar.</string>
+    <string name="library_add_recipe">Afegeix una recepta</string>
+    <string name="library_search_hint">Cerca receptes</string>
+    <string name="library_search">Cerca</string>
+    <string name="library_search_close">Tanca la cerca</string>
+    <string name="library_no_results_title">Cap resultat</string>
+    <string name="library_no_results_body">Prova amb unes altres paraules o treu els filtres.</string>
+    <string name="library_sort">Ordena</string>
+    <string name="library_filter">Filtra</string>
+    <string name="library_filters_clear">Treu els filtres</string>
+    <plurals name="library_recipe_count">
+        <item quantity="one">%1$d recepta</item>
+        <item quantity="other">%1$d receptes</item>
+    </plurals>
+
+    <!-- Sorting -->
+    <string name="sort_alphabetical">Alfabètic</string>
+    <string name="sort_recently_added">Afegides recentment</string>
+    <string name="sort_recently_cooked">Cuinades recentment</string>
+    <string name="sort_most_cooked">Més cuinades</string>
+    <string name="sort_highest_rated">Millor valorades</string>
+    <string name="sort_cooking_time">Temps de cocció</string>
+
+    <!-- Filtering -->
+    <string name="filter_favorites">Només preferides</string>
+    <string name="filter_never_cooked">Mai cuinades</string>
+    <string name="filter_recently_cooked">Cuinades el darrer mes</string>
+    <string name="filter_tags">Etiquetes</string>
+
+    <!-- Recipe detail -->
+    <string name="detail_ingredients">Ingredients</string>
+    <string name="detail_instructions">Preparació</string>
+    <string name="detail_notes">Notes</string>
+    <string name="detail_source">Font</string>
+    <string name="detail_servings">Racions</string>
+    <string name="detail_servings_decrease">Menys racions</string>
+    <string name="detail_servings_increase">Més racions</string>
+    <string name="detail_servings_reset">Torna a les racions originals</string>
+    <string name="detail_scaled_notice">Quantitats ajustades per a %1$d racions</string>
+    <string name="detail_mark_cooked">Marca com a cuinada</string>
+    <string name="detail_marked_cooked">Marcada com a cuinada</string>
+    <string name="detail_favorite_add">Afegeix a preferides</string>
+    <string name="detail_favorite_remove">Treu de preferides</string>
+    <string name="detail_edit">Edita</string>
+    <string name="detail_delete">Elimina</string>
+    <string name="detail_delete_confirm_title">Vols eliminar la recepta?</string>
+    <string name="detail_delete_confirm_body">Aquesta acció no es pot desfer.</string>
+    <string name="detail_prep_time">Preparació</string>
+    <string name="detail_cook_time">Cocció</string>
+    <string name="detail_total_time">Total</string>
+    <string name="detail_never_cooked">Encara no l\'has cuinada</string>
+    <string name="detail_rating">Valoració</string>
+    <plurals name="detail_cook_count">
+        <item quantity="one">Cuinada %1$d vegada</item>
+        <item quantity="other">Cuinada %1$d vegades</item>
+    </plurals>
+    <string name="detail_last_cooked">Darrera vegada: %1$s</string>
+    <string name="detail_not_found">No s\'ha trobat la recepta</string>
+
+    <!-- Editor -->
+    <string name="edit_title_new">Nova recepta</string>
+    <string name="edit_title_existing">Edita la recepta</string>
+    <string name="edit_save">Desa</string>
+    <string name="edit_field_title">Títol</string>
+    <string name="edit_field_title_required">El títol és obligatori</string>
+    <string name="edit_field_prep_time">Temps de preparació (min)</string>
+    <string name="edit_field_cook_time">Temps de cocció (min)</string>
+    <string name="edit_field_total_time">Temps total (min)</string>
+    <string name="edit_field_servings">Racions</string>
+    <string name="edit_field_notes">Notes personals</string>
+    <string name="edit_field_source">Font</string>
+    <string name="edit_field_source_url">Enllaç original</string>
+    <string name="edit_field_rating">Valoració</string>
+    <string name="edit_field_tags">Etiquetes</string>
+    <string name="edit_tag_add_hint">Afegeix una etiqueta</string>
+    <string name="edit_tag_add">Afegeix</string>
+    <string name="edit_tag_remove">Treu l\'etiqueta %1$s</string>
+    <string name="edit_section_ingredients">Ingredients</string>
+    <string name="edit_section_instructions">Preparació</string>
+    <string name="edit_section_name_hint">Nom de la secció (opcional)</string>
+    <string name="edit_add_section">Afegeix una secció</string>
+    <string name="edit_remove_section">Elimina la secció</string>
+    <string name="edit_add_ingredient">Afegeix un ingredient</string>
+    <string name="edit_ingredient_hint">p. ex. 200 g de farina</string>
+    <string name="edit_remove_ingredient">Elimina l\'ingredient</string>
+    <string name="edit_add_step">Afegeix un pas</string>
+    <string name="edit_step_hint">Descriu el pas</string>
+    <string name="edit_remove_step">Elimina el pas</string>
+    <string name="edit_move_up">Mou amunt</string>
+    <string name="edit_move_down">Mou avall</string>
+    <string name="edit_image_add">Afegeix una imatge</string>
+    <string name="edit_image_replace">Canvia la imatge</string>
+    <string name="edit_image_remove">Treu la imatge</string>
+    <string name="edit_image_from_gallery">Tria de la galeria</string>
+    <string name="edit_image_from_camera">Fes una foto</string>
+    <string name="edit_discard_title">Vols descartar els canvis?</string>
+    <string name="edit_discard_body">Els canvis que has fet es perdran.</string>
+    <string name="edit_discard_confirm">Descarta</string>
+
+    <!-- Import -->
+    <string name="import_title">Afegeix una recepta</string>
+    <string name="import_from_website">Des d\'un lloc web</string>
+    <string name="import_from_image">Des d\'una imatge</string>
+    <string name="import_from_text">Des de text</string>
+    <string name="import_manual">Crea-la manualment</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Configuració</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_system">Idioma del sistema</string>
+    <string name="settings_language_ca">Català</string>
+    <string name="settings_language_es">Castellà</string>
+    <string name="settings_language_en">Anglès</string>
+    <string name="settings_version">Versió %1$s</string>
+
+    <!-- Common -->
+    <string name="common_coming_soon">Encara no està disponible</string>
+    <string name="common_cancel">Cancel·la</string>
+    <string name="common_delete">Elimina</string>
+    <string name="common_done">Fet</string>
+    <string name="common_recipe_image">Imatge de la recepta</string>
+    <string name="common_minutes_short">%1$d min</string>
+
+</resources>
