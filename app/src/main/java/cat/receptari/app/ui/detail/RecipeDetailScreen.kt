@@ -3,6 +3,8 @@ package cat.receptari.app.ui.detail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -205,6 +207,7 @@ fun RecipeDetailScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RecipeContent(
     state: RecipeDetailUiState,
@@ -240,7 +243,8 @@ private fun RecipeContent(
                 TimeRow(recipe)
 
                 if (recipe.tags.isNotEmpty()) {
-                    Row(
+                    // Wraps rather than overflowing: a recipe can carry several tags.
+                    FlowRow(
                         modifier = Modifier.padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {

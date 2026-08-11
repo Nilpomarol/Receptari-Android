@@ -1,9 +1,14 @@
 package cat.receptari.app.ui.edit
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,8 +28,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -42,12 +49,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.FileProvider
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,6 +67,7 @@ import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
+import java.io.File
 
 @Composable
 fun RecipeEditRoute(
@@ -67,7 +77,10 @@ fun RecipeEditRoute(
     viewModel: RecipeEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    var showDiscardDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
@@ -77,8 +90,8 @@ fun RecipeEditRoute(
         }
     }
 
-    // The photo picker needs no runtime permission, which keeps image import a single tap
-    // with no permission dialog to explain.
+    // The photo picker needs no runtime permission, which keeps choosing an image a single
+    // tap with no permission dialog to explain.
     val pickImage = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
@@ -88,18 +101,79 @@ fun RecipeEditRoute(
         }
     }
 
+    // The capture target must exist before launching and survive the camera app taking over
+    // the screen — including process death — so only its name is held, and the file is
+    // resolved again on the way back.
+    var pendingCapture by rememberSaveable { mutableStateOf<String?>(null) }
+    val takePhoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture(),
+    ) { captured ->
+        val fileName = pendingCapture
+        pendingCapture = null
+        if (!captured || fileName == null) return@rememberLauncherForActivityResult
+
+        val file = context.captureFile(fileName)
+        if (file.exists()) {
+            viewModel.onEvent(RecipeEditEvent.ImagePicked(file.readBytes()))
+            // ImageStore has its own downscaled copy now; this one is scratch.
+            file.delete()
+        }
+    }
+
+    val leaveEditor = {
+        if (hasUnsavedChanges) showDiscardDialog = true else onNavigateBack()
+    }
+
+    BackHandler(enabled = hasUnsavedChanges) { showDiscardDialog = true }
+
     RecipeEditScreen(
         state = state,
         onEvent = viewModel::onEvent,
-        onNavigateBack = onNavigateBack,
+        onNavigateBack = leaveEditor,
         onPickImage = {
             pickImage.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
             )
         },
+        onTakePhoto = {
+            val fileName = "capture-${System.currentTimeMillis()}.jpg"
+            pendingCapture = fileName
+            takePhoto.launch(context.captureUri(fileName))
+        },
         modifier = modifier,
     )
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text(stringResource(R.string.edit_discard_title)) },
+            text = { Text(stringResource(R.string.edit_discard_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDiscardDialog = false
+                        viewModel.discardChanges()
+                        onNavigateBack()
+                    },
+                ) {
+                    Text(stringResource(R.string.edit_discard_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
 }
+
+private fun Context.captureFile(fileName: String): File =
+    File(File(cacheDir, "camera").apply { mkdirs() }, fileName)
+
+/** Must match the `file_paths.xml` cache-path and the manifest authority. */
+private fun Context.captureUri(fileName: String): Uri =
+    FileProvider.getUriForFile(this, "$packageName.fileprovider", captureFile(fileName))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,6 +182,7 @@ fun RecipeEditScreen(
     onEvent: (RecipeEditEvent) -> Unit,
     onNavigateBack: () -> Unit,
     onPickImage: () -> Unit,
+    onTakePhoto: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -147,7 +222,14 @@ fun RecipeEditScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { ImageField(state = state, onEvent = onEvent, onPickImage = onPickImage) }
+            item {
+                ImageField(
+                    state = state,
+                    onEvent = onEvent,
+                    onPickImage = onPickImage,
+                    onTakePhoto = onTakePhoto,
+                )
+            }
 
             item {
                 Column(Modifier.padding(horizontal = 16.dp)) {
@@ -382,11 +464,13 @@ private fun androidx.compose.foundation.lazy.LazyListScope.sectionEditor(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ImageField(
     state: RecipeEditUiState,
     onEvent: (RecipeEditEvent) -> Unit,
     onPickImage: () -> Unit,
+    onTakePhoto: () -> Unit,
 ) {
     Column {
         state.imageDisplayPath?.let { path ->
@@ -400,16 +484,21 @@ private fun ImageField(
             )
         }
 
-        Row(
+        FlowRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(onClick = onPickImage) {
                 Icon(Icons.Default.Image, contentDescription = null)
                 Text(
-                    text = stringResource(
-                        if (state.imagePath == null) R.string.edit_image_add else R.string.edit_image_replace,
-                    ),
+                    text = stringResource(R.string.edit_image_from_gallery),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            OutlinedButton(onClick = onTakePhoto) {
+                Icon(Icons.Default.PhotoCamera, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.edit_image_from_camera),
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
@@ -454,7 +543,7 @@ private fun RatingField(rating: Int?, onEvent: (RecipeEditEvent) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun TagsField(tags: List<String>, onEvent: (RecipeEditEvent) -> Unit) {
     var draft by remember { mutableStateOf("") }
@@ -488,7 +577,9 @@ private fun TagsField(tags: List<String>, onEvent: (RecipeEditEvent) -> Unit) {
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Flows onto more lines rather than running off the edge — a recipe can easily
+        // carry four or five tags.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             tags.forEach { tag ->
                 FilterChip(
                     selected = true,
@@ -546,6 +637,7 @@ private fun RecipeEditScreenPreview() {
             onEvent = {},
             onNavigateBack = {},
             onPickImage = {},
+            onTakePhoto = {},
         )
     }
 }

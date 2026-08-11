@@ -14,11 +14,15 @@ import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
@@ -112,6 +116,23 @@ class RecipeEditViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RecipeEditUiState(isLoading = editingRecipeId != null))
     val uiState: StateFlow<RecipeEditUiState> = _uiState.asStateFlow()
 
+    /**
+     * The form as it was last loaded or saved. Compared against the live state so leaving
+     * the editor can warn before throwing work away.
+     */
+    private var savedSnapshot: RecipeEditUiState = _uiState.value
+
+    /**
+     * Images written to storage while editing. An image has to be written before it can be
+     * shown, but which of them survives is only decided on save or discard — so they are
+     * tracked here and cleaned up once the outcome is known.
+     */
+    private val imagesWrittenThisSession = mutableListOf<String>()
+
+    val hasUnsavedChanges: StateFlow<Boolean> = _uiState
+        .map { it.differsFrom(savedSnapshot) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
     private val effectChannel = Channel<RecipeEditEffect>(Channel.BUFFERED)
     val effects: Flow<RecipeEditEffect> = effectChannel.receiveAsFlow()
 
@@ -174,6 +195,24 @@ class RecipeEditViewModel @Inject constructor(
                 )
             }.ifEmpty { listOf(FormSection()) },
         )
+        savedSnapshot = _uiState.value
+    }
+
+    /**
+     * Called when the user chooses to throw away their edits.
+     *
+     * Removes the images written during this edit and leaves the recipe's own image alone —
+     * discarding must not damage what is already saved. `NonCancellable` because this runs
+     * as the screen is being torn down and `viewModelScope` is about to be cancelled.
+     */
+    fun discardChanges() {
+        val orphans = imagesWrittenThisSession.filterNot { it == savedSnapshot.imagePath }
+        imagesWrittenThisSession.clear()
+        if (orphans.isEmpty()) return
+
+        viewModelScope.launch(NonCancellable) {
+            orphans.forEach { imageStore.delete(it) }
+        }
     }
 
     fun onEvent(event: RecipeEditEvent) {
@@ -211,19 +250,18 @@ class RecipeEditViewModel @Inject constructor(
                 _uiState.update { it.copy(tags = it.tags - event.name) }
 
             is RecipeEditEvent.ImagePicked -> viewModelScope.launch {
-                val state = _uiState.value
-                val path = imageStore.save(state.id, event.bytes)
-                // Replacing an image should not leave the old file behind.
-                state.imagePath?.let { imageStore.delete(it) }
+                val path = imageStore.save(_uiState.value.id, event.bytes)
+                imagesWrittenThisSession += path
                 _uiState.update {
                     it.copy(imagePath = path, imageDisplayPath = imageStore.absolutePathOf(path))
                 }
             }
 
-            RecipeEditEvent.ImageRemoved -> viewModelScope.launch {
-                _uiState.value.imagePath?.let { imageStore.delete(it) }
+            // Deliberately does not delete anything. The file belongs to the saved recipe
+            // until the edit is saved; deleting here would leave a saved recipe pointing at
+            // a missing file the moment the user backed out.
+            RecipeEditEvent.ImageRemoved ->
                 _uiState.update { it.copy(imagePath = null, imageDisplayPath = null) }
-            }
 
             is RecipeEditEvent.SectionNameChanged -> updateSections(event.kind) { sections ->
                 sections.map { if (it.id == event.sectionId) it.copy(name = event.value) else it }
@@ -304,9 +342,28 @@ class RecipeEditViewModel @Inject constructor(
             }
 
             recipeRepository.save(merged)
+
+            // The outcome is settled: every image written during this edit, plus the one
+            // the recipe used to reference, is now dead weight unless it is the one saved.
+            val keep = merged.imagePath
+            (imagesWrittenThisSession + listOfNotNull(savedSnapshot.imagePath))
+                .distinct()
+                .filterNot { it == keep }
+                .forEach { imageStore.delete(it) }
+            imagesWrittenThisSession.clear()
+
+            savedSnapshot = _uiState.value
             effectChannel.send(RecipeEditEffect.Saved(merged.id))
         }
     }
+
+    /**
+     * Transient UI flags are not edits — a validation error appearing must not make the
+     * form look dirty.
+     */
+    private fun RecipeEditUiState.differsFrom(other: RecipeEditUiState): Boolean =
+        copy(showTitleError = false, isLoading = false) !=
+            other.copy(showTitleError = false, isLoading = false)
 
     private fun List<FormSection>.toIngredientSections(): List<IngredientSection> =
         mapNotNull { section ->
@@ -372,4 +429,8 @@ class RecipeEditViewModel @Inject constructor(
     }
 
     private fun String.digitsOnly(): String = filter { it.isDigit() }
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
 }
