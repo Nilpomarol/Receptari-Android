@@ -183,5 +183,9 @@
     <string name="common_recipe_image">Imatge de la recepta</string>
     <string name="common_minutes_short">%1$d min</string>
     <string name="common_rating_value">Valoració: %1$d de 5</string>
+    <plurals name="common_servings">
+        <item quantity="one">%1$d ració</item>
+        <item quantity="other">%1$d racions</item>
+    </plurals>
 
 </resources>
