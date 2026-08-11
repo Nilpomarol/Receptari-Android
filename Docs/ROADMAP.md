@@ -265,6 +265,8 @@ retrofitting later would mean touching all of them twice.
 - ☑ Engraved corner sprigs flanking the wordmark
 - ☑ Library rebuilt: script masthead, always-visible search, filter pills instead of a
   dropdown, framed recipe plates
+- ☑ Cards print one honest duration (`CookingTime`) plus the servings; a recipe with
+  nothing but a name gets a printer's mark rather than empty space
 - ☑ Recipe detail rebuilt: centred title page, ornamental section headings, ruled step
   numerals
 - ☑ Import, editor and settings moved onto the same components

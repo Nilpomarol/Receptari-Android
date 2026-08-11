@@ -421,7 +421,10 @@ private fun RecipeHeader(recipe: Recipe, modifier: Modifier = Modifier) {
             recipe.cookTimeMinutes?.let {
                 add(labelledTime(R.string.detail_cook_time, it))
             }
-            recipe.totalTimeMinutes?.let {
+            // Falls back to the total the parts imply, so a recipe that recorded prep and
+            // cook separately still shows what it actually costs without the reader adding
+            // up. Null when it would only repeat a figure already on this line.
+            (recipe.totalTimeMinutes ?: recipe.derivedTotalMinutes)?.let {
                 add(labelledTime(R.string.detail_total_time, it))
             }
         }

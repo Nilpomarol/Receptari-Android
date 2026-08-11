@@ -10,6 +10,7 @@ import cat.receptari.app.data.local.mapper.toDomain
 import cat.receptari.app.data.local.mapper.toWriteModel
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.model.RecipeQuery
+import cat.receptari.app.domain.model.RecipeSort
 import cat.receptari.app.domain.model.IngredientSection
 import cat.receptari.app.domain.model.InstructionSection
 import cat.receptari.app.domain.model.Recipe
@@ -178,6 +179,57 @@ class RecipeDaoTest {
         assertNull(summaries[0].lastCookedAt)
     }
 
+    // --- what the library card reads ----------------------------------------------
+
+    @Test
+    fun summariesCarryTheTimePartsAndTheServings() = runBlocking {
+        save(
+            sampleRecipe().copy(
+                prepTimeMinutes = 20,
+                cookTimeMinutes = 80,
+                baseServings = 6,
+            ),
+        )
+
+        val summary = recipeDao.observeSummaries(RecipeQueryBuilder.build(RecipeQuery()))
+            .first()
+            .single()
+
+        // The card prints one duration, but which one depends on all three, so the
+        // projection has to carry the parts rather than just the total.
+        assertEquals(20, summary.prepTimeMinutes)
+        assertEquals(80, summary.cookTimeMinutes)
+        assertNull(summary.totalTimeMinutes)
+        assertEquals(6, summary.baseServings)
+        assertEquals(100, summary.toDomain().effectiveTimeMinutes)
+    }
+
+    /**
+     * Sorting by cooking time has to agree with the figure the card prints, or the list
+     * orders by one number and shows another. Both sides implement
+     * [cat.receptari.app.domain.model.CookingTime]; this is what pins them together.
+     */
+    @Test
+    fun sortingByCookingTimeUsesTheSameFallbackTheCardPrints() = runBlocking {
+        // Bare recipes, not copies of the sample: copying would reuse its section,
+        // ingredient and step ids and the second save would fail on the primary key.
+        save(timedRecipe("total-90", total = 90, prep = 5))
+        save(timedRecipe("parts-45", prep = 15, cook = 30))
+        save(timedRecipe("cook-30", cook = 30))
+        save(timedRecipe("prep-15", prep = 15))
+        save(timedRecipe("untimed"))
+
+        val order = recipeDao
+            .observeSummaries(
+                RecipeQueryBuilder.build(RecipeQuery(sort = RecipeSort.CookingTime)),
+            )
+            .first()
+            .map { it.id }
+
+        // Untimed last: a recipe with no time recorded is not a zero-minute recipe.
+        assertEquals(listOf("prep-15", "cook-30", "parts-45", "total-90", "untimed"), order)
+    }
+
     // --- deletion cascades --------------------------------------------------------
 
     @Test
@@ -259,6 +311,22 @@ class RecipeDaoTest {
         recipeId = recipeId,
         cookedAt = at.toEpochMilli(),
         note = null,
+    )
+
+    /** A recipe with times and nothing else, so several can coexist without id clashes. */
+    private fun timedRecipe(
+        id: String,
+        prep: Int? = null,
+        cook: Int? = null,
+        total: Int? = null,
+    ) = Recipe(
+        id = id,
+        title = id,
+        prepTimeMinutes = prep,
+        cookTimeMinutes = cook,
+        totalTimeMinutes = total,
+        createdAt = now,
+        updatedAt = now,
     )
 
     private fun sampleRecipe() = Recipe(

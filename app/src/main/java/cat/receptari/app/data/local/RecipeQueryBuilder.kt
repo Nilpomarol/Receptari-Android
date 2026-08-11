@@ -12,6 +12,10 @@ import cat.receptari.app.domain.model.RecipeSort
  */
 object RecipeQueryBuilder {
 
+    private const val EffectiveTime =
+        "COALESCE(r.totalTimeMinutes, r.prepTimeMinutes + r.cookTimeMinutes, " +
+            "r.cookTimeMinutes, r.prepTimeMinutes)"
+
     fun build(query: RecipeQuery): SupportSQLiteQuery {
         val conditions = mutableListOf<String>()
         val arguments = mutableListOf<Any>()
@@ -55,7 +59,10 @@ object RecipeQueryBuilder {
             SELECT r.id AS id,
                    r.title AS title,
                    r.imagePath AS imagePath,
+                   r.prepTimeMinutes AS prepTimeMinutes,
+                   r.cookTimeMinutes AS cookTimeMinutes,
                    r.totalTimeMinutes AS totalTimeMinutes,
+                   r.baseServings AS baseServings,
                    r.isFavorite AS isFavorite,
                    r.rating AS rating,
                    COUNT(c.id) AS cookCount,
@@ -97,6 +104,9 @@ object RecipeQueryBuilder {
         RecipeSort.RecentlyCooked -> "lastCookedAt IS NULL, lastCookedAt DESC"
         RecipeSort.MostCooked -> "cookCount DESC, r.title COLLATE NOCASE ASC"
         RecipeSort.HighestRated -> "r.rating IS NULL, r.rating DESC, r.title COLLATE NOCASE ASC"
-        RecipeSort.CookingTime -> "r.totalTimeMinutes IS NULL, r.totalTimeMinutes ASC"
+        // Must match CookingTime.effective, or the list sorts by one number and prints
+        // another. SQL does the work for free: `prep + cook` is NULL unless both exist,
+        // which is exactly the fallback order the domain rule uses.
+        RecipeSort.CookingTime -> "$EffectiveTime IS NULL, $EffectiveTime ASC"
     }
 }

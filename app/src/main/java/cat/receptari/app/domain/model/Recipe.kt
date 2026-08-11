@@ -38,4 +38,19 @@ data class Recipe(
     /** True when the serving multiplier can be offered at all (PRD §3.3). */
     val isScalable: Boolean
         get() = baseServings != null && baseServings > 0
+
+    /** The single duration worth printing where there is room for one. */
+    val effectiveTimeMinutes: Int?
+        get() = CookingTime.effective(totalTimeMinutes, prepTimeMinutes, cookTimeMinutes)
+
+    /**
+     * A total the recipe implies but does not state. Null when it would only repeat a figure
+     * already on screen — see [CookingTime.derivedTotal].
+     */
+    val derivedTotalMinutes: Int?
+        get() = if (totalTimeMinutes != null) {
+            null
+        } else {
+            CookingTime.derivedTotal(prepTimeMinutes, cookTimeMinutes)
+        }
 }

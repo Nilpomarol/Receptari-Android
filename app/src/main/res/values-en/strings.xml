@@ -166,5 +166,9 @@
     <string name="common_recipe_image">Recipe image</string>
     <string name="common_minutes_short">%1$d min</string>
     <string name="common_rating_value">Rating: %1$d out of 5</string>
+    <plurals name="common_servings">
+        <item quantity="one">%1$d serving</item>
+        <item quantity="other">%1$d servings</item>
+    </plurals>
 
 </resources>

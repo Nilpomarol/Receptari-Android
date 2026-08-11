@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Schedule
@@ -51,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -426,23 +429,28 @@ private fun RecipeCard(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                recipe.totalTimeMinutes?.let { minutes ->
+                val minutes = recipe.effectiveTimeMinutes
+                // Zero or negative servings would be a broken import, not "for nobody".
+                val servings = recipe.baseServings?.takeIf { it > 0 }
+
+                if (minutes != null || servings != null) {
                     Row(
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Schedule,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Text(
-                            text = stringResource(R.string.common_minutes_short, minutes),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        minutes?.let {
+                            MetaItem(
+                                icon = Icons.Outlined.Schedule,
+                                label = stringResource(R.string.common_minutes_short, it),
+                            )
+                        }
+                        servings?.let {
+                            MetaItem(
+                                icon = Icons.Outlined.Group,
+                                label = pluralStringResource(R.plurals.common_servings, it, it),
+                            )
+                        }
                     }
                 }
 
@@ -464,6 +472,21 @@ private fun RecipeCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+
+                // A recipe with nothing but a name leaves the card looking unfinished. A
+                // printer's mark is the honest filler: it says there is nothing more to say,
+                // where invented metadata or an "add details" prompt would be noise.
+                val hasMeta = minutes != null ||
+                    servings != null ||
+                    recipe.rating != null ||
+                    recipe.cookCount > 0
+                if (!hasMeta) {
+                    OrnamentalDivider(
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .width(88.dp),
                     )
                 }
             }
@@ -490,6 +513,28 @@ private fun RecipeCard(
                 )
             }
         }
+    }
+}
+
+/** One piece of card metadata: a small icon and its figure. */
+@Composable
+private fun MetaItem(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -571,13 +616,32 @@ private fun LibraryScreenPreview() {
                     RecipeSummary(
                         id = "1",
                         title = "Fricandó amb moixernons",
-                        totalTimeMinutes = 100,
+                        prepTimeMinutes = 20,
+                        cookTimeMinutes = 80,
+                        baseServings = 4,
                         rating = 4,
                         cookCount = 3,
                         isFavorite = true,
                     ),
-                    RecipeSummary(id = "2", title = "Crema catalana", totalTimeMinutes = 25, rating = 5),
-                    RecipeSummary(id = "3", title = "Truita de patates", totalTimeMinutes = 40),
+                    // Only a cook time, so that is the whole time.
+                    RecipeSummary(
+                        id = "2",
+                        title = "Crema catalana",
+                        cookTimeMinutes = 25,
+                        baseServings = 6,
+                        rating = 5,
+                    ),
+                    // A stated total wins over parts that disagree with it.
+                    RecipeSummary(
+                        id = "3",
+                        title = "Truita de patates",
+                        prepTimeMinutes = 10,
+                        cookTimeMinutes = 15,
+                        totalTimeMinutes = 40,
+                        baseServings = 2,
+                    ),
+                    // Nothing but a name: the case the printer's mark exists for.
+                    RecipeSummary(id = "4", title = "Escudella"),
                 ),
                 availableTags = listOf(Tag(id = "t1", name = "Postres")),
                 isLoading = false,
