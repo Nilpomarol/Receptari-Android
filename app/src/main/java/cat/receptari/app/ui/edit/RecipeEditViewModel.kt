@@ -12,6 +12,7 @@ import cat.receptari.app.domain.model.Tag
 import cat.receptari.app.domain.parser.IngredientParser
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
+import cat.receptari.app.ui.importer.ImportDraftHandoff
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.NonCancellable
@@ -109,6 +110,7 @@ class RecipeEditViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val imageStore: ImageStore,
     private val clock: Clock,
+    importDraftHandoff: ImportDraftHandoff,
 ) : ViewModel() {
 
     private val editingRecipeId: String? = savedStateHandle["recipeId"]
@@ -143,7 +145,20 @@ class RecipeEditViewModel @Inject constructor(
     private var originalLanguage: String? = null
 
     init {
-        editingRecipeId?.let { load(it) }
+        if (editingRecipeId != null) {
+            load(editingRecipeId)
+        } else {
+            // An import lands here as an ordinary new recipe: same form, same validation,
+            // same save path. Nothing is read-only and nothing marks it as imported
+            // (PRD §13). `savedSnapshot` stays the empty form on purpose, so backing out of
+            // a filled-in import warns rather than silently discarding the extraction.
+            importDraftHandoff.consume()?.let { draft ->
+                _uiState.value = draft.toFormState()
+                // Recorded now because the source language is only knowable at import time,
+                // and Phase 5 translation needs to know what it is translating from.
+                originalLanguage = draft.originalLanguage
+            }
+        }
     }
 
     private fun load(id: String) = viewModelScope.launch {

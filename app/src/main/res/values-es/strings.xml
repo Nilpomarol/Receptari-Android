@@ -107,6 +107,24 @@
     <string name="import_from_image">Desde una imagen</string>
     <string name="import_from_text">Desde texto</string>
     <string name="import_manual">Crearla manualmente</string>
+    <string name="import_text_title">Pegar el texto</string>
+    <string name="import_text_label">Texto de la receta</string>
+    <string name="import_text_explanation">Pega la receta tal como la tengas. Claude extraerá los ingredientes y los pasos, y después podrás revisarlos.</string>
+    <string name="import_action_extract">Extraer la receta</string>
+    <string name="import_extracting">Extrayendo…</string>
+    <string name="import_nothing_found">No se ha encontrado ninguna receta.</string>
+    <string name="import_review_notice">Revísalo siempre antes de guardar.</string>
+    <string name="import_website_title">Desde un sitio web</string>
+    <string name="import_website_label">Dirección de la página</string>
+    <string name="import_website_explanation">Pega la dirección de la receta. Si la página ya publica la receta en un formato estructurado, se leerá directamente; si no, la extraerá Claude.</string>
+    <string name="import_error_unreachable">No se ha podido cargar la página.</string>
+    <string name="import_image_title">Desde una imagen</string>
+    <string name="import_image_explanation">Añade una foto por cada página de la receta, en orden. Se enviarán todas juntas para que se lean como una sola receta.</string>
+    <string name="import_image_from_gallery">Galería</string>
+    <string name="import_image_from_camera">Cámara</string>
+    <string name="import_image_remove_page">Quitar la imagen</string>
+    <string name="import_nothing_found_image">No se ha encontrado ninguna receta. Comprueba que el texto se lea bien.</string>
+    <string name="import_error_invalid_url">La dirección no es válida.</string>
 
     <string name="settings_title">Ajustes</string>
     <string name="settings_language">Idioma</string>
@@ -115,6 +133,31 @@
     <string name="settings_language_es">Castellano</string>
     <string name="settings_language_en">Inglés</string>
     <string name="settings_version">Versión %1$s</string>
+
+    <string name="settings_api_key">Clave de la API de Claude</string>
+    <string name="settings_api_key_explanation">Las importaciones automáticas necesitan tu clave de Claude. Se guarda cifrada en el dispositivo y solo se envía a api.anthropic.com.</string>
+    <string name="settings_api_key_label">Clave de la API</string>
+    <string name="settings_api_key_save">Guardar la clave</string>
+    <string name="settings_api_key_configured">Clave configurada</string>
+    <string name="settings_api_key_test">Comprobarla</string>
+    <string name="settings_api_key_replace">Cambiarla</string>
+    <string name="settings_api_key_remove">Eliminarla</string>
+    <string name="settings_api_key_show">Mostrar la clave</string>
+    <string name="settings_api_key_hide">Ocultar la clave</string>
+    <string name="settings_api_key_saved">Clave guardada</string>
+    <string name="settings_api_key_removed">Clave eliminada</string>
+    <string name="settings_api_key_valid">La clave funciona</string>
+    <string name="settings_api_key_remove_title">¿Eliminar la clave?</string>
+    <string name="settings_api_key_remove_body">Tendrás que volver a introducirla para importar recetas automáticamente.</string>
+
+    <string name="ai_error_no_key">Configura la clave de la API en Ajustes.</string>
+    <string name="ai_error_invalid_key">La clave no se ha aceptado. Compruébala.</string>
+    <string name="ai_error_rate_limited">Demasiadas peticiones seguidas. Inténtalo de nuevo en un momento.</string>
+    <string name="ai_error_quota">La cuenta de Claude se ha quedado sin crédito.</string>
+    <string name="ai_error_offline">Sin conexión a internet.</string>
+    <string name="ai_error_refused">Claude no ha podido procesar este contenido.</string>
+    <string name="ai_error_unreadable">No se ha podido leer la respuesta. Inténtalo de nuevo.</string>
+    <string name="ai_error_unexpected">Se ha producido un error inesperado.</string>
 
     <string name="common_coming_soon">Todavía no disponible</string>
     <string name="common_cancel">Cancelar</string>

@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
+        The only network the app does is calling api.anthropic.com with the user's own key,
+        and fetching pages the user asks to import. Everything else stays on the device.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
         Package visibility for the camera app. Without this, resolving ACTION_IMAGE_CAPTURE
         fails on API 30+ and "take a photo" silently does nothing.
 

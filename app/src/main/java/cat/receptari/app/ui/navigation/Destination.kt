@@ -7,6 +7,9 @@ package cat.receptari.app.ui.navigation
 object Destination {
     const val LIBRARY = "library"
     const val IMPORT = "import"
+    const val IMPORT_TEXT = "import/text"
+    const val IMPORT_WEBSITE = "import/website"
+    const val IMPORT_IMAGE = "import/image"
     const val SETTINGS = "settings"
 
     const val RECIPE_ID_ARG = "recipeId"

@@ -45,9 +45,18 @@ These were decided deliberately. Do not silently change them; see
 
 Break any of these and the feature is wrong, regardless of how clean the code is.
 
-1. **`Ingredient.originalText` is never null and never lost.** Every parse, import,
-   translation, and edit preserves the text the user or source actually provided. This is
-   the project's data-integrity guarantee (PRD §3.2, §14).
+1. **`Ingredient.originalText` is never null and never lost.** It holds the line as the
+   user approved it — the source's own wording, with exactly one sanctioned transformation:
+   `UnitNormalizer` rewrites the leading `quantity [unit]` span before the line reaches the
+   editable preview (ADR-008). Nothing else may touch it. No parse, import, translation, or
+   edit may drop a line, reword an ingredient name, or delete a qualifier it does not
+   understand (PRD §3.2, §14).
+   - Normalisation is **deterministic Kotlin, never the model.** Do not ask the extractor
+     to convert, tidy, or shorten anything — its prompt says copy verbatim, and that is what
+     makes the parser's fixture corpus meaningful.
+   - **No volume-to-mass conversion, ever.** A cup of flour is 120 g, of butter 227 g. There
+     is no correct answer without the ingredient's density, and a confident wrong number is
+     worse than a foreign-looking right one.
 2. **Scaling servings never mutates stored data.** The serving multiplier is a
    display-time pure function. `Recipe.baseServings` and stored ingredient quantities are
    immutable under scaling (PRD §3.3, §14).

@@ -2,6 +2,7 @@ package cat.receptari.app.domain.scaling
 
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.parser.IngredientParser
+import cat.receptari.app.domain.parser.UnitNormalizer
 import java.util.Locale
 
 /**
@@ -44,12 +45,22 @@ data class ScaledIngredient(
      * gets shown.
      */
     fun displayText(locale: Locale = Locale.getDefault()): String {
-        if (!wasScaled || quantity == null) return originalText
+        val scaled = if (!wasScaled || quantity == null) {
+            originalText
+        } else {
+            val range = IngredientParser.leadingQuantityRange(originalText)
+            if (range == null) {
+                originalText
+            } else {
+                QuantityFormatter.formatRange(quantity, quantityMax, unit, locale) +
+                    originalText.substring(range.last + 1)
+            }
+        }
 
-        val range = IngredientParser.leadingQuantityRange(originalText) ?: return originalText
-        val scaledQuantity = QuantityFormatter.formatRange(quantity, quantityMax, unit, locale)
-
-        return scaledQuantity + originalText.substring(range.last + 1)
+        // Normalising *after* scaling, not before, keeps the quantity and the unit in step:
+        // the line is re-read as a whole, so "8 oz" doubled to "16 oz" converts to "455 g"
+        // rather than pairing a scaled imperial number with a metric symbol.
+        return UnitNormalizer.normalizeIngredient(scaled, locale)
     }
 }
 

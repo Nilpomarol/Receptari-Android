@@ -70,7 +70,7 @@ class ScaledIngredientDisplayTest {
     @Test
     fun `fractions scale into readable quantities`() {
         assertEquals("4 ½ tomàquets madurs", scaled("3 tomàquets madurs", 1.5).displayText(ca))
-        assertEquals("3 cups flour", scaled("1 1/2 cups flour", 2.0).displayText(ca))
+        assertEquals("1 ½ cs d'oli", scaled("1 cullerada d'oli", 1.5).displayText(ca))
     }
 
     // --- rounding that suits what is being measured -------------------------------
@@ -113,9 +113,22 @@ class ScaledIngredientDisplayTest {
     }
 
     @Test
-    fun `spoons and cups keep their fractions`() {
-        assertEquals("1 ½ cullerada d'oli", scaled("1 cullerada d'oli", 1.5).displayText(ca))
-        assertEquals("3 cups flour", scaled("1 1/2 cups flour", 2.0).displayText(ca))
+    fun `spoons keep their fractions and are abbreviated in their own language`() {
+        assertEquals("1 ½ cs d'oli", scaled("1 cullerada d'oli", 1.5).displayText(ca))
+        assertEquals("1 ½ tbsp of oil", scaled("1 tablespoon of oil", 1.5).displayText(ca))
+    }
+
+    /**
+     * Scaling runs first and normalising second, so the number and the unit convert
+     * together. Doing it the other way round would pair a scaled imperial quantity with a
+     * metric symbol — "16 g" for two lots of 8 oz.
+     */
+    @Test
+    fun `an imperial quantity is scaled before it is converted`() {
+        // 8 oz doubled is 16 oz, which is 453.6 g, shown as what a scale can read.
+        assertEquals("455 g de mantega", scaled("8 oz de mantega", 2.0).displayText(ca))
+        // 1½ cups doubled is 3 cups, which is 709.8 ml.
+        assertEquals("710 ml flour", scaled("1 1/2 cups flour", 2.0).displayText(ca))
     }
 
     @Test

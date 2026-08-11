@@ -105,6 +105,24 @@
     <string name="import_from_image">From an image</string>
     <string name="import_from_text">From text</string>
     <string name="import_manual">Create manually</string>
+    <string name="import_text_title">Paste the text</string>
+    <string name="import_text_label">Recipe text</string>
+    <string name="import_text_explanation">Paste the recipe however you have it. Claude will pull out the ingredients and steps, and you can review them afterwards.</string>
+    <string name="import_action_extract">Extract the recipe</string>
+    <string name="import_extracting">Extracting…</string>
+    <string name="import_nothing_found">No recipe was found in that text.</string>
+    <string name="import_review_notice">Always review it before saving.</string>
+    <string name="import_website_title">From a website</string>
+    <string name="import_website_label">Page address</string>
+    <string name="import_website_explanation">Paste the recipe\'s address. If the page already publishes the recipe in a structured format it is read directly; otherwise Claude extracts it.</string>
+    <string name="import_error_unreachable">The page could not be loaded.</string>
+    <string name="import_image_title">From an image</string>
+    <string name="import_image_explanation">Add one photo per page of the recipe, in order. They are sent together so they are read as a single recipe.</string>
+    <string name="import_image_from_gallery">Gallery</string>
+    <string name="import_image_from_camera">Camera</string>
+    <string name="import_image_remove_page">Remove image</string>
+    <string name="import_nothing_found_image">No recipe was found. Check that the text is readable.</string>
+    <string name="import_error_invalid_url">That address is not valid.</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
@@ -113,6 +131,31 @@
     <string name="settings_language_es">Spanish</string>
     <string name="settings_language_en">English</string>
     <string name="settings_version">Version %1$s</string>
+
+    <string name="settings_api_key">Claude API key</string>
+    <string name="settings_api_key_explanation">Automatic imports need your Claude API key. It is stored encrypted on this device and is only ever sent to api.anthropic.com.</string>
+    <string name="settings_api_key_label">API key</string>
+    <string name="settings_api_key_save">Save key</string>
+    <string name="settings_api_key_configured">Key configured</string>
+    <string name="settings_api_key_test">Test it</string>
+    <string name="settings_api_key_replace">Replace it</string>
+    <string name="settings_api_key_remove">Remove it</string>
+    <string name="settings_api_key_show">Show key</string>
+    <string name="settings_api_key_hide">Hide key</string>
+    <string name="settings_api_key_saved">Key saved</string>
+    <string name="settings_api_key_removed">Key removed</string>
+    <string name="settings_api_key_valid">The key works</string>
+    <string name="settings_api_key_remove_title">Remove the key?</string>
+    <string name="settings_api_key_remove_body">You will need to enter it again to import recipes automatically.</string>
+
+    <string name="ai_error_no_key">Set your API key in Settings.</string>
+    <string name="ai_error_invalid_key">The key was not accepted. Check it.</string>
+    <string name="ai_error_rate_limited">Too many requests. Try again in a moment.</string>
+    <string name="ai_error_quota">The Claude account has run out of credit.</string>
+    <string name="ai_error_offline">No internet connection.</string>
+    <string name="ai_error_refused">Claude could not process this content.</string>
+    <string name="ai_error_unreadable">The response could not be read. Try again.</string>
+    <string name="ai_error_unexpected">Something went wrong.</string>
 
     <string name="common_coming_soon">Not available yet</string>
     <string name="common_cancel">Cancel</string>

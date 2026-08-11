@@ -6,6 +6,7 @@ import cat.receptari.app.domain.model.RecipeQuery
 import cat.receptari.app.domain.model.RecipeSummary
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
+import cat.receptari.app.ui.importer.ImportDraftHandoff
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -152,6 +153,7 @@ class RecipeEditImageLifecycleTest {
             recipeRepository = repository,
             imageStore = imageStore,
             clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+            importDraftHandoff = ImportDraftHandoff(),
         )
     }
 

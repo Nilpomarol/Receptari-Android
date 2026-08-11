@@ -164,19 +164,58 @@ finishes, taking the seeded database with it.
 
 ---
 
-## Phase 4 — Import ☐
+## Phase 4 — Import ☑ (built, not yet exercised against the live API)
 
 Deliverable: PRD §7–§10. Build the shared pipeline once
 (`Source → Extract → Structure → Preview/Edit → Save`), reusing the Phase 3 edit screen as
 the preview — so no import path can bypass review.
 
-1. ☐ Import source picker + `DraftRecipe` + pipeline skeleton
-2. ☐ Settings: API key entry, encrypted storage, "test key", "remove key"
-3. ☐ `AiClient` interface + `ClaudeAiClient`
-4. ☐ **Text import** — simplest, no fetching, validates the whole pipeline
-5. ☐ **Website import** — JSON-LD → microdata → AI fallback; store `sourceUrl`
-6. ☐ **Image import** — multi-image, downscaling, vision extraction
-7. ☐ Failure handling: paywalls, auth, anti-bot, malformed responses, quota errors
+1. ☑ Import source picker + `DraftRecipe` + pipeline skeleton
+2. ☑ Settings: API key entry, encrypted storage, "test key", "remove key"
+3. ☑ `AiClient` interface + `ClaudeAiClient`
+4. ☑ **Text import** — simplest, no fetching, validates the whole pipeline
+5. ☑ **Website import** — JSON-LD → microdata → AI fallback; store `sourceUrl`
+6. ☑ **Image import** — multi-image, downscaling, vision extraction
+7. ☑ Failure handling: typed `AiError`/`ImportError`, one message per failure the user can act on
+
+`./gradlew build` passes (74 unit tests, lint, guardrail). **No request has been made against
+the live API yet** — that needs a real key on the device, and is the first thing to do next.
+
+### How the pieces fit
+
+```
+ImportScreen ──┬── TextImportViewModel ─────── AiClient.extractFromText
+               ├── WebsiteImportViewModel ──── ImportRecipeFromWebsite
+               │                                 ├─ WebPageSource (JSON-LD → microdata)
+               │                                 └─ AiClient.extractFromWebContent (fallback)
+               └── ImageImportViewModel ─────── AiClient.extractFromImages
+                                    │
+                          ImportDraftHandoff (in-memory, consumed once)
+                                    │
+                            RecipeEditViewModel  ← the same editor as manual entry
+```
+
+### Notes
+
+- **The model returns ingredient *lines*, not structured fields.** `DraftRecipe` carries
+  text; `IngredientParser` structures it on save, exactly as for a hand-typed recipe. That is
+  what makes `originalText` trustworthy end to end, and it means extraction quality is
+  covered by the parser's fixture corpus rather than by whatever the model felt like
+  returning.
+- **Structured outputs, not prompt-and-hope.** `RecipeSchema` constrains the response, so
+  there is no prose to strip and no code-fence handling.
+- **The draft never touches the database.** `ImportDraftHandoff` hands it to the editor in
+  memory and clears itself on read, so an unreviewed model response cannot be resurrected or
+  persisted (PRD §14).
+- **Structured metadata short-circuits the model.** A page publishing schema.org Recipe is
+  parsed directly — free, instant, exact. `SchemaOrgRecipeParser` has 14 tests covering the
+  shapes that actually occur: `@graph` wrappers, `@type` arrays, `HowToStep`, `HowToSection`,
+  instructions as one `<br>`-separated blob, and HTML inside ingredient text.
+- **Photos are downscaled to 1568 px before sending.** The API resizes anything larger
+  server-side anyway, so this costs no quality and saves the user's data.
+- **The key is never in an error message.** `AiError.Unexpected` carries a diagnostic string
+  that is redacted against the key before it leaves the client, and the UI shows a generic
+  message rather than the detail.
 
 **Exit criteria:** a failed or partial import always lands the user in the editor with
 whatever was recovered, never in an error dead end.

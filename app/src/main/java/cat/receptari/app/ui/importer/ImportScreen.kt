@@ -35,13 +35,17 @@ import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 fun ImportRoute(
     onNavigateBack: () -> Unit,
     onCreateManually: () -> Unit,
+    onImportFromText: () -> Unit,
+    onImportFromWebsite: () -> Unit,
+    onImportFromImage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Phase 4 wires the three automatic sources to the shared import pipeline; manual
-    // creation already goes straight to the editor.
     ImportScreen(
         onNavigateBack = onNavigateBack,
         onCreateManually = onCreateManually,
+        onImportFromText = onImportFromText,
+        onImportFromWebsite = onImportFromWebsite,
+        onImportFromImage = onImportFromImage,
         modifier = modifier,
     )
 }
@@ -51,6 +55,9 @@ fun ImportRoute(
 fun ImportScreen(
     onNavigateBack: () -> Unit,
     onCreateManually: () -> Unit,
+    onImportFromText: () -> Unit,
+    onImportFromWebsite: () -> Unit,
+    onImportFromImage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -82,22 +89,22 @@ fun ImportScreen(
 
             HorizontalDivider()
 
-            // The three automatic sources arrive in Phase 4. They are listed but inert, so
-            // the shape of the flow is visible without pretending to work.
-            ImportOption(Icons.Default.Language, stringResource(R.string.import_from_website))
-            ImportOption(Icons.Default.Image, stringResource(R.string.import_from_image))
             ImportOption(
                 Icons.AutoMirrored.Filled.Notes,
                 stringResource(R.string.import_from_text),
+                onClick = onImportFromText,
             )
 
-            Text(
-                text = stringResource(R.string.common_coming_soon),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+            ImportOption(
+                Icons.Default.Language,
+                stringResource(R.string.import_from_website),
+                onClick = onImportFromWebsite,
+            )
+
+            ImportOption(
+                Icons.Default.Image,
+                stringResource(R.string.import_from_image),
+                onClick = onImportFromImage,
             )
         }
     }
@@ -128,6 +135,12 @@ private fun ImportOption(
 @Composable
 private fun ImportScreenPreview() {
     ReceptariTheme(dynamicColor = false) {
-        ImportScreen(onNavigateBack = {}, onCreateManually = {})
+        ImportScreen(
+            onNavigateBack = {},
+            onCreateManually = {},
+            onImportFromText = {},
+            onImportFromWebsite = {},
+            onImportFromImage = {},
+        )
     }
 }
