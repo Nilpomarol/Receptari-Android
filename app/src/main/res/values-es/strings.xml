@@ -95,8 +95,6 @@
     <string name="edit_remove_step">Eliminar el paso</string>
     <string name="edit_move_up">Mover arriba</string>
     <string name="edit_move_down">Mover abajo</string>
-    <string name="edit_image_add">Añadir una imagen</string>
-    <string name="edit_image_replace">Cambiar la imagen</string>
     <string name="edit_image_remove">Quitar la imagen</string>
     <string name="edit_image_from_gallery">Elegir de la galería</string>
     <string name="edit_image_from_camera">Hacer una foto</string>
