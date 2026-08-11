@@ -11,6 +11,9 @@ import androidx.navigation.navArgument
 import cat.receptari.app.ui.detail.RecipeDetailRoute
 import cat.receptari.app.ui.edit.RecipeEditRoute
 import cat.receptari.app.ui.importer.ImportRoute
+import cat.receptari.app.ui.importer.image.ImageImportRoute
+import cat.receptari.app.ui.importer.text.TextImportRoute
+import cat.receptari.app.ui.importer.website.WebsiteImportRoute
 import cat.receptari.app.ui.library.LibraryRoute
 import cat.receptari.app.ui.settings.SettingsRoute
 
@@ -78,6 +81,32 @@ fun ReceptariNavHost(
                     navController.popBackStack()
                     navController.navigate(Destination.edit())
                 },
+                onImportFromText = { navController.navigate(Destination.IMPORT_TEXT) },
+                onImportFromWebsite = { navController.navigate(Destination.IMPORT_WEBSITE) },
+                onImportFromImage = { navController.navigate(Destination.IMPORT_IMAGE) },
+            )
+        }
+
+        composable(Destination.IMPORT_WEBSITE) {
+            WebsiteImportRoute(
+                onNavigateBack = navController::popBackStack,
+                onDraftReady = { navController.toDraftEditor() },
+            )
+        }
+
+        composable(Destination.IMPORT_TEXT) {
+            TextImportRoute(
+                onNavigateBack = navController::popBackStack,
+                // The source screens have done their job once the draft exists; going back
+                // from the editor belongs in the library, not in the paste box.
+                onDraftReady = { navController.toDraftEditor() },
+            )
+        }
+
+        composable(Destination.IMPORT_IMAGE) {
+            ImageImportRoute(
+                onNavigateBack = navController::popBackStack,
+                onDraftReady = { navController.toDraftEditor() },
             )
         }
 
@@ -85,4 +114,13 @@ fun ReceptariNavHost(
             SettingsRoute(onNavigateBack = navController::popBackStack)
         }
     }
+}
+
+/**
+ * Clears the import screens off the back stack and opens the editor on the pending draft.
+ * Shared by all three import sources so they behave identically once extraction succeeds.
+ */
+private fun NavHostController.toDraftEditor() {
+    popBackStack(Destination.LIBRARY, inclusive = false)
+    navigate(Destination.edit())
 }

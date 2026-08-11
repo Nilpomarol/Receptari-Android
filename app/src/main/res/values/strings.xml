@@ -118,6 +118,24 @@
     <string name="import_from_image">Des d\'una imatge</string>
     <string name="import_from_text">Des de text</string>
     <string name="import_manual">Crea-la manualment</string>
+    <string name="import_text_title">Enganxa el text</string>
+    <string name="import_text_label">Text de la recepta</string>
+    <string name="import_text_explanation">Enganxa la recepta tal com la tens. Claude n\'extraurà els ingredients i els passos, i després els podràs revisar.</string>
+    <string name="import_action_extract">Extreu la recepta</string>
+    <string name="import_extracting">Extraient…</string>
+    <string name="import_nothing_found">No s\'hi ha trobat cap recepta.</string>
+    <string name="import_review_notice">Revisa-ho sempre abans de desar.</string>
+    <string name="import_website_title">Des d\'un lloc web</string>
+    <string name="import_website_label">Adreça de la pàgina</string>
+    <string name="import_website_explanation">Enganxa l\'adreça de la recepta. Si la pàgina ja publica la recepta en un format estructurat, es llegirà directament; si no, l\'extraurà Claude.</string>
+    <string name="import_error_unreachable">No s\'ha pogut carregar la pàgina.</string>
+    <string name="import_image_title">Des d\'una imatge</string>
+    <string name="import_image_explanation">Afegeix una foto per cada pàgina de la recepta, en ordre. S\'enviaran totes juntes perquè es llegeixin com una sola recepta.</string>
+    <string name="import_image_from_gallery">Galeria</string>
+    <string name="import_image_from_camera">Càmera</string>
+    <string name="import_image_remove_page">Treu la imatge</string>
+    <string name="import_nothing_found_image">No s\'hi ha trobat cap recepta. Comprova que el text es llegeixi bé.</string>
+    <string name="import_error_invalid_url">L\'adreça no és vàlida.</string>
 
     <!-- Settings -->
     <string name="settings_title">Configuració</string>
@@ -127,6 +145,33 @@
     <string name="settings_language_es">Castellà</string>
     <string name="settings_language_en">Anglès</string>
     <string name="settings_version">Versió %1$s</string>
+
+    <!-- API key -->
+    <string name="settings_api_key">Clau de l\'API de Claude</string>
+    <string name="settings_api_key_explanation">Les importacions automàtiques necessiten la teva clau de Claude. Es desa xifrada al dispositiu i només s\'envia a api.anthropic.com.</string>
+    <string name="settings_api_key_label">Clau de l\'API</string>
+    <string name="settings_api_key_save">Desa la clau</string>
+    <string name="settings_api_key_configured">Clau configurada</string>
+    <string name="settings_api_key_test">Comprova-la</string>
+    <string name="settings_api_key_replace">Canvia-la</string>
+    <string name="settings_api_key_remove">Elimina-la</string>
+    <string name="settings_api_key_show">Mostra la clau</string>
+    <string name="settings_api_key_hide">Amaga la clau</string>
+    <string name="settings_api_key_saved">Clau desada</string>
+    <string name="settings_api_key_removed">Clau eliminada</string>
+    <string name="settings_api_key_valid">La clau funciona</string>
+    <string name="settings_api_key_remove_title">Vols eliminar la clau?</string>
+    <string name="settings_api_key_remove_body">Hauràs de tornar-la a introduir per importar receptes automàticament.</string>
+
+    <!-- AI errors -->
+    <string name="ai_error_no_key">Configura la clau de l\'API a Configuració.</string>
+    <string name="ai_error_invalid_key">La clau no s\'ha acceptat. Comprova-la.</string>
+    <string name="ai_error_rate_limited">Massa peticions seguides. Torna-ho a provar d\'aquí a un moment.</string>
+    <string name="ai_error_quota">El compte de Claude s\'ha quedat sense crèdit.</string>
+    <string name="ai_error_offline">Sense connexió a internet.</string>
+    <string name="ai_error_refused">Claude no ha pogut processar aquest contingut.</string>
+    <string name="ai_error_unreadable">No s\'ha pogut llegir la resposta. Torna-ho a provar.</string>
+    <string name="ai_error_unexpected">Hi ha hagut un error inesperat.</string>
 
     <!-- Common -->
     <string name="common_coming_soon">Encara no està disponible</string>

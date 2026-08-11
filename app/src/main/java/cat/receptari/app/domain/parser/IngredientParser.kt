@@ -117,6 +117,57 @@ object IngredientParser {
         return offset until (offset + quantity.consumedChars)
     }
 
+    /**
+     * The leading `quantity [unit]` of [text], with the exact span it occupies.
+     *
+     * The wider sibling of [leadingQuantityRange]: rewriting a unit means rewriting the
+     * quantity with it ("8 oz" becomes "225 g", not "8 g"), so the two have to be replaced
+     * as one span. Everything after that span — connector, name, note — is left alone,
+     * for the same grammatical reasons documented on [leadingQuantityRange].
+     */
+    fun leadingMeasurement(text: String): Measurement? {
+        val trimmed = text.trimStart()
+        val offset = text.length - trimmed.length
+        val quantity = parseQuantity(trimmed) ?: return null
+
+        val afterQuantity = trimmed.substring(quantity.consumedChars)
+        val gap = afterQuantity.takeWhile { it.isWhitespace() }.length
+        val rawToken = afterQuantity.drop(gap).takeWhile { !it.isWhitespace() }
+
+        // Trailing punctuation belongs to the sentence, not the unit. Swallowing it would
+        // turn "200 g, ben picat" into "200 g ben picat".
+        val unitToken = rawToken.trimEnd('.', ',', ':', ';')
+        val canonical = unitToken.takeIf { it.isNotEmpty() }?.let(UnitLexicon::canonicalize)
+
+        val end = if (canonical == null) {
+            offset + quantity.consumedChars
+        } else {
+            offset + quantity.consumedChars + gap + unitToken.length
+        }
+
+        return Measurement(
+            quantity = quantity.min,
+            quantityMax = quantity.max,
+            unit = canonical,
+            unitText = if (canonical == null) null else unitToken,
+            range = offset until end,
+        )
+    }
+
+    /**
+     * A leading measurement and where it sits in the line.
+     *
+     * [unit] is the canonical token ("tbsp"); [unitText] is how the source actually spelled
+     * it ("cullerades"), which is what tells a normaliser the language it is working in.
+     */
+    data class Measurement(
+        val quantity: Double,
+        val quantityMax: Double?,
+        val unit: String?,
+        val unitText: String?,
+        val range: IntRange,
+    )
+
     private data class Quantity(val min: Double, val max: Double?, val consumedChars: Int)
 
     private fun parseQuantity(text: String): Quantity? {

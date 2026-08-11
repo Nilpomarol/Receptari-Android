@@ -111,6 +111,7 @@ dependencies {
     ksp(libs.room.compiler)
 
     implementation(libs.coil.compose)
+    implementation(libs.anthropic.java)
     implementation(libs.okhttp)
     implementation(libs.jsoup)
     implementation(libs.kotlinx.serialization.json)

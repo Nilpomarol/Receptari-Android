@@ -153,6 +153,105 @@ table the MVP does not need.
 
 ---
 
+## ADR-007 — Use the official Anthropic Java SDK, not hand-rolled HTTP
+
+**Date:** 2026-08-11 · **Status:** Accepted
+
+### Context
+Kotlin has no dedicated Anthropic SDK; Kotlin projects use `com.anthropic:anthropic-java`.
+The alternative was raw HTTP with OkHttp and kotlinx.serialization, both already
+dependencies — zero additional bytes, but every request/response type, retry rule, and
+error mapping written and maintained by hand.
+
+The open question was whether a JVM SDK built on Jackson and OkHttp would work on Android
+at all. It was tested rather than assumed: `com.anthropic:anthropic-java:2.53.0` compiles
+and dexes cleanly at `minSdk 33` with no desugaring errors.
+
+### Decision
+Use the official SDK.
+
+### Rationale
+It is the documented path for Kotlin, and it supplies typed exceptions per HTTP status,
+automatic retry with backoff on 429/5xx, and structured-output support. Hand-rolling those
+means re-implementing them and keeping them current as the API changes — for a solo
+project, that maintenance is the expensive part, not the bytes.
+
+### Consequences
+- **The release APK grows from 2.1 MB to 9.24 MB** (post-R8) — Jackson is most of it. For
+  a private app that never faces a store size limit this is affordable; if it ever stops
+  being affordable, the escape hatch is real, because all model access sits behind the
+  `AiClient` interface in `domain/ai` and nothing outside `data/remote/claude/` imports an
+  SDK type.
+- The SDK's calls are blocking, so every one is wrapped in `withContext(ioDispatcher)`.
+- Ships Jackson alongside kotlinx.serialization. Two JSON libraries is not elegant;
+  kotlinx.serialization stays the choice for our own code (Jsoup JSON-LD parsing, any
+  future export), and Jackson is an implementation detail of the SDK.
+
+---
+
+## ADR-008 — Units are normalised in code before review, never by the model
+
+**Date:** 2026-08-11 · **Status:** Accepted
+
+### Context
+Imported recipes arrive in whatever units the source used: `2 tablespoons`, `8 oz`,
+`1 1/2 cups`, `350°F`. The goal is a recipe book that reads consistently in European units
+with symbols rather than spelled-out words.
+
+Two places could do this. The extractor's prompt could be told to convert, or the app could
+do it deterministically after extraction. The prompt is the obvious-looking option and the
+wrong one: it costs the same money, cannot be tested, may convert inconsistently between
+runs, and does nothing for recipes typed by hand.
+
+This decision also relaxes AGENTS.md §3.1, which previously said the source text was never
+altered at all. That absolute wording was a hardening of PRD §14 ("preserve original text
+where useful"), adopted after rendering-from-parsed-fields produced broken Catalan. The
+grammatical hazard is real; the blanket ban was stricter than the PRD requires.
+
+### Decision
+Normalise in `domain/parser/UnitNormalizer`, a pure function applied in two places:
+
+- **On import**, to the lines that fill the editable preview — so the user reviews and
+  approves the normalised text, and that is what gets stored.
+- **At display time**, in `ScaledIngredient.displayText()`, after scaling — so hand-typed
+  recipes read consistently too.
+
+The extractor's prompt is unchanged: it still copies the source verbatim.
+
+### Rationale
+Deterministic, free, and testable against the existing fixture corpus. It works on manual
+entry as well as imports. And because it runs before an editable preview, the user is the
+one who approves the result — which is what PRD §14 actually asks for.
+
+Three limits define what it may do:
+
+- **Only the leading `quantity [unit]` span is replaced.** The connector, name, note and
+  punctuation are copied through byte-for-byte. This is the same surgical substitution
+  scaling uses, for the same reason: rebuilding a line from parsed fields yields
+  "3 grans all" for "3 grans d'all" (see ADR-005).
+- **Conversions are exact arithmetic only** — oz→g, lb→g, cup→ml, °F→°C. Volume-to-mass is
+  excluded by design; it needs per-ingredient density and would silently produce recipes
+  that fail.
+- **Abbreviating is not translating.** Spoons are a legitimate European measure, so they are
+  shortened within their own language — `cullerades`→`cs`, `cucharadas`→`cda`,
+  `tablespoons`→`tbsp` — and never converted to millilitres. Counting words with no
+  language-neutral symbol (`gra`, `clove`, `fulla`) are left alone entirely, because
+  abbreviating those would mean translating them.
+
+### Consequences
+- Scaling must run **before** normalising, not after, or a scaled imperial quantity gets
+  paired with a metric symbol ("16 g" for two lots of 8 oz). `displayText()` enforces the
+  order and a test covers it.
+- The stored `originalText` of an imported recipe may differ from the source page. It is
+  still what the user saw and approved, and no information is dropped — but "byte-identical
+  to the website" is no longer a property of the database.
+- Every abbreviation produced is a spelling `UnitLexicon` already recognises, so normalised
+  text round-trips back through the parser.
+- Adding a unit means touching `UnitLexicon` (spellings) and `UnitNormalizer` (target), in
+  that order.
+
+---
+
 ## ADR-006 — Modern SDK floor: `minSdk 33`
 
 **Date:** 2026-08-10 · **Status:** Accepted
