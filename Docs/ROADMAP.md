@@ -164,7 +164,7 @@ finishes, taking the seeded database with it.
 
 ---
 
-## Phase 4 — Import ☑ (built, not yet exercised against the live API)
+## Phase 4 — Import ☑
 
 Deliverable: PRD §7–§10. Build the shared pipeline once
 (`Source → Extract → Structure → Preview/Edit → Save`), reusing the Phase 3 edit screen as
@@ -178,8 +178,27 @@ the preview — so no import path can bypass review.
 6. ☑ **Image import** — multi-image, downscaling, vision extraction
 7. ☑ Failure handling: typed `AiError`/`ImportError`, one message per failure the user can act on
 
-`./gradlew build` passes (74 unit tests, lint, guardrail). **No request has been made against
-the live API yet** — that needs a real key on the device, and is the first thing to do next.
+`./gradlew build` passes (112 unit tests, lint, guardrail).
+
+### Verified against the live API
+
+On a Pixel 10 Pro XL with a real key: **one text import and two image imports**, all
+successful end to end. That covers the parts that could only be proven in flight — the
+request shape, `output_config` structured outputs against `RecipeSchema`, `ExtractionDto`
+decoding, the base64 vision path through `JpegDownscaler`, the draft handoff, and the
+editor prefill.
+
+**Website import has not been run against a real page yet.** It is the one path with
+substantial logic the other two do not share (`OkHttpWebPageSource` plus the JSON-LD and
+microdata short-circuit in `SchemaOrgRecipeParser`), so its 14 unit tests are fixture-based
+only. Worth an hour against a handful of real recipe sites before it is trusted.
+
+The failure paths — rejected key, offline, exhausted quota — are also unexercised. They are
+straightforward mappings, but they are untested mappings.
+
+A `/security-review` of the whole change found no HIGH or MEDIUM issues. The Keystore
+AES-256-GCM implementation, the key's confinement to `api.anthropic.com`, and the redaction
+of the key out of error messages were each checked specifically.
 
 ### How the pieces fit
 
