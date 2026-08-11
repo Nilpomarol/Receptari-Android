@@ -1,6 +1,8 @@
 package cat.receptari.app.ui.library
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,39 +12,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,9 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -64,9 +62,18 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
+import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.FilterPill
+import cat.receptari.app.core.designsystem.OrnamentalDivider
+import cat.receptari.app.core.designsystem.PaperCard
+import cat.receptari.app.core.designsystem.PaperScaffold
+import cat.receptari.app.core.designsystem.StarRating
+import cat.receptari.app.core.designsystem.Wordmark
+import cat.receptari.app.core.designsystem.pageFrame
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.domain.model.RecipeSort
 import cat.receptari.app.domain.model.RecipeSummary
+import cat.receptari.app.domain.model.Tag
 import coil3.compose.AsyncImage
 
 @Composable
@@ -89,7 +96,6 @@ fun LibraryRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     state: LibraryUiState,
@@ -99,34 +105,45 @@ fun LibraryScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(
+    PaperScaffold(
         modifier = modifier,
-        topBar = {
-            if (state.isSearchActive) {
-                SearchBar(
-                    query = state.searchQuery,
-                    onQueryChange = { onEvent(LibraryEvent.SearchQueryChanged(it)) },
-                    onClose = { onEvent(LibraryEvent.SearchActiveChanged(false)) },
-                )
-            } else {
-                LibraryTopBar(state = state, onEvent = onEvent, onOpenSettings = onOpenSettings)
-            }
-        },
+        topBar = { Masthead(onOpenSettings = onOpenSettings) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddRecipe,
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.library_add_recipe)) },
             )
         },
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
+            SearchField(
+                query = state.searchQuery,
+                onQueryChange = { onEvent(LibraryEvent.SearchQueryChanged(it)) },
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+
+            FilterPills(
+                state = state,
+                onEvent = onEvent,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+
+            SortRow(
+                sort = state.sort,
+                onSelect = { onEvent(LibraryEvent.SortChanged(it)) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+            )
+
             when {
-                state.isLoading -> Unit
+                state.isLoading -> Box(Modifier.fillMaxSize())
 
                 state.isLibraryEmpty -> EmptyState(
                     title = stringResource(R.string.library_empty_title),
@@ -142,7 +159,7 @@ fun LibraryScreen(
                     contentPadding = PaddingValues(
                         start = 16.dp,
                         end = 16.dp,
-                        top = 8.dp,
+                        top = 4.dp,
                         bottom = 96.dp,
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -162,196 +179,207 @@ fun LibraryScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The book's title page, not a top app bar.
+ *
+ * The wordmark is the only script on the screen and the only place the app names itself, so
+ * it gets the room a title page would give it.
+ */
 @Composable
-private fun LibraryTopBar(
-    state: LibraryUiState,
-    onEvent: (LibraryEvent) -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    var sortMenuOpen by remember { mutableStateOf(false) }
-    var filterMenuOpen by remember { mutableStateOf(false) }
-
-    TopAppBar(
-        title = { Text(stringResource(R.string.library_title)) },
-        actions = {
-            IconButton(onClick = { onEvent(LibraryEvent.SearchActiveChanged(true)) }) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = stringResource(R.string.library_search),
-                )
-            }
-
-            Box {
-                IconButton(onClick = { sortMenuOpen = true }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = stringResource(R.string.library_sort),
-                    )
-                }
-                SortMenu(
-                    expanded = sortMenuOpen,
-                    current = state.sort,
-                    onDismiss = { sortMenuOpen = false },
-                    onSelect = {
-                        onEvent(LibraryEvent.SortChanged(it))
-                        sortMenuOpen = false
-                    },
-                )
-            }
-
-            Box {
-                IconButton(onClick = { filterMenuOpen = true }) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = stringResource(R.string.library_filter),
-                        tint = if (state.filter.isActive) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
-                FilterMenu(
-                    expanded = filterMenuOpen,
-                    state = state,
-                    onDismiss = { filterMenuOpen = false },
-                    onEvent = onEvent,
-                )
-            }
-
-            IconButton(onClick = onOpenSettings) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.nav_settings),
-                )
-            }
-        },
-    )
+private fun Masthead(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(top = 4.dp, bottom = 10.dp),
+    ) {
+        Wordmark(
+            text = stringResource(R.string.library_title),
+            modifier = Modifier.align(Alignment.Center),
+        )
+        IconButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.align(Alignment.TopEnd),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = stringResource(R.string.nav_settings),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Search is always on screen rather than hidden behind an icon.
+ *
+ * A book opens to its index; making the reader tap to reveal one is a phone habit rather
+ * than a book one. This uses `BasicTextField` because Material's `TextField` brings its own
+ * container, indicator and 56 dp of chrome, all of which would then have to be argued back
+ * out again.
+ */
 @Composable
-private fun SearchBar(
+private fun SearchField(
     query: String,
     onQueryChange: (String) -> Unit,
-    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val focusRequester = remember { FocusRequester() }
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, ReceptariTheme.palette.rule),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
 
-    // Opening search should put the cursor in the field; making the user tap twice reads
-    // as the button not having worked.
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
-
-    TopAppBar(
-        title = {
-            TextField(
+            BasicTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                placeholder = { Text(stringResource(R.string.library_search_hint)) },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
                 ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester),
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = Icons.Default.Clear,
-                    contentDescription = stringResource(R.string.library_search_close),
-                )
-            }
-        },
-    )
-}
-
-@Composable
-private fun SortMenu(
-    expanded: Boolean,
-    current: RecipeSort,
-    onDismiss: () -> Unit,
-    onSelect: (RecipeSort) -> Unit,
-) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        RecipeSort.entries.forEach { sort ->
-            DropdownMenuItem(
-                text = { Text(sort.label()) },
-                onClick = { onSelect(sort) },
-                leadingIcon = { RadioButton(selected = sort == current, onClick = null) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterMenu(
-    expanded: Boolean,
-    state: LibraryUiState,
-    onDismiss: () -> Unit,
-    onEvent: (LibraryEvent) -> Unit,
-) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        CheckableItem(
-            label = stringResource(R.string.filter_favorites),
-            checked = state.filter.favoritesOnly,
-            onClick = { onEvent(LibraryEvent.ToggleFavoritesFilter) },
-        )
-        CheckableItem(
-            label = stringResource(R.string.filter_never_cooked),
-            checked = state.filter.neverCooked,
-            onClick = { onEvent(LibraryEvent.ToggleNeverCookedFilter) },
-        )
-        CheckableItem(
-            label = stringResource(R.string.filter_recently_cooked),
-            checked = state.filter.cookedSinceEpochMillis != null,
-            onClick = { onEvent(LibraryEvent.ToggleRecentlyCookedFilter) },
-        )
-
-        if (state.availableTags.isNotEmpty()) {
-            HorizontalDivider()
-            Text(
-                text = stringResource(R.string.filter_tags),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            state.availableTags.forEach { tag ->
-                CheckableItem(
-                    label = tag.name,
-                    checked = tag.id in state.filter.tagIds,
-                    onClick = { onEvent(LibraryEvent.ToggleTagFilter(tag.id)) },
-                )
-            }
-        }
-
-        if (state.filter.isActive) {
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.library_filters_clear)) },
-                onClick = {
-                    onEvent(LibraryEvent.ClearFilters)
-                    onDismiss()
+                    .weight(1f)
+                    .padding(start = 10.dp, top = 14.dp, bottom = 14.dp),
+                decorationBox = { field ->
+                    if (query.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.library_search_hint),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    field()
                 },
             )
+
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = stringResource(R.string.library_search_clear),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Filters as a scrolling row rather than a menu.
+ *
+ * Which filters are on is the most useful thing to know when the list comes back empty, and
+ * a dropdown hides exactly that.
+ */
+@Composable
+private fun FilterPills(
+    state: LibraryUiState,
+    onEvent: (LibraryEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterPill(
+            label = stringResource(R.string.filter_all),
+            selected = !state.filter.isActive,
+            onClick = { onEvent(LibraryEvent.ClearFilters) },
+            icon = Icons.Outlined.GridView,
+        )
+        FilterPill(
+            label = stringResource(R.string.filter_favorites),
+            selected = state.filter.favoritesOnly,
+            onClick = { onEvent(LibraryEvent.ToggleFavoritesFilter) },
+            icon = Icons.Default.FavoriteBorder,
+        )
+        FilterPill(
+            label = stringResource(R.string.filter_never_cooked),
+            selected = state.filter.neverCooked,
+            onClick = { onEvent(LibraryEvent.ToggleNeverCookedFilter) },
+            icon = Icons.Outlined.Restaurant,
+        )
+        FilterPill(
+            label = stringResource(R.string.filter_recently_cooked),
+            selected = state.filter.cookedSinceEpochMillis != null,
+            onClick = { onEvent(LibraryEvent.ToggleRecentlyCookedFilter) },
+            icon = Icons.Outlined.Schedule,
+        )
+        state.availableTags.forEach { tag ->
+            FilterPill(
+                label = tag.name,
+                selected = tag.id in state.filter.tagIds,
+                onClick = { onEvent(LibraryEvent.ToggleTagFilter(tag.id)) },
+                icon = Icons.Outlined.LocalOffer,
+            )
         }
     }
 }
 
 @Composable
-private fun CheckableItem(label: String, checked: Boolean, onClick: () -> Unit) {
-    DropdownMenuItem(
-        text = { Text(label) },
-        onClick = onClick,
-        leadingIcon = { Checkbox(checked = checked, onCheckedChange = null) },
-    )
+private fun SortRow(
+    sort: RecipeSort,
+    onSelect: (RecipeSort) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.library_sort),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(
+                    text = sort.label(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                RecipeSort.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label()) },
+                        onClick = {
+                            onSelect(option)
+                            expanded = false
+                        },
+                        leadingIcon = { RadioButton(selected = option == sort, onClick = null) },
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -361,26 +389,13 @@ private fun RecipeCard(
     onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    PaperCard(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        contentPadding = PaddingValues(10.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            recipe.imagePath?.let { path ->
-                AsyncImage(
-                    model = path,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                )
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RecipePlate(imagePath = recipe.imagePath)
 
             Column(
                 modifier = Modifier
@@ -394,40 +409,45 @@ private fun RecipeCard(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                val metadata = buildList {
-                    recipe.totalTimeMinutes?.let {
-                        add(stringResource(R.string.common_minutes_short, it))
-                    }
-                    if (recipe.cookCount > 0) {
-                        add(
-                            pluralStringResource(
-                                R.plurals.detail_cook_count,
-                                recipe.cookCount,
-                                recipe.cookCount,
-                            ),
+                recipe.totalTimeMinutes?.let { minutes ->
+                    Row(
+                        modifier = Modifier.padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Schedule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.common_minutes_short, minutes),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
-                if (metadata.isNotEmpty()) {
-                    Text(
-                        text = metadata.joinToString(" · "),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
+
+                recipe.rating?.let { rating ->
+                    StarRating(
+                        rating = rating,
+                        contentDescription = stringResource(R.string.common_rating_value, rating),
+                        modifier = Modifier.padding(top = 5.dp),
                     )
                 }
 
-                recipe.rating?.let { rating ->
-                    Row(modifier = Modifier.padding(top = 4.dp)) {
-                        repeat(rating) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    }
+                if (recipe.cookCount > 0) {
+                    Text(
+                        text = pluralStringResource(
+                            R.plurals.detail_cook_count,
+                            recipe.cookCount,
+                            recipe.cookCount,
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
             }
 
@@ -446,7 +466,7 @@ private fun RecipeCard(
                         },
                     ),
                     tint = if (recipe.isFavorite) {
-                        MaterialTheme.colorScheme.primary
+                        ReceptariTheme.palette.heart
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
@@ -456,27 +476,59 @@ private fun RecipeCard(
     }
 }
 
+/** The photograph, framed like one pasted into the book — or its empty mount. */
+@Composable
+private fun RecipePlate(imagePath: String?, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(4.dp)
+    // pageFrame sits outside the clip: inside it, the outer half of the stroke would be
+    // clipped away and the frame would render at half its width.
+    val frame = modifier
+        .size(76.dp)
+        .pageFrame(shape, ReceptariTheme.palette.rule, inset = 0.dp)
+        .clip(shape)
+
+    if (imagePath == null) {
+        Box(
+            modifier = frame.background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Restaurant,
+                contentDescription = null,
+                tint = ReceptariTheme.palette.rule,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+    } else {
+        AsyncImage(
+            model = imagePath,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = frame,
+        )
+    }
+}
+
 @Composable
 private fun EmptyState(title: String, body: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
+            .padding(horizontal = 40.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        OrnamentalDivider(modifier = Modifier.padding(bottom = 20.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
         )
-        Text(
+        Aside(
             text = body,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 10.dp),
         )
+        OrnamentalDivider(modifier = Modifier.padding(top = 20.dp))
     }
 }
 
@@ -495,19 +547,22 @@ private fun RecipeSort.label(): String = stringResource(
 @Preview
 @Composable
 private fun LibraryScreenPreview() {
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme {
         LibraryScreen(
             state = LibraryUiState(
                 recipes = listOf(
                     RecipeSummary(
                         id = "1",
-                        title = "Pollastre amb salsa",
-                        totalTimeMinutes = 45,
+                        title = "Fricandó amb moixernons",
+                        totalTimeMinutes = 100,
                         rating = 4,
                         cookCount = 3,
+                        isFavorite = true,
                     ),
-                    RecipeSummary(id = "2", title = "Crema catalana", totalTimeMinutes = 30, isFavorite = true),
+                    RecipeSummary(id = "2", title = "Crema catalana", totalTimeMinutes = 25, rating = 5),
+                    RecipeSummary(id = "3", title = "Truita de patates", totalTimeMinutes = 40),
                 ),
+                availableTags = listOf(Tag(id = "t1", name = "Postres")),
                 isLoading = false,
             ),
             onEvent = {},
@@ -521,7 +576,7 @@ private fun LibraryScreenPreview() {
 @Preview
 @Composable
 private fun LibraryScreenEmptyPreview() {
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme {
         LibraryScreen(
             state = LibraryUiState(isLoading = false),
             onEvent = {},

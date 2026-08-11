@@ -252,6 +252,62 @@ Three limits define what it may do:
 
 ---
 
+## ADR-009 — A fixed printed-book design system, not Material You
+
+**Date:** 2026-08-11 · **Status:** Accepted
+
+### Context
+Until now the app took its colours from `dynamicLightColorScheme`, so it looked like
+whatever wallpaper the phone happened to have, in Material's default type. That is a fine
+default for an app whose job is to disappear into the system. This one's job is the
+opposite: it is a private recipe book, and it should read as a book.
+
+### Decision
+A fixed design system in `core/designsystem`, modelled on a printed recipe book:
+
+- **No dynamic colour.** One hand-picked palette, plus a dark variant. `ReceptariTheme` no
+  longer takes a `dynamicColor` parameter, because there is nothing sensible for it to do.
+- **Light is paper, dark is lamplight.** The dark theme is warm walnut and aged cream — the
+  same book read at night — rather than the neutral near-black Material would derive.
+- **Three bundled fonts** (SIL OFL, licences in `Docs/licenses/`): *Pinyon Script* for the
+  wordmark only, *Playfair Display* for titles and headings, *Lora* for everything read
+  rather than glanced at. Lora and Playfair ship as variable fonts, so each weight is the
+  same file with a different `wght` axis.
+- **Paper is generated, not shipped.** `Modifier.paperBackground()` draws a colour, a 96 px
+  repeating grain tile, and an off-centre vignette.
+- **Tokens Material has no role for** — page edge, rule, gold, sealing-wax red — live in
+  `ReceptariPalette`, reached through `ReceptariTheme.palette`. Everything that does map
+  onto a Material role stays a Material role.
+
+### Rationale
+Dynamic colour and this aesthetic are mutually exclusive: the whole point of a wallpaper-
+derived scheme is that the app does not control its own colours, and the whole point here is
+that it does. Keeping both would mean the parchment and the ink survive only until someone
+sets a blue wallpaper.
+
+A photographic paper texture was the obvious alternative to generating one. It was rejected
+because it needs a light and a dark variant, costs about a megabyte, and tiles visibly down
+a long scroll. Generated grain costs one 96×96 bitmap per theme and cannot seam.
+
+Three faces is one more than a careful designer would usually allow. The script face earns
+its place only because it is confined to the wordmark; the moment it appears twice, the
+whole thing reads as a pastiche.
+
+### Consequences
+- The app ignores Material You. On a device themed to match its wallpaper, Receptari will
+  be the one app that does not join in. Deliberate.
+- ~890 KB of fonts in the APK. Acceptable for a private app; the first thing to revisit if
+  size ever matters.
+- Screens must use `PaperScaffold`, not `Scaffold`. A bare `Scaffold` paints
+  `colorScheme.background` over the grain and the vignette and looks *almost* right, which
+  is the worst kind of wrong.
+- `values/colors.xml` and `values-night/colors.xml` hold the pre-first-frame window
+  background and must be kept in step with `Parchment` and `Leather` in `Color.kt`.
+- The library's search field is now always visible rather than hidden behind an icon, so
+  `LibraryUiState.isSearchActive` and `LibraryEvent.SearchActiveChanged` are gone.
+
+---
+
 ## ADR-006 — Modern SDK floor: `minSdk 33`
 
 **Date:** 2026-08-10 · **Status:** Accepted

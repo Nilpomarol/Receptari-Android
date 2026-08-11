@@ -16,11 +16,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
+import cat.receptari.app.core.designsystem.PaperScaffold
+import cat.receptari.app.core.designsystem.PaperTopBar
+import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.ui.importer.ImportEffect
 
@@ -77,11 +78,11 @@ fun WebsiteImportScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    Scaffold(
+    PaperScaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            PaperTopBar(
                 title = { Text(stringResource(R.string.import_website_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -108,6 +109,8 @@ fun WebsiteImportScreen(
             )
 
             OutlinedTextField(
+
+                colors = paperFieldColors(),
                 value = uiState.url,
                 onValueChange = { onEvent(WebsiteImportEvent.UrlChanged(it)) },
                 label = { Text(stringResource(R.string.import_website_label)) },
@@ -153,7 +156,7 @@ fun WebsiteImportScreen(
 @Preview
 @Composable
 private fun WebsiteImportScreenPreview() {
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme() {
         WebsiteImportScreen(
             uiState = WebsiteImportUiState(url = SAMPLE_URL),
             onEvent = {},

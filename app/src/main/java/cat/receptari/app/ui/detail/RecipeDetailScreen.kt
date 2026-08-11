@@ -1,10 +1,13 @@
 package cat.receptari.app.ui.detail
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -21,23 +25,18 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,22 +45,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
+import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.FilterPill
+import cat.receptari.app.core.designsystem.Hairline
+import cat.receptari.app.core.designsystem.OrnamentHeading
+import cat.receptari.app.core.designsystem.OrnamentalDivider
+import cat.receptari.app.core.designsystem.PaperCard
+import cat.receptari.app.core.designsystem.PaperScaffold
+import cat.receptari.app.core.designsystem.PaperTopBar
+import cat.receptari.app.core.designsystem.SectionLabel
+import cat.receptari.app.core.designsystem.StarRating
 import cat.receptari.app.core.designsystem.ingredientLine
+import cat.receptari.app.core.designsystem.pageFrame
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.model.IngredientSection
 import cat.receptari.app.domain.model.InstructionSection
 import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.Step
-import cat.receptari.app.domain.scaling.ScaledIngredientSection
 import cat.receptari.app.domain.scaling.ServingScaler
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
@@ -97,7 +109,6 @@ fun RecipeDetailRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailScreen(
     state: RecipeDetailUiState,
@@ -109,12 +120,14 @@ fun RecipeDetailScreen(
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
 
-    Scaffold(
+    PaperScaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { },
+            PaperTopBar(
+                // No title: the recipe names itself in display type a few dp below, and
+                // printing it twice makes the page look like a form.
+                showRule = false,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -140,7 +153,7 @@ fun RecipeDetailScreen(
                                     },
                                 ),
                                 tint = if (recipe.isFavorite) {
-                                    MaterialTheme.colorScheme.primary
+                                    ReceptariTheme.palette.heart
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 },
@@ -164,7 +177,7 @@ fun RecipeDetailScreen(
         },
     ) { innerPadding ->
         when {
-            state.isLoading -> Unit
+            state.isLoading -> Box(Modifier.fillMaxSize())
 
             state.isMissing -> Box(
                 modifier = Modifier
@@ -172,7 +185,10 @@ fun RecipeDetailScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(stringResource(R.string.detail_not_found))
+                Text(
+                    text = stringResource(R.string.detail_not_found),
+                    style = MaterialTheme.typography.titleMedium,
+                )
             }
 
             else -> RecipeContent(
@@ -186,6 +202,7 @@ fun RecipeDetailScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             title = { Text(stringResource(R.string.detail_delete_confirm_title)) },
             text = { Text(stringResource(R.string.detail_delete_confirm_body)) },
             confirmButton = {
@@ -195,7 +212,10 @@ fun RecipeDetailScreen(
                         onEvent(RecipeDetailEvent.Delete)
                     },
                 ) {
-                    Text(stringResource(R.string.common_delete))
+                    Text(
+                        text = stringResource(R.string.common_delete),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             dismissButton = {
@@ -212,248 +232,339 @@ fun RecipeDetailScreen(
 private fun RecipeContent(
     state: RecipeDetailUiState,
     onEvent: (RecipeDetailEvent) -> Unit,
-    contentPadding: androidx.compose.foundation.layout.PaddingValues,
+    contentPadding: PaddingValues,
 ) {
     val recipe = state.recipe ?: return
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+        contentPadding = PaddingValues(
             top = contentPadding.calculateTopPadding(),
-            bottom = 32.dp,
+            bottom = 40.dp,
         ),
     ) {
         state.imagePath?.let { path ->
-            item {
+            item(key = "photo") {
                 AsyncImage(
                     model = path,
                     contentDescription = stringResource(R.string.common_recipe_image),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp),
+                        .padding(horizontal = PagePadding)
+                        .height(210.dp)
+                        .pageFrame(MaterialTheme.shapes.large, ReceptariTheme.palette.rule)
+                        .clip(MaterialTheme.shapes.large),
                 )
             }
         }
 
-        item {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Text(text = recipe.title, style = MaterialTheme.typography.headlineMedium)
+        item(key = "title") { RecipeHeader(recipe = recipe) }
 
-                TimeRow(recipe)
-
-                if (recipe.tags.isNotEmpty()) {
-                    // Wraps rather than overflowing: a recipe can carry several tags.
-                    FlowRow(
-                        modifier = Modifier.padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        recipe.tags.forEach { tag ->
-                            AssistChip(onClick = { }, label = { Text(tag.name) })
-                        }
+        if (recipe.tags.isNotEmpty()) {
+            item(key = "tags") {
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = PagePadding, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    recipe.tags.forEach { tag ->
+                        // Read-only here: tags are edited in the editor, and a tappable chip
+                        // that does nothing is worse than a label.
+                        FilterPill(label = tag.name, selected = false)
                     }
                 }
-
-                recipe.rating?.let { rating ->
-                    Row(modifier = Modifier.padding(top = 8.dp)) {
-                        repeat(rating) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
-                }
-
-                CookHistory(recipe)
             }
         }
 
         if (recipe.isScalable) {
-            item { ServingsSelector(state = state, onEvent = onEvent) }
+            item(key = "servings") { ServingsSelector(state = state, onEvent = onEvent) }
         }
 
-        item {
-            SectionHeader(stringResource(R.string.detail_ingredients))
+        item(key = "ingredients-heading") {
+            OrnamentHeading(
+                title = stringResource(R.string.detail_ingredients),
+                modifier = Modifier.padding(horizontal = PagePadding, vertical = 12.dp),
+            )
         }
 
         state.ingredientSections.forEach { section ->
-            item(key = "section-${section.id}") {
-                section.name?.let { name ->
-                    Text(
+            section.name?.let { name ->
+                item(key = "isec-${section.id}") {
+                    SectionLabel(
                         text = name,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(
+                            start = PagePadding,
+                            end = PagePadding,
+                            top = 10.dp,
+                            bottom = 4.dp,
+                        ),
                     )
                 }
             }
             items(section.ingredients, key = { it.id }) { ingredient ->
-                Text(
-                    text = ingredientLine(ingredient),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
+                IngredientRow(text = ingredientLine(ingredient))
             }
         }
 
-        item { SectionHeader(stringResource(R.string.detail_instructions)) }
+        item(key = "instructions-heading") {
+            OrnamentHeading(
+                title = stringResource(R.string.detail_instructions),
+                modifier = Modifier.padding(horizontal = PagePadding, vertical = 12.dp),
+            )
+        }
 
         // Step numbers run continuously across sections (PRD §3.4): "Prepare sauce" 1–2,
         // "Cook chicken" 3–4.
         var stepNumber = 0
         recipe.instructionSections.forEach { section ->
-            item(key = "isection-${section.id}") {
-                section.name?.let { name ->
-                    Text(
+            section.name?.let { name ->
+                item(key = "ssec-${section.id}") {
+                    SectionLabel(
                         text = name,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(
+                            start = PagePadding,
+                            end = PagePadding,
+                            top = 12.dp,
+                            bottom = 6.dp,
+                        ),
                     )
                 }
             }
             section.steps.forEach { step ->
                 stepNumber += 1
                 val number = stepNumber
-                item(key = "step-${step.id}") {
-                    Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                        Text(
-                            text = "$number.", // i18n-exempt: a numeral, not a phrase
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(end = 12.dp),
-                        )
-                        Text(text = step.text, style = MaterialTheme.typography.bodyLarge)
+                item(key = "step-${step.id}") { StepRow(number = number, text = step.text) }
+            }
+        }
+
+        recipe.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+            item(key = "notes") {
+                Column {
+                    OrnamentHeading(
+                        title = stringResource(R.string.detail_notes),
+                        modifier = Modifier.padding(horizontal = PagePadding, vertical = 12.dp),
+                    )
+                    PaperCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = PagePadding),
+                        contentPadding = PaddingValues(14.dp),
+                    ) {
+                        Text(text = notes, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
         }
 
-        recipe.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-            item {
-                SectionHeader(stringResource(R.string.detail_notes))
-                Text(
-                    text = notes,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
+        (recipe.sourceName ?: recipe.sourceUrl)?.let { source ->
+            item(key = "source") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = PagePadding, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    OrnamentalDivider(modifier = Modifier.padding(bottom = 8.dp))
+                    Aside(text = stringResource(R.string.detail_source_line, source))
+                }
             }
         }
 
-        val source = recipe.sourceName ?: recipe.sourceUrl
-        source?.let {
-            item {
-                SectionHeader(stringResource(R.string.detail_source))
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-            }
-        }
-
-        item {
+        item(key = "cooked") {
             Button(
                 onClick = { onEvent(RecipeDetailEvent.MarkCooked) },
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                contentPadding = PaddingValues(vertical = 14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = PagePadding, vertical = 8.dp),
             ) {
-                Icon(Icons.Default.Restaurant, contentDescription = null)
+                Icon(Icons.Outlined.Restaurant, contentDescription = null)
                 Text(
                     text = stringResource(R.string.detail_mark_cooked),
-                    modifier = Modifier.padding(start = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(start = 10.dp),
                 )
             }
         }
     }
 }
 
+/** Title, times, rating and history — the recipe's own title page. */
 @Composable
-private fun TimeRow(recipe: Recipe) {
-    val times = buildList {
-        recipe.prepTimeMinutes?.let {
-            add(stringResource(R.string.detail_prep_time) + " " + stringResource(R.string.common_minutes_short, it))
-        }
-        recipe.cookTimeMinutes?.let {
-            add(stringResource(R.string.detail_cook_time) + " " + stringResource(R.string.common_minutes_short, it))
-        }
-        recipe.totalTimeMinutes?.let {
-            add(stringResource(R.string.detail_total_time) + " " + stringResource(R.string.common_minutes_short, it))
-        }
-    }
-    if (times.isEmpty()) return
+private fun RecipeHeader(recipe: Recipe, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = PagePadding, vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = recipe.title,
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center,
+        )
 
-    Text(
-        text = times.joinToString(" · "),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 4.dp),
-    )
+        val times = buildList {
+            recipe.prepTimeMinutes?.let {
+                add(labelledTime(R.string.detail_prep_time, it))
+            }
+            recipe.cookTimeMinutes?.let {
+                add(labelledTime(R.string.detail_cook_time, it))
+            }
+            recipe.totalTimeMinutes?.let {
+                add(labelledTime(R.string.detail_total_time, it))
+            }
+        }
+        if (times.isNotEmpty()) {
+            Text(
+                text = times.joinToString(TimeSeparator),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
+
+        recipe.rating?.let { rating ->
+            StarRating(
+                rating = rating,
+                contentDescription = stringResource(R.string.common_rating_value, rating),
+                starSize = 18.dp,
+                modifier = Modifier.padding(top = 10.dp),
+            )
+        }
+
+        Aside(
+            text = if (recipe.cookCount == 0) {
+                stringResource(R.string.detail_never_cooked)
+            } else {
+                pluralStringResource(R.plurals.detail_cook_count, recipe.cookCount, recipe.cookCount)
+            },
+            modifier = Modifier.padding(top = 8.dp),
+        )
+
+        OrnamentalDivider(modifier = Modifier.padding(top = 12.dp))
+    }
 }
 
+/**
+ * One ingredient, marked with a printer's diamond.
+ *
+ * The text is whatever [cat.receptari.app.domain.scaling.ScaledIngredient.displayText]
+ * produced — the source's own line. Nothing here re-typesets it.
+ */
 @Composable
-private fun CookHistory(recipe: Recipe) {
-    val text = if (recipe.cookCount == 0) {
-        stringResource(R.string.detail_never_cooked)
-    } else {
-        pluralStringResource(R.plurals.detail_cook_count, recipe.cookCount, recipe.cookCount)
+private fun IngredientRow(text: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = PagePadding, vertical = 5.dp),
+    ) {
+        Diamond(modifier = Modifier.padding(top = 10.dp, end = 12.dp))
+        Text(text = text, style = MaterialTheme.typography.bodyLarge)
     }
+}
 
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp),
-    )
+/** One step, opened by its number set in a ruled roundel. */
+@Composable
+private fun StepRow(number: Int, text: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = PagePadding, vertical = 7.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .pageFrame(CircleShape, ReceptariTheme.palette.rule, inset = 0.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = number.toString(), // i18n-exempt: a numeral, not a phrase
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = 12.dp),
+        )
+    }
 }
 
 @Composable
 private fun ServingsSelector(
     state: RecipeDetailUiState,
     onEvent: (RecipeDetailEvent) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.detail_servings),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
-
-            FilledTonalIconButton(onClick = { onEvent(RecipeDetailEvent.DecreaseServings) }) {
-                Icon(
-                    imageVector = Icons.Default.Remove,
-                    contentDescription = stringResource(R.string.detail_servings_decrease),
-                )
-            }
-            Text(
-                text = state.servings?.toString().orEmpty(), // i18n-exempt: a numeral
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-            FilledTonalIconButton(onClick = { onEvent(RecipeDetailEvent.IncreaseServings) }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.detail_servings_increase),
-                )
-            }
-        }
-
-        if (state.isScaled) {
+    PaperCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = PagePadding, vertical = 6.dp),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stringResource(R.string.detail_scaled_notice, state.servings ?: 0),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    text = stringResource(R.string.detail_servings),
+                    style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = { onEvent(RecipeDetailEvent.ResetServings) }) {
-                    Text(stringResource(R.string.detail_servings_reset))
+
+                OutlinedIconButton(
+                    onClick = { onEvent(RecipeDetailEvent.DecreaseServings) },
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = stringResource(R.string.detail_servings_decrease),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Text(
+                    text = state.servings?.toString().orEmpty(), // i18n-exempt: a numeral
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 18.dp),
+                )
+                OutlinedIconButton(
+                    onClick = { onEvent(RecipeDetailEvent.IncreaseServings) },
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.detail_servings_increase),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+
+            if (state.isScaled) {
+                Hairline(modifier = Modifier.padding(vertical = 8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Aside(
+                        text = stringResource(R.string.detail_scaled_notice, state.servings ?: 0),
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { onEvent(RecipeDetailEvent.ResetServings) }) {
+                        Text(
+                            text = stringResource(R.string.detail_servings_reset),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                 }
             }
         }
@@ -461,34 +572,49 @@ private fun ServingsSelector(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Column {
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+private fun Diamond(modifier: Modifier = Modifier) {
+    val color = ReceptariTheme.palette.rule
+    Canvas(modifier = modifier.size(6.dp)) {
+        val half = size.minDimension / 2f
+        drawPath(
+            path = Path().apply {
+                moveTo(half, 0f)
+                lineTo(size.width, half)
+                lineTo(half, size.height)
+                lineTo(0f, half)
+                close()
+            },
+            color = color,
         )
     }
 }
+
+@Composable
+private fun labelledTime(@StringRes labelRes: Int, minutes: Int): String =
+    stringResource(R.string.detail_time_pair, stringResource(labelRes), minutes)
+
+private val PagePadding = 20.dp
+private const val TimeSeparator = "   ·   " // i18n-exempt: punctuation, identical in every locale
 
 @Preview
 @Composable
 private fun RecipeDetailScreenPreview() {
     val recipe = Recipe(
         id = "1",
-        title = "Pollastre amb salsa",
+        title = "Fricandó amb moixernons",
         baseServings = 4,
-        prepTimeMinutes = 15,
-        cookTimeMinutes = 30,
-        totalTimeMinutes = 45,
+        prepTimeMinutes = 20,
+        cookTimeMinutes = 80,
+        totalTimeMinutes = 100,
         rating = 4,
         createdAt = Instant.EPOCH,
         updatedAt = Instant.EPOCH,
+        sourceName = "Àvia Montserrat",
+        notes = "Millor de un dia per l'altre.",
         ingredientSections = listOf(
             IngredientSection(
                 id = "s1",
-                name = "Salsa",
+                name = "Per al sofregit",
                 ingredients = listOf(
                     Ingredient("i1", 200.0, null, "ml", "nata", null, "200 ml de nata"),
                     Ingredient("i2", null, null, null, null, null, "Sal al gust"),
@@ -499,13 +625,13 @@ private fun RecipeDetailScreenPreview() {
             InstructionSection(
                 id = "is1",
                 name = "Prepara la salsa",
-                steps = listOf(Step("st1", "Talla la ceba."), Step("st2", "Cou-la a foc lent.")),
+                steps = listOf(Step("st1", "Talla la ceba ben fina."), Step("st2", "Cou-la a foc lent.")),
             ),
         ),
         cookCount = 3,
     )
 
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme {
         RecipeDetailScreen(
             state = RecipeDetailUiState(
                 recipe = recipe,

@@ -29,7 +29,6 @@ data class LibraryUiState(
     val recipes: List<RecipeSummary> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
     val searchQuery: String = "",
-    val isSearchActive: Boolean = false,
     val sort: RecipeSort = RecipeSort.RecentlyAdded,
     val filter: RecipeFilter = RecipeFilter(),
     val isLoading: Boolean = true,
@@ -41,7 +40,6 @@ data class LibraryUiState(
 
 sealed interface LibraryEvent {
     data class SearchQueryChanged(val query: String) : LibraryEvent
-    data class SearchActiveChanged(val active: Boolean) : LibraryEvent
     data class SortChanged(val sort: RecipeSort) : LibraryEvent
     data object ToggleFavoritesFilter : LibraryEvent
     data object ToggleNeverCookedFilter : LibraryEvent
@@ -61,14 +59,12 @@ class LibraryViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val query = MutableStateFlow(RecipeQuery())
-    private val isSearchActive = MutableStateFlow(false)
 
     val uiState: StateFlow<LibraryUiState> = combine(
         query,
-        isSearchActive,
         query.flatMapLatest { recipeRepository.observeSummaries(it) },
         tagRepository.observeAll(),
-    ) { currentQuery, searchActive, recipes, tags ->
+    ) { currentQuery, recipes, tags ->
         LibraryUiState(
             // Stored image paths are relative so they survive a reinstall; the image
             // loader needs a real location, so they are resolved here on the way to the UI.
@@ -77,7 +73,6 @@ class LibraryViewModel @Inject constructor(
             },
             availableTags = tags,
             searchQuery = currentQuery.searchQuery,
-            isSearchActive = searchActive,
             sort = currentQuery.sort,
             filter = currentQuery.filter,
             isLoading = false,
@@ -92,11 +87,6 @@ class LibraryViewModel @Inject constructor(
         when (event) {
             is LibraryEvent.SearchQueryChanged ->
                 query.update { it.copy(searchQuery = event.query) }
-
-            is LibraryEvent.SearchActiveChanged -> {
-                isSearchActive.value = event.active
-                if (!event.active) query.update { it.copy(searchQuery = "") }
-            }
 
             is LibraryEvent.SortChanged ->
                 query.update { it.copy(sort = event.sort) }

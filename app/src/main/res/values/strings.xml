@@ -18,12 +18,10 @@
     <string name="library_empty_body">Afegeix la teva primera recepta per començar.</string>
     <string name="library_add_recipe">Afegeix una recepta</string>
     <string name="library_search_hint">Cerca receptes</string>
-    <string name="library_search">Cerca</string>
-    <string name="library_search_close">Tanca la cerca</string>
+    <string name="library_search_clear">Esborra la cerca</string>
     <string name="library_no_results_title">Cap resultat</string>
     <string name="library_no_results_body">Prova amb unes altres paraules o treu els filtres.</string>
-    <string name="library_sort">Ordena</string>
-    <string name="library_filter">Filtra</string>
+    <string name="library_sort">Ordena per</string>
     <string name="library_filters_clear">Treu els filtres</string>
     <plurals name="library_recipe_count">
         <item quantity="one">%1$d recepta</item>
@@ -39,7 +37,8 @@
     <string name="sort_cooking_time">Temps de cocció</string>
 
     <!-- Filtering -->
-    <string name="filter_favorites">Només preferides</string>
+    <string name="filter_all">Totes</string>
+    <string name="filter_favorites">Preferides</string>
     <string name="filter_never_cooked">Mai cuinades</string>
     <string name="filter_recently_cooked">Cuinades el darrer mes</string>
     <string name="filter_tags">Etiquetes</string>
@@ -49,6 +48,8 @@
     <string name="detail_instructions">Preparació</string>
     <string name="detail_notes">Notes</string>
     <string name="detail_source">Font</string>
+    <string name="detail_source_line">Font: %1$s</string>
+    <string name="detail_time_pair">%1$s %2$d min</string>
     <string name="detail_servings">Racions</string>
     <string name="detail_servings_decrease">Menys racions</string>
     <string name="detail_servings_increase">Més racions</string>
@@ -114,6 +115,7 @@
 
     <!-- Import -->
     <string name="import_title">Afegeix una recepta</string>
+    <string name="import_where_from">D\'on la treus?</string>
     <string name="import_from_website">Des d\'un lloc web</string>
     <string name="import_from_image">Des d\'una imatge</string>
     <string name="import_from_text">Des de text</string>
@@ -180,5 +182,6 @@
     <string name="common_done">Fet</string>
     <string name="common_recipe_image">Imatge de la recepta</string>
     <string name="common_minutes_short">%1$d min</string>
+    <string name="common_rating_value">Valoració: %1$d de 5</string>
 
 </resources>

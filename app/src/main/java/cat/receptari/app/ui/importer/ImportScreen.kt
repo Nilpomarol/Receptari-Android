@@ -1,34 +1,40 @@
 package cat.receptari.app.ui.importer
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.automirrored.outlined.Notes
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cat.receptari.app.R
+import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.OrnamentalDivider
+import cat.receptari.app.core.designsystem.PaperCard
+import cat.receptari.app.core.designsystem.PaperScaffold
+import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 
 @Composable
@@ -50,7 +56,6 @@ fun ImportRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImportScreen(
     onNavigateBack: () -> Unit,
@@ -60,10 +65,10 @@ fun ImportScreen(
     onImportFromImage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(
+    PaperScaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
+            PaperTopBar(
                 title = { Text(stringResource(R.string.import_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -79,62 +84,94 @@ fun ImportScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Text(
+                text = stringResource(R.string.import_where_from),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+            )
+            OrnamentalDivider(modifier = Modifier.padding(bottom = 4.dp))
+
             ImportOption(
-                icon = Icons.Default.Edit,
+                icon = Icons.AutoMirrored.Outlined.Notes,
+                label = stringResource(R.string.import_from_text),
+                onClick = onImportFromText,
+            )
+            ImportOption(
+                icon = Icons.Outlined.Language,
+                label = stringResource(R.string.import_from_website),
+                onClick = onImportFromWebsite,
+            )
+            ImportOption(
+                icon = Icons.Outlined.PhotoCamera,
+                label = stringResource(R.string.import_from_image),
+                onClick = onImportFromImage,
+            )
+
+            OrnamentalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+            ImportOption(
+                icon = Icons.Outlined.Edit,
                 label = stringResource(R.string.import_manual),
                 onClick = onCreateManually,
             )
 
-            HorizontalDivider()
-
-            ImportOption(
-                Icons.AutoMirrored.Filled.Notes,
-                stringResource(R.string.import_from_text),
-                onClick = onImportFromText,
-            )
-
-            ImportOption(
-                Icons.Default.Language,
-                stringResource(R.string.import_from_website),
-                onClick = onImportFromWebsite,
-            )
-
-            ImportOption(
-                Icons.Default.Image,
-                stringResource(R.string.import_from_image),
-                onClick = onImportFromImage,
+            Aside(
+                text = stringResource(R.string.import_review_notice),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             )
         }
     }
 }
 
+/** One way into the editor. All four end in the same place, so all four look the same. */
 @Composable
 private fun ImportOption(
     icon: ImageVector,
     label: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
 ) {
-    ListItem(
-        modifier = if (onClick != null) modifier.clickable(onClick = onClick) else modifier,
-        headlineContent = { Text(label) },
-        leadingContent = { Icon(imageVector = icon, contentDescription = null) },
-        colors = ListItemDefaults.colors(
-            headlineColor = if (onClick != null) {
-                MaterialTheme.colorScheme.onSurface
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-        ),
-    )
+    PaperCard(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ) {
+                Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(start = 16.dp),
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun ImportScreenPreview() {
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme {
         ImportScreen(
             onNavigateBack = {},
             onCreateManually = {},

@@ -34,6 +34,8 @@ These were decided deliberately. Do not silently change them; see
 | Preferences | DataStore (Preferences) |
 | AI | Claude API called **directly from the device**, with a user-supplied API key |
 | Default AI model | `claude-sonnet-5` |
+| Theming | Fixed printed-book design system in `core/designsystem`. **No Material You / dynamic colour** (ADR-009) |
+| Typography | Bundled OFL fonts: Pinyon Script (wordmark only), Playfair Display (headings), Lora (body) |
 | UI language | Catalan is the default (`values/`), with `values-es/` and `values-en/` overlays |
 | Translation targets | Catalan, Spanish, English |
 | Sync / accounts | None. Local-only. Schema stays sync-*ready*, nothing more |
@@ -108,6 +110,11 @@ if you skip it:
   `receiveAsFlow()` — never as `StateFlow`.
 - **`Modifier` is the first optional parameter** of every public composable and is applied
   to the root layout node, unmodified.
+- **Build screens from `core/designsystem`, not from raw Material.** `PaperScaffold` rather
+  than `Scaffold` (a bare `Scaffold` paints over the paper texture), `PaperTopBar`,
+  `PaperCard`, `FilterPill`, `StarRating`, `OrnamentHeading`, `paperFieldColors()`. Extra
+  tokens — page edge, rule, gold, sealing-wax red — come from `ReceptariTheme.palette`;
+  everything else is a normal `MaterialTheme.colorScheme` role. See ADR-009.
 - **No `CoroutineScope` stored in domain/data classes.** Suspend functions and `Flow` only;
   scope belongs to the ViewModel.
 - Kotlin official code style, 4-space indent, trailing commas on, explicit visibility for

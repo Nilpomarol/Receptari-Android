@@ -31,11 +31,9 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,6 +54,8 @@ import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
+import cat.receptari.app.core.designsystem.PaperScaffold
+import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.ui.importer.ImportEffect
 import coil3.compose.AsyncImage
@@ -142,11 +142,11 @@ fun ImageImportScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    Scaffold(
+    PaperScaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            PaperTopBar(
                 title = { Text(stringResource(R.string.import_image_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -279,7 +279,7 @@ private const val MAX_PAGES = 10
 @Preview
 @Composable
 private fun ImageImportScreenPreview() {
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme() {
         ImageImportScreen(
             uiState = ImageImportUiState(),
             onEvent = {},
