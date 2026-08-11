@@ -1,6 +1,5 @@
 package cat.receptari.app.core.designsystem.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -28,8 +27,8 @@ data class ReceptariPalette(
     val gold: Color,
     /** Favourites. Sealing-wax red, deliberately distinct from the error red. */
     val heart: Color,
-    /** How strongly the paper grain prints. Zero would be a flat colour fill. */
-    val grainAlpha: Float,
+    /** How strongly the paper texture prints over the base colour. Zero is a flat fill. */
+    val paperIntensity: Float,
 )
 
 private val LightPalette = ReceptariPalette(
@@ -37,7 +36,7 @@ private val LightPalette = ReceptariPalette(
     rule = Rule,
     gold = Gold,
     heart = Claret,
-    grainAlpha = 0.055f,
+    paperIntensity = 0.42f,
 )
 
 private val DarkPalette = ReceptariPalette(
@@ -45,8 +44,8 @@ private val DarkPalette = ReceptariPalette(
     rule = RuleDark,
     gold = GoldDark,
     heart = ClaretDark,
-    // Grain on a dark ground reads as sensor noise long before it reads as paper.
-    grainAlpha = 0.03f,
+    // Texture on a dark ground reads as sensor noise long before it reads as paper.
+    paperIntensity = 0.18f,
 )
 
 private val LightColors = lightColorScheme(
@@ -121,9 +120,16 @@ private val DarkColors = darkColorScheme(
 
 private val LocalReceptariPalette = staticCompositionLocalOf { LightPalette }
 
+/**
+ * @param darkTheme kept as a parameter, not read from the system.
+ *
+ * A printed book is paper, so the app is paper — following the phone into dark mode would
+ * hand the look back to a setting the design does not agree with. The lamplight palette is
+ * still here and still correct, waiting for the theme preference in Settings to drive it.
+ */
 @Composable
 fun ReceptariTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) DarkColors else LightColors

@@ -258,18 +258,26 @@ retrofitting later would mean touching all of them twice.
 
 - ☑ `core/designsystem`: `PaperScaffold`, `PaperTopBar`, `PaperCard`, `FilterPill`,
   `StarRating`, `OrnamentHeading`, `OrnamentalDivider`, `Wordmark`, `paperFieldColors()`
-- ☑ Fixed parchment/lamplight palette, `ReceptariPalette` for the non-Material tokens
+- ☑ Fixed parchment palette, pinned light; `ReceptariPalette` for the non-Material tokens
 - ☑ Three bundled OFL faces; Lora and Playfair as variable fonts
-- ☑ Generated paper grain and vignette (`Modifier.paperBackground()`), no shipped texture
+- ☑ Generated paper at two scales — seamless grain/fibre/foxing tile plus page-relative
+  mottling, vignette and binding gutter. Cards carry the grain too
+- ☑ Engraved corner sprigs flanking the wordmark
 - ☑ Library rebuilt: script masthead, always-visible search, filter pills instead of a
   dropdown, framed recipe plates
 - ☑ Recipe detail rebuilt: centred title page, ornamental section headings, ruled step
   numerals
 - ☑ Import, editor and settings moved onto the same components
 
-**Not verified on a device.** The build is green — 112 unit tests, lint, and
-`checkNoHardcodedUiText` — but nothing here has been seen rendered. Dark mode in
-particular has only ever existed as hex values.
+**Partly verified.** The build is green — 112 unit tests, lint, and
+`checkNoHardcodedUiText` — and the paper texture and the corner sprig were tuned against
+offline PNG renders of the same maths, so those two are known to look right. Everything
+else — layout, type sizes, how it all sits together — has still never been seen on a
+screen.
+
+Deferred: a theme preference in Settings (Paper / Lamplight / System). The dark palette is
+written and `ReceptariTheme(darkTheme = …)` already takes it; only the preference and the
+plumbing are missing.
 
 ---
 

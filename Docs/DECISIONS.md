@@ -265,16 +265,23 @@ opposite: it is a private recipe book, and it should read as a book.
 ### Decision
 A fixed design system in `core/designsystem`, modelled on a printed recipe book:
 
-- **No dynamic colour.** One hand-picked palette, plus a dark variant. `ReceptariTheme` no
-  longer takes a `dynamicColor` parameter, because there is nothing sensible for it to do.
-- **Light is paper, dark is lamplight.** The dark theme is warm walnut and aged cream — the
-  same book read at night — rather than the neutral near-black Material would derive.
+- **No dynamic colour.** One hand-picked palette. `ReceptariTheme` no longer takes a
+  `dynamicColor` parameter, because there is nothing sensible for it to do.
+- **Always light.** `darkTheme` survives as a parameter but defaults to `false` rather than
+  to `isSystemInDarkTheme()`, and `enableEdgeToEdge` pins the system-bar icons dark to
+  match. A printed book is paper; following the phone into dark mode hands the look back to
+  a setting the design does not agree with. The lamplight palette — warm walnut and aged
+  cream, the same book read at night — is written and correct, waiting for a theme
+  preference in Settings to drive it.
 - **Three bundled fonts** (SIL OFL, licences in `Docs/licenses/`): *Pinyon Script* for the
   wordmark only, *Playfair Display* for titles and headings, *Lora* for everything read
   rather than glanced at. Lora and Playfair ship as variable fonts, so each weight is the
   same file with a different `wght` axis.
-- **Paper is generated, not shipped.** `Modifier.paperBackground()` draws a colour, a 96 px
-  repeating grain tile, and an off-centre vignette.
+- **Paper is generated, not shipped**, at two scales. A seamless 256 px tile carries the
+  *sheet*: fine value-noise grain, pulp fibres, foxing specks — all high-frequency.
+  Page-scale marks — cloudy mottling, a vignette, the shadow of the binding down the inner
+  edge — are drawn against the composable's own size. `Modifier.paperGrain()` applies the
+  tile alone, so cards are paper too rather than flat colour.
 - **Tokens Material has no role for** — page edge, rule, gold, sealing-wax red — live in
   `ReceptariPalette`, reached through `ReceptariTheme.palette`. Everything that does map
   onto a Material role stays a Material role.
@@ -286,23 +293,36 @@ that it does. Keeping both would mean the parchment and the ink survive only unt
 sets a blue wallpaper.
 
 A photographic paper texture was the obvious alternative to generating one. It was rejected
-because it needs a light and a dark variant, costs about a megabyte, and tiles visibly down
-a long scroll. Generated grain costs one 96×96 bitmap per theme and cannot seam.
+because it costs about a megabyte and tiles visibly down a long scroll. Generated grain
+costs one 256×256 bitmap and cannot seam.
+
+The split between sheet scale and page scale was not a design flourish but a bug fix. The
+first version put the broad mottling into the tile, and the repeat was the first thing you
+saw — a tile laid across a phone four times over turns any coarse feature into a motif, and
+a motif is wallpaper. Keeping the tile strictly high-frequency and moving the broad
+variation to page-relative gradients removes the repeat entirely.
+
+None of this was judged by eye on a device. The texture maths was ported to a throwaway
+Python script and rendered to PNG so the layers could actually be looked at and tuned; the
+constants in `Paper.kt` are the ones that survived that.
 
 Three faces is one more than a careful designer would usually allow. The script face earns
 its place only because it is confined to the wordmark; the moment it appears twice, the
 whole thing reads as a pastiche.
 
 ### Consequences
-- The app ignores Material You. On a device themed to match its wallpaper, Receptari will
-  be the one app that does not join in. Deliberate.
+- The app ignores Material You *and* the system dark-mode setting. On a device themed to
+  match its wallpaper, at night, Receptari will be the one app that does not join in.
+  Deliberate, and revisited when the theme preference lands.
+- `values-night/` is gone. With the theme pinned light, a dark window background would flash
+  parchment-over-walnut on launch for anyone whose phone is in dark mode.
 - ~890 KB of fonts in the APK. Acceptable for a private app; the first thing to revisit if
   size ever matters.
 - Screens must use `PaperScaffold`, not `Scaffold`. A bare `Scaffold` paints
   `colorScheme.background` over the grain and the vignette and looks *almost* right, which
   is the worst kind of wrong.
-- `values/colors.xml` and `values-night/colors.xml` hold the pre-first-frame window
-  background and must be kept in step with `Parchment` and `Leather` in `Color.kt`.
+- `values/colors.xml` holds the pre-first-frame window background and must be kept in step
+  with `Parchment` in `Color.kt`.
 - The library's search field is now always visible rather than hidden behind an icon, so
   `LibraryUiState.isSearchActive` and `LibraryEvent.SearchActiveChanged` are gone.
 

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Matches Leather in Color.kt. See the note in values/colors.xml. -->
-    <color name="window_background">#FF1E1710</color>
-</resources>
