@@ -38,7 +38,9 @@ Deliverable: an app that builds, installs, shows an empty themed screen, and has
 
 `./gradlew build` passes locally (debug + release with R8, unit tests, lint, guardrail).
 Verified on a Pixel 10 Pro XL (Android 17): installs, renders, and switches Catalan ↔
-Spanish ↔ English at runtime. CI has not run yet — no git remote is configured.
+Spanish ↔ English at runtime. CI is green on GitHub Actions, which also confirms the two
+things that can only fail on Linux: `gradlew` is committed executable, and the runner
+provisions the Android 37 platform itself.
 
 ### Environment notes
 
