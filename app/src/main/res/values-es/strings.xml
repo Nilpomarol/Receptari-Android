@@ -10,12 +10,10 @@
     <string name="library_empty_body">Añade tu primera receta para empezar.</string>
     <string name="library_add_recipe">Añadir receta</string>
     <string name="library_search_hint">Buscar recetas</string>
-    <string name="library_search">Buscar</string>
-    <string name="library_search_close">Cerrar la búsqueda</string>
+        <string name="library_search_clear">Borrar la búsqueda</string>
     <string name="library_no_results_title">Sin resultados</string>
     <string name="library_no_results_body">Prueba con otras palabras o quita los filtros.</string>
-    <string name="library_sort">Ordenar</string>
-    <string name="library_filter">Filtrar</string>
+    <string name="library_sort">Ordenar por</string>
     <string name="library_filters_clear">Quitar los filtros</string>
     <plurals name="library_recipe_count">
         <item quantity="one">%1$d receta</item>
@@ -30,7 +28,8 @@
     <string name="sort_highest_rated">Mejor valoradas</string>
     <string name="sort_cooking_time">Tiempo de cocción</string>
 
-    <string name="filter_favorites">Solo favoritas</string>
+    <string name="filter_all">Todas</string>
+    <string name="filter_favorites">Favoritas</string>
     <string name="filter_never_cooked">Nunca cocinadas</string>
     <string name="filter_recently_cooked">Cocinadas el último mes</string>
     <string name="filter_tags">Etiquetas</string>
@@ -39,6 +38,8 @@
     <string name="detail_instructions">Preparación</string>
     <string name="detail_notes">Notas</string>
     <string name="detail_source">Fuente</string>
+    <string name="detail_source_line">Fuente: %1$s</string>
+    <string name="detail_time_pair">%1$s %2$d min</string>
     <string name="detail_servings">Raciones</string>
     <string name="detail_servings_decrease">Menos raciones</string>
     <string name="detail_servings_increase">Más raciones</string>
@@ -103,6 +104,7 @@
     <string name="edit_discard_confirm">Descartar</string>
 
     <string name="import_title">Añadir una receta</string>
+    <string name="import_where_from">¿De dónde la sacas?</string>
     <string name="import_from_website">Desde un sitio web</string>
     <string name="import_from_image">Desde una imagen</string>
     <string name="import_from_text">Desde texto</string>
@@ -165,5 +167,6 @@
     <string name="common_done">Hecho</string>
     <string name="common_recipe_image">Imagen de la receta</string>
     <string name="common_minutes_short">%1$d min</string>
+    <string name="common_rating_value">Valoración: %1$d de 5</string>
 
 </resources>

@@ -10,12 +10,10 @@
     <string name="library_empty_body">Add your first recipe to get started.</string>
     <string name="library_add_recipe">Add recipe</string>
     <string name="library_search_hint">Search recipes</string>
-    <string name="library_search">Search</string>
-    <string name="library_search_close">Close search</string>
+        <string name="library_search_clear">Clear search</string>
     <string name="library_no_results_title">No results</string>
     <string name="library_no_results_body">Try different words, or clear the filters.</string>
-    <string name="library_sort">Sort</string>
-    <string name="library_filter">Filter</string>
+    <string name="library_sort">Sort by</string>
     <string name="library_filters_clear">Clear filters</string>
     <plurals name="library_recipe_count">
         <item quantity="one">%1$d recipe</item>
@@ -29,7 +27,8 @@
     <string name="sort_highest_rated">Highest rated</string>
     <string name="sort_cooking_time">Cooking time</string>
 
-    <string name="filter_favorites">Favourites only</string>
+    <string name="filter_all">All</string>
+    <string name="filter_favorites">Favourites</string>
     <string name="filter_never_cooked">Never cooked</string>
     <string name="filter_recently_cooked">Cooked in the last month</string>
     <string name="filter_tags">Tags</string>
@@ -38,6 +37,8 @@
     <string name="detail_instructions">Instructions</string>
     <string name="detail_notes">Notes</string>
     <string name="detail_source">Source</string>
+    <string name="detail_source_line">Source: %1$s</string>
+    <string name="detail_time_pair">%1$s %2$d min</string>
     <string name="detail_servings">Servings</string>
     <string name="detail_servings_decrease">Fewer servings</string>
     <string name="detail_servings_increase">More servings</string>
@@ -101,6 +102,7 @@
     <string name="edit_discard_confirm">Discard</string>
 
     <string name="import_title">Add a recipe</string>
+    <string name="import_where_from">Where is it coming from?</string>
     <string name="import_from_website">From a website</string>
     <string name="import_from_image">From an image</string>
     <string name="import_from_text">From text</string>
@@ -163,5 +165,6 @@
     <string name="common_done">Done</string>
     <string name="common_recipe_image">Recipe image</string>
     <string name="common_minutes_short">%1$d min</string>
+    <string name="common_rating_value">Rating: %1$d out of 5</string>
 
 </resources>

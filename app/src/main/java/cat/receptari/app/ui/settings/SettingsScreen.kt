@@ -22,18 +22,15 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +52,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.BuildConfig
 import cat.receptari.app.R
+import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.OrnamentHeading
+import cat.receptari.app.core.designsystem.OrnamentalDivider
+import cat.receptari.app.core.designsystem.PaperScaffold
+import cat.receptari.app.core.designsystem.PaperTopBar
+import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 
 @Composable
@@ -103,11 +106,11 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    Scaffold(
+    PaperScaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            PaperTopBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -126,11 +129,9 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(
-                text = stringResource(R.string.settings_language),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            OrnamentHeading(
+                title = stringResource(R.string.settings_language),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
             )
 
             Column(Modifier.selectableGroup()) {
@@ -143,15 +144,15 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            OrnamentalDivider(Modifier.padding(vertical = 12.dp))
 
             ApiKeySection(state = uiState, onEvent = onEvent)
 
-            Text(
+            Aside(
                 text = stringResource(R.string.settings_version, versionName),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
             )
         }
     }
@@ -187,11 +188,9 @@ private fun ApiKeySection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.padding(horizontal = 16.dp)) {
-        Text(
-            text = stringResource(R.string.settings_api_key),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(vertical = 12.dp),
+        OrnamentHeading(
+            title = stringResource(R.string.settings_api_key),
+            modifier = Modifier.padding(bottom = 14.dp),
         )
         Text(
             text = stringResource(R.string.settings_api_key_explanation),
@@ -234,6 +233,7 @@ private fun ApiKeySection(
             }
         } else {
             OutlinedTextField(
+                colors = paperFieldColors(),
                 value = state.keyInput,
                 onValueChange = { onEvent(SettingsEvent.KeyChanged(it)) },
                 label = { Text(stringResource(R.string.settings_api_key_label)) },
@@ -329,7 +329,7 @@ private fun Context.applyAppLanguage(language: AppLanguage) {
 @Preview
 @Composable
 private fun SettingsScreenPreview() {
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme() {
         SettingsScreen(
             uiState = SettingsUiState(),
             selectedLanguage = AppLanguage.Catalan,
@@ -344,7 +344,7 @@ private fun SettingsScreenPreview() {
 @Preview
 @Composable
 private fun SettingsScreenWithKeyPreview() {
-    ReceptariTheme(dynamicColor = false) {
+    ReceptariTheme() {
         SettingsScreen(
             uiState = SettingsUiState(hasKey = true),
             selectedLanguage = AppLanguage.Catalan,

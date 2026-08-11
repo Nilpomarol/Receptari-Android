@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="window_background">#FFFBF8F4</color>
+    <!--
+        Only covers the window before Compose draws its first frame, so it must match
+        Parchment in Color.kt. If those drift apart the app flashes on launch.
+    -->
+    <color name="window_background">#FFF2E6CE</color>
 </resources>

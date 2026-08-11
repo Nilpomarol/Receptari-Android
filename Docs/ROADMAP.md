@@ -250,6 +250,29 @@ whatever was recovered, never in an error dead end.
 
 ---
 
+## Phase 5.5 — Design system ☑
+
+Replaced Material You with a fixed printed-book aesthetic (ADR-009). Done out of order,
+before translation, because every screen built after this point inherits it for free and
+retrofitting later would mean touching all of them twice.
+
+- ☑ `core/designsystem`: `PaperScaffold`, `PaperTopBar`, `PaperCard`, `FilterPill`,
+  `StarRating`, `OrnamentHeading`, `OrnamentalDivider`, `Wordmark`, `paperFieldColors()`
+- ☑ Fixed parchment/lamplight palette, `ReceptariPalette` for the non-Material tokens
+- ☑ Three bundled OFL faces; Lora and Playfair as variable fonts
+- ☑ Generated paper grain and vignette (`Modifier.paperBackground()`), no shipped texture
+- ☑ Library rebuilt: script masthead, always-visible search, filter pills instead of a
+  dropdown, framed recipe plates
+- ☑ Recipe detail rebuilt: centred title page, ornamental section headings, ruled step
+  numerals
+- ☑ Import, editor and settings moved onto the same components
+
+**Not verified on a device.** The build is green — 112 unit tests, lint, and
+`checkNoHardcodedUiText` — but nothing here has been seen rendered. Dark mode in
+particular has only ever existed as hex values.
+
+---
+
 ## Phase 6 — Polish before calling it v1 ☐
 
 - ☐ Backup / restore (export database + images, import back)
