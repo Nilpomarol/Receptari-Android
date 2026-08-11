@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Camera captures land in the cache directory: they are temporary. The bytes are read
+    back, downscaled and written to permanent storage by ImageStore, after which the
+    capture file is disposable.
+-->
+<paths>
+    <cache-path
+        name="camera"
+        path="camera/" />
+</paths>
