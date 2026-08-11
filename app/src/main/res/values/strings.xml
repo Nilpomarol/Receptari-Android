@@ -105,8 +105,6 @@
     <string name="edit_remove_step">Elimina el pas</string>
     <string name="edit_move_up">Mou amunt</string>
     <string name="edit_move_down">Mou avall</string>
-    <string name="edit_image_add">Afegeix una imatge</string>
-    <string name="edit_image_replace">Canvia la imatge</string>
     <string name="edit_image_remove">Treu la imatge</string>
     <string name="edit_image_from_gallery">Tria de la galeria</string>
     <string name="edit_image_from_camera">Fes una foto</string>

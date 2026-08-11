@@ -93,8 +93,6 @@
     <string name="edit_remove_step">Remove step</string>
     <string name="edit_move_up">Move up</string>
     <string name="edit_move_down">Move down</string>
-    <string name="edit_image_add">Add an image</string>
-    <string name="edit_image_replace">Replace image</string>
     <string name="edit_image_remove">Remove image</string>
     <string name="edit_image_from_gallery">Choose from gallery</string>
     <string name="edit_image_from_camera">Take a photo</string>
