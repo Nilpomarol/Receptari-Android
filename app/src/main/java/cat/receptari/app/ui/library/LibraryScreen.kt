@@ -63,6 +63,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.CornerFlourish
 import cat.receptari.app.core.designsystem.FilterPill
 import cat.receptari.app.core.designsystem.OrnamentalDivider
 import cat.receptari.app.core.designsystem.PaperCard
@@ -193,10 +194,26 @@ private fun Masthead(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) 
             .statusBarsPadding()
             .padding(top = 4.dp, bottom = 10.dp),
     ) {
+        // Engraved sprigs flanking the title, the way a title page is decorated. They sit
+        // beside the wordmark rather than in the corners: the corners are where the settings
+        // button lives, and an icon on top of leaves is just clutter.
+        CornerFlourish(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 4.dp),
+        )
+        CornerFlourish(
+            mirrored = true,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 4.dp),
+        )
+
         Wordmark(
             text = stringResource(R.string.library_title),
             modifier = Modifier.align(Alignment.Center),
         )
+
         IconButton(
             onClick = onOpenSettings,
             modifier = Modifier.align(Alignment.TopEnd),

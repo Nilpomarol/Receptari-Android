@@ -15,22 +15,22 @@ import androidx.compose.ui.graphics.Color
 // --- Light: paper -----------------------------------------------------------------
 
 /** The page itself. Every screen background. */
-internal val Parchment = Color(0xFFF2E6CE)
+internal val Parchment = Color(0xFFF1E4C9)
 
 /** A sheet laid on the page — cards, sections, anything that should lift slightly. */
-internal val ParchmentRaised = Color(0xFFFAF2E0)
+internal val ParchmentRaised = Color(0xFFF8EEDB)
 
 /** A recess in the page — text fields, wells, pressed states. */
 internal val ParchmentSunk = Color(0xFFE8D9B8)
 
 /** Aging at the edges. Used for the vignette and the grain, never for text. */
-internal val PaperEdge = Color(0xFFCDB489)
+internal val PaperEdge = Color(0xFFC3A578)
 
-internal val Ink = Color(0xFF3E2C1A)
-internal val InkSoft = Color(0xFF7C6547)
+internal val Ink = Color(0xFF3A2614)
+internal val InkSoft = Color(0xFF77603F)
 
 /** Hairlines: card frames, rules, dividers. */
-internal val Rule = Color(0xFFC4A97C)
+internal val Rule = Color(0xFFB99A66)
 
 internal val Olive = Color(0xFF55642F)
 internal val OliveOn = Color(0xFFF7F0DE)

@@ -134,6 +134,8 @@ fun PaperCard(
     ) {
         Box(
             modifier = Modifier
+                // Inside the Surface, so the grain is clipped to the card's own shape.
+                .paperGrain()
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
                 .padding(contentPadding),
         ) {
