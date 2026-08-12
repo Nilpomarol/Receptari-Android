@@ -23,6 +23,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
 
+private const val DATABASE_SCHEMA_VERSION = 5
+
 /**
  * Schema version 5.
  *
@@ -44,7 +46,7 @@ import java.security.MessageDigest
         CookEventEntity::class,
         RecipeTranslationEntity::class,
     ],
-    version = 5,
+    version = DATABASE_SCHEMA_VERSION,
     exportSchema = true,
 )
 abstract class ReceptariDatabase : RoomDatabase() {
@@ -55,6 +57,7 @@ abstract class ReceptariDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "receptari.db"
+        const val SCHEMA_VERSION = DATABASE_SCHEMA_VERSION
 
         /** Adds folders: a flat, user-managed table a recipe optionally files under. */
         val MIGRATION_1_2 = object : Migration(1, 2) {

@@ -63,6 +63,7 @@ cat.receptari.app
 │   │   └── web/                   HtmlFetcher, JsonLdRecipeParser, MicrodataRecipeParser
 │   ├── image/                     ImageStore — copy/compress/delete files in app storage
 │   ├── settings/                  DataStore + Keystore-backed encrypted API key storage
+│   ├── backup/                    versioned archive validation + startup restore swap/rollback
 │   ├── timer/                     transient timer DataStore, AlarmManager, notifications
 │   └── repository/                *RepositoryImpl
 │
@@ -72,7 +73,7 @@ cat.receptari.app
     ├── detail/                    recipe view, serving multiplier, mark-as-cooked
     ├── edit/                      create/edit form — reused as the import preview
     ├── importer/                  source picker + per-source input screens
-    └── settings/                  API key, language, about
+    └── settings/                  API key, language, backup/restore, about
 ```
 
 ---

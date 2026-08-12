@@ -256,6 +256,30 @@
     <string name="settings_api_key_remove_title">Remove the key?</string>
     <string name="settings_api_key_remove_body">You will need to enter it again to import recipes automatically.</string>
 
+    <string name="settings_backup_title">Backup</string>
+    <string name="settings_backup_explanation">Export your whole library and its images as one file. Your Claude key and active timers are not included. Restoring it replaces the current library.</string>
+    <string name="settings_backup_export">Export a backup</string>
+    <string name="settings_restore_choose">Restore a backup</string>
+    <string name="settings_backup_working">Preparing the library…</string>
+    <string name="settings_backup_exported">Backup exported</string>
+    <string name="settings_backup_failed">The backup could not be completed</string>
+    <string name="settings_restore_invalid">This file is not a valid Receptari backup</string>
+    <string name="settings_restore_newer_version">This backup needs a newer version of Receptari</string>
+    <string name="settings_restore_confirm_title">Restore this backup?</string>
+    <string name="settings_restore_confirm_body">All current recipes, folders, translations, history, and images will be replaced. This cannot be undone.</string>
+    <string name="settings_restore_created">Created: %1$s</string>
+    <string name="settings_restore_confirm">Restore</string>
+    <string name="settings_restore_completed">Backup restored</string>
+    <string name="settings_restore_failed">Restore failed; the previous library was kept</string>
+    <plurals name="settings_restore_recipe_count">
+        <item quantity="one">%1$d recipe</item>
+        <item quantity="other">%1$d recipes</item>
+    </plurals>
+    <plurals name="settings_restore_image_count">
+        <item quantity="one">%1$d image</item>
+        <item quantity="other">%1$d images</item>
+    </plurals>
+
     <string name="ai_error_no_key">Set your API key in Settings.</string>
     <string name="ai_error_invalid_key">The key was not accepted. Check it.</string>
     <string name="ai_error_rate_limited">Too many requests. Try again in a moment.</string>

@@ -1,8 +1,15 @@
 package cat.receptari.app.ui.settings
 
 import android.app.LocaleManager
+import android.app.Activity
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.LocaleList
+import android.os.SystemClock
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +24,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -31,17 +40,20 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -51,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.BuildConfig
+import cat.receptari.app.MainActivity
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.OrnamentHeading
@@ -59,6 +72,15 @@ import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
+import cat.receptari.app.domain.backup.BackupArchive
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.DateFormat
+import java.util.Date
+import java.util.UUID
+import kotlin.system.exitProcess
 
 @Composable
 fun SettingsRoute(
@@ -68,14 +90,69 @@ fun SettingsRoute(
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
     var selected by remember { mutableStateOf(context.currentAppLanguage()) }
+    var pendingArchive by remember { mutableStateOf<BackupArchive?>(null) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val createBackupDocument = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.receptari.backup"),
+    ) { uri ->
+        val archive = pendingArchive ?: return@rememberLauncherForActivityResult
+        pendingArchive = null
+        if (uri == null) {
+            viewModel.onBackupSaveCancelled(archive)
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val saved = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                        archive.file.inputStream().use { input -> input.copyTo(output) }
+                    } ?: error("No output stream")
+                }.isSuccess
+            }
+            viewModel.onBackupSaved(archive, saved)
+        }
+    }
+    val openBackupDocument = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val localFile = withContext(Dispatchers.IO) {
+                runCatching {
+                    File(context.cacheDir, "restore-${UUID.randomUUID()}.receptari").also { target ->
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            target.outputStream().use { output -> input.copyTo(output) }
+                        } ?: error("No input stream")
+                    }
+                }.getOrNull()
+            }
+            viewModel.onRestoreFileSelected(localFile)
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.messages.collect { message ->
             snackbarHostState.showSnackbar(resources.getString(message.messageRes))
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is SettingsEffect.SaveBackup -> {
+                    pendingArchive = effect.archive
+                    createBackupDocument.launch(effect.archive.suggestedFileName)
+                }
+                SettingsEffect.OpenBackup -> openBackupDocument.launch(
+                    arrayOf("application/vnd.receptari.backup", "application/zip", "application/octet-stream"),
+                )
+                SettingsEffect.RestartAfterRestore -> context.restartForRestore()
+            }
         }
     }
 
@@ -148,6 +225,10 @@ fun SettingsScreen(
 
             ApiKeySection(state = uiState, onEvent = onEvent)
 
+            OrnamentalDivider(Modifier.padding(vertical = 12.dp))
+
+            BackupSection(state = uiState, onEvent = onEvent)
+
             Aside(
                 text = stringResource(R.string.settings_version, versionName),
                 modifier = Modifier
@@ -173,6 +254,95 @@ fun SettingsScreen(
                 }
             },
         )
+    }
+
+    uiState.restorePreview?.let { preview ->
+        val date = remember(preview.createdAt) {
+            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                .format(Date.from(preview.createdAt))
+        }
+        AlertDialog(
+            onDismissRequest = { if (!uiState.isBackupBusy) onEvent(SettingsEvent.DismissRestore) },
+            title = { Text(stringResource(R.string.settings_restore_confirm_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.settings_restore_confirm_body))
+                    Text(
+                        text = stringResource(R.string.settings_restore_created, date),
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                    Text(pluralStringResource(R.plurals.settings_restore_recipe_count, preview.recipeCount, preview.recipeCount))
+                    Text(pluralStringResource(R.plurals.settings_restore_image_count, preview.imageCount, preview.imageCount))
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { onEvent(SettingsEvent.ConfirmRestore) },
+                    enabled = !uiState.isBackupBusy,
+                ) { Text(stringResource(R.string.settings_restore_confirm)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { onEvent(SettingsEvent.DismissRestore) },
+                    enabled = !uiState.isBackupBusy,
+                ) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun BackupSection(
+    state: SettingsUiState,
+    onEvent: (SettingsEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.padding(horizontal = 16.dp)) {
+        OrnamentHeading(
+            title = stringResource(R.string.settings_backup_title),
+            modifier = Modifier.padding(bottom = 14.dp),
+        )
+        Text(
+            text = stringResource(R.string.settings_backup_explanation),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedButton(
+            onClick = { onEvent(SettingsEvent.CreateBackup) },
+            enabled = !state.isBackupBusy,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp),
+        ) {
+            Icon(Icons.Default.SaveAlt, contentDescription = null)
+            Text(
+                text = stringResource(R.string.settings_backup_export),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+        OutlinedButton(
+            onClick = { onEvent(SettingsEvent.ChooseRestore) },
+            enabled = !state.isBackupBusy,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Default.Restore, contentDescription = null)
+            Text(
+                text = stringResource(R.string.settings_restore_choose),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+        if (state.isBackupBusy) {
+            Row(
+                modifier = Modifier.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                Text(
+                    text = stringResource(R.string.settings_backup_working),
+                    modifier = Modifier.padding(start = 10.dp),
+                )
+            }
+        }
     }
 }
 
@@ -324,6 +494,27 @@ private fun Context.currentAppLanguage(): AppLanguage =
  */
 private fun Context.applyAppLanguage(language: AppLanguage) {
     localeManager().applicationLocales = LocaleList.forLanguageTags(language.languageTag)
+}
+
+private fun Context.restartForRestore() {
+    val intent = Intent(this, MainActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    }
+    val pendingIntent = PendingIntent.getActivity(
+        this,
+        41_907,
+        intent,
+        PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+    val alarmManager = getSystemService(AlarmManager::class.java)
+    val triggerAt = SystemClock.elapsedRealtime() + 500L
+    if (alarmManager.canScheduleExactAlarms()) {
+        alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
+    } else {
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pendingIntent)
+    }
+    (this as? Activity)?.finishAffinity()
+    exitProcess(0)
 }
 
 @Preview

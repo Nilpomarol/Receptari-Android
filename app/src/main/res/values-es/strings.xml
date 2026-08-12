@@ -260,6 +260,30 @@
     <string name="settings_api_key_remove_title">¿Eliminar la clave?</string>
     <string name="settings_api_key_remove_body">Tendrás que volver a introducirla para importar recetas automáticamente.</string>
 
+    <string name="settings_backup_title">Copia de seguridad</string>
+    <string name="settings_backup_explanation">Exporta toda la biblioteca y sus imágenes en un único archivo. La clave de Claude y los temporizadores activos no se incluyen. Al restaurarlo se sustituye la biblioteca actual.</string>
+    <string name="settings_backup_export">Exportar una copia</string>
+    <string name="settings_restore_choose">Restaurar una copia</string>
+    <string name="settings_backup_working">Preparando la biblioteca…</string>
+    <string name="settings_backup_exported">Copia de seguridad exportada</string>
+    <string name="settings_backup_failed">No se ha podido completar la copia de seguridad</string>
+    <string name="settings_restore_invalid">Este archivo no es una copia válida de Receptari</string>
+    <string name="settings_restore_newer_version">Esta copia necesita una versión más reciente de Receptari</string>
+    <string name="settings_restore_confirm_title">¿Restaurar esta copia?</string>
+    <string name="settings_restore_confirm_body">Se sustituirán todas las recetas, carpetas, traducciones, historial e imágenes actuales. Esta acción no se puede deshacer.</string>
+    <string name="settings_restore_created">Creada: %1$s</string>
+    <string name="settings_restore_confirm">Restaurar</string>
+    <string name="settings_restore_completed">Copia restaurada</string>
+    <string name="settings_restore_failed">La restauración ha fallado; se ha conservado la biblioteca anterior</string>
+    <plurals name="settings_restore_recipe_count">
+        <item quantity="one">%1$d receta</item>
+        <item quantity="other">%1$d recetas</item>
+    </plurals>
+    <plurals name="settings_restore_image_count">
+        <item quantity="one">%1$d imagen</item>
+        <item quantity="other">%1$d imágenes</item>
+    </plurals>
+
     <string name="ai_error_no_key">Configura la clave de la API en Ajustes.</string>
     <string name="ai_error_invalid_key">La clave no se ha aceptado. Compruébala.</string>
     <string name="ai_error_rate_limited">Demasiadas peticiones seguidas. Inténtalo de nuevo en un momento.</string>
