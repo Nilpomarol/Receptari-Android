@@ -63,6 +63,7 @@ cat.receptari.app
 │   │   └── web/                   HtmlFetcher, JsonLdRecipeParser, MicrodataRecipeParser
 │   ├── image/                     ImageStore — copy/compress/delete files in app storage
 │   ├── settings/                  DataStore + Keystore-backed encrypted API key storage
+│   ├── timer/                     transient timer DataStore, AlarmManager, notifications
 │   └── repository/                *RepositoryImpl
 │
 └── ui/
@@ -122,6 +123,13 @@ so Room types never escape `data/`.
 
 No repository or use case stores a `CoroutineScope`. Structured concurrency comes from the
 caller.
+
+The cooking timer follows the same boundary with one Android-specific implementation under
+`data/timer`. Its active timer collection lives in a dedicated Preferences DataStore rather
+than Room: it is device-session state, not recipe data and not cooked history. The domain model
+and repository contract remain Android-free. Every timer has its own `AlarmManager` deadline
+and notification identity; the UI merely derives each displayed countdown from its stored
+deadline.
 
 ---
 

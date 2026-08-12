@@ -5,4 +5,5 @@
         Parchment in Color.kt. If those drift apart the app flashes on launch.
     -->
     <color name="window_background">#FFF2E6CE</color>
+    <color name="timer_notification_color">#FF7A3F2A</color>
 </resources>

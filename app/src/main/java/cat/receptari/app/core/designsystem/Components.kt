@@ -1,6 +1,7 @@
 package cat.receptari.app.core.designsystem
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,7 +90,13 @@ fun PaperTopBar(
     actions: @Composable RowScope.() -> Unit = {},
     showRule: Boolean = true,
 ) {
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier
+            // The top bar must be opaque while content scrolls beneath it, but it should
+            // still read as the very same sheet rather than as a Material toolbar.
+            .background(MaterialTheme.colorScheme.background)
+            .paperGrain(intensity = 1f),
+    ) {
         CenterAlignedTopAppBar(
             title = title,
             navigationIcon = navigationIcon,
