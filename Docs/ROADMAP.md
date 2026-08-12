@@ -307,7 +307,10 @@ plumbing are missing.
 
 ## Phase 6 — Polish before calling it v1 ☐
 
-- ☐ Backup / restore (export database + images, import back)
+- ☑ Backup / restore: a versioned `.receptari` archive exports the Room snapshot and all
+  referenced recipe images through Android's document picker. Restore validates and stages the
+  archive, confirms replacement totals with the user, then swaps it in before Room opens with a
+  rollback copy. API keys and active timers remain device-only and are never archived.
 - ☐ Accessibility pass: TalkBack, touch targets, contrast, font scaling
 - ☐ Dark theme audit
 - ☐ Empty, loading, and error states for every screen

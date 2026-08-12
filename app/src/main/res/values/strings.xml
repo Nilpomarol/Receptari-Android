@@ -272,6 +272,31 @@
     <string name="settings_api_key_remove_title">Vols eliminar la clau?</string>
     <string name="settings_api_key_remove_body">Hauràs de tornar-la a introduir per importar receptes automàticament.</string>
 
+    <!-- Backup and restore -->
+    <string name="settings_backup_title">Còpia de seguretat</string>
+    <string name="settings_backup_explanation">Exporta tota la biblioteca i les imatges en un sol fitxer. La clau de Claude i els temporitzadors actius no s\'hi inclouen. En restaurar-lo, la biblioteca actual se substituirà.</string>
+    <string name="settings_backup_export">Exporta una còpia</string>
+    <string name="settings_restore_choose">Restaura una còpia</string>
+    <string name="settings_backup_working">Preparant la biblioteca…</string>
+    <string name="settings_backup_exported">Còpia de seguretat exportada</string>
+    <string name="settings_backup_failed">No s\'ha pogut completar la còpia de seguretat</string>
+    <string name="settings_restore_invalid">Aquest fitxer no és una còpia de Receptari vàlida</string>
+    <string name="settings_restore_newer_version">Aquesta còpia necessita una versió més nova de Receptari</string>
+    <string name="settings_restore_confirm_title">Vols restaurar aquesta còpia?</string>
+    <string name="settings_restore_confirm_body">Se substituiran totes les receptes, carpetes, traduccions, historial i imatges actuals. Aquesta acció no es pot desfer.</string>
+    <string name="settings_restore_created">Creada: %1$s</string>
+    <string name="settings_restore_confirm">Restaura</string>
+    <string name="settings_restore_completed">Còpia restaurada</string>
+    <string name="settings_restore_failed">La restauració ha fallat; s\'ha conservat la biblioteca anterior</string>
+    <plurals name="settings_restore_recipe_count">
+        <item quantity="one">%1$d recepta</item>
+        <item quantity="other">%1$d receptes</item>
+    </plurals>
+    <plurals name="settings_restore_image_count">
+        <item quantity="one">%1$d imatge</item>
+        <item quantity="other">%1$d imatges</item>
+    </plurals>
+
     <!-- AI errors -->
     <string name="ai_error_no_key">Configura la clau de l\'API a Configuració.</string>
     <string name="ai_error_invalid_key">La clau no s\'ha acceptat. Comprova-la.</string>
