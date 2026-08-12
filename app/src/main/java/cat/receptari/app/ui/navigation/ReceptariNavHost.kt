@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cat.receptari.app.ui.detail.RecipeDetailRoute
+import cat.receptari.app.ui.cook.CookModeRoute
 import cat.receptari.app.ui.edit.RecipeEditRoute
 import cat.receptari.app.ui.folders.FolderRoute
 import cat.receptari.app.ui.importer.ImportRoute
@@ -56,7 +57,15 @@ fun ReceptariNavHost(
             RecipeDetailRoute(
                 onNavigateBack = navController::popBackStack,
                 onEditRecipe = { navController.navigate(Destination.edit(it)) },
+                onStartCooking = { navController.navigate(Destination.cook(it)) },
             )
+        }
+
+        composable(
+            route = Destination.COOK_ROUTE,
+            arguments = listOf(navArgument(Destination.RECIPE_ID_ARG) { type = NavType.StringType }),
+        ) {
+            CookModeRoute(onNavigateBack = navController::popBackStack)
         }
 
         composable(

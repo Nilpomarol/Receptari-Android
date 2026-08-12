@@ -18,6 +18,9 @@ object Destination {
     const val DETAIL_ROUTE = "recipe/{$RECIPE_ID_ARG}"
     fun detail(recipeId: String) = "recipe/$recipeId"
 
+    const val COOK_ROUTE = "recipe/{$RECIPE_ID_ARG}/cook"
+    fun cook(recipeId: String) = "recipe/$recipeId/cook"
+
     const val FOLDER_ROUTE = "folder/{$FOLDER_ID_ARG}"
     fun folder(folderId: String) = "folder/$folderId"
 

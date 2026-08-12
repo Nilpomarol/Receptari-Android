@@ -66,6 +66,15 @@
     <string name="detail_last_cooked">Última vez: %1$s</string>
     <string name="detail_not_found">No se ha encontrado la receta</string>
 
+    <!-- Modo de cocina -->
+    <string name="cook_mode_start">Empezar a cocinar</string>
+    <string name="cook_mode_exit">Salir del modo de cocina</string>
+    <string name="cook_mode_progress">Paso %1$d de %2$d</string>
+    <string name="cook_mode_previous">Anterior</string>
+    <string name="cook_mode_next">Siguiente</string>
+    <string name="cook_mode_finish">Terminar</string>
+    <string name="cook_mode_no_steps">Esta receta no tiene pasos de preparación.</string>
+
     <!-- Cooking timer -->
     <string name="timer_set">Poner un temporizador</string>
     <string name="timer_setup_title">Temporizador</string>

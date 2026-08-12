@@ -289,8 +289,8 @@ plumbing are missing.
 - ☐ Accessibility pass: TalkBack, touch targets, contrast, font scaling
 - ☐ Dark theme audit
 - ☐ Empty, loading, and error states for every screen
-- ◐ Cook mode niceties: multiple persistent cooking timers and keep-screen-on while one runs are
-  implemented; larger step text remains
+- ☑ Focused cook mode: one large step at a time, section context, quick ingredient access,
+  persistent timer controls, safe-area-aware navigation, and keep-screen-on for the full session
 - ☐ Release build config, signing, ProGuard/R8 rules
 
 ---
