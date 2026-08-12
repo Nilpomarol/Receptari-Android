@@ -8,6 +8,7 @@ data class InstructionSection(
     val id: String,
     val name: String? = null,
     val steps: List<Step> = emptyList(),
+    val originalName: String? = null,
 )
 
 /**

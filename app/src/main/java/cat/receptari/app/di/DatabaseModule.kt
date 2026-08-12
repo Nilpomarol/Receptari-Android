@@ -24,7 +24,12 @@ object DatabaseModule {
         Room.databaseBuilder(context, ReceptariDatabase::class.java, ReceptariDatabase.NAME)
             // No destructive fallback: every schema change ships a real migration
             // (Docs/DATA_MODEL.md §5).
-            .addMigrations(ReceptariDatabase.MIGRATION_1_2, ReceptariDatabase.MIGRATION_2_3)
+            .addMigrations(
+                ReceptariDatabase.MIGRATION_1_2,
+                ReceptariDatabase.MIGRATION_2_3,
+                ReceptariDatabase.MIGRATION_3_4,
+                ReceptariDatabase.MIGRATION_4_5,
+            )
             .build()
 
     @Provides

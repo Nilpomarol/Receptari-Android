@@ -58,6 +58,7 @@ fun ReceptariNavHost(
                 onNavigateBack = navController::popBackStack,
                 onEditRecipe = { navController.navigate(Destination.edit(it)) },
                 onStartCooking = { navController.navigate(Destination.cook(it)) },
+                onOpenSettings = { navController.navigate(Destination.SETTINGS) },
             )
         }
 

@@ -16,7 +16,9 @@ Recipe ──1:n──► IngredientSection ──1:n──► Ingredient
    │
    ├──n:1──► Folder          (nullable, at most one)
    │
-   └──1:n──► CookEvent
+   ├──1:n──► CookEvent
+   │
+   └──1:n──► RecipeTranslation
 
 RecipeFts   (FTS4, derived — rebuilt on save)
 ```
@@ -43,6 +45,7 @@ RecipeFts   (FTS4, derived — rebuilt on save)
 | `sourceName` | `String?` | e.g. "Cuinar amb la iaia", "NYT Cooking" |
 | `sourceUrl` | `String?` | required for website imports (PRD §8) |
 | `originalLanguage` | `String?` | BCP-47, e.g. `en`, `es`, `ca` |
+| `displayLanguage` | `String?` | BCP-47 language of the current translated display; null before translation |
 | `folderId` | `String?` FK → `folders.id` | `ON DELETE SET NULL` — deleting a folder unfiles its recipes, never deletes them |
 | `createdAt` | `Long` | epoch ms |
 | `updatedAt` | `Long` | epoch ms |
@@ -56,6 +59,7 @@ Indexes: `title`, `isFavorite`, `updatedAt`, `folderId`.
 | `id` | `String` PK | |
 | `recipeId` | `String` FK → `recipes.id` | `ON DELETE CASCADE`, indexed |
 | `name` | `String?` | null = the unnamed default section |
+| `originalName` | `String?` | earliest section name, preserved when translated |
 | `position` | `Int` | 0-based ordering |
 
 Every recipe has at least one section. A recipe with no groupings has exactly one section
@@ -74,14 +78,16 @@ with `name = null` — the UI hides the header in that case.
 | `name` | `String?` | ingredient name with unit and quantity stripped |
 | `note` | `String?` | e.g. `finely chopped`, `al gust` |
 | `originalText` | `String` **NOT NULL** | verbatim source text — never lost (PRD §3.2) |
+| `displayText` | `String?` | translated editable line; null means render `originalText` |
 
 **`originalText` is the integrity guarantee of this project.** All four of `quantity`,
 `unit`, `name`, and `note` may be null simultaneously; the row is still valid and renders
-from `originalText`.
+from `displayText` when translated, otherwise from `originalText`. Translation never
+overwrites `originalText`.
 
 ### `instruction_sections`
 
-Same shape as `ingredient_sections`: `id`, `recipeId`, `name?`, `position`.
+Same shape as `ingredient_sections`: `id`, `recipeId`, `name?`, `originalName?`, `position`.
 
 ### `steps`
 
@@ -95,6 +101,21 @@ Same shape as `ingredient_sections`: `id`, `recipeId`, `name?`, `position`.
 
 Displayed step numbering is continuous across sections (PRD §3.4: *Prepare sauce* 1–2,
 *Cook chicken* 3–4), computed at render time from `position` — not stored.
+
+### `recipe_translations`
+
+| Column | Type | Notes |
+|---|---|---|
+| `recipeId` | `String` FK → `recipes.id` | `ON DELETE CASCADE`; first half of the composite PK |
+| `language` | `String` | BCP-47 target language; second half of the composite PK |
+| `payloadJson` | `String` | title and id-keyed section, ingredient-line, and step overlays plus source metadata |
+| `updatedAt` | `Long` | epoch ms |
+
+This table is a cache of language display overlays, not an alternate recipe store. The
+normal recipe aggregate contains the active display language. Each payload also records a
+SHA-256 fingerprint of the canonical source text and stable field ids; a mismatch makes the
+cache entry ineligible. Quantities, parsed units, source URLs, notes, tags, and other shared
+recipe data are deliberately not duplicated. Deleting a recipe deletes all its overlays.
 
 ### `tags`
 
@@ -154,8 +175,9 @@ sections, ingredients, steps, tag links and cook events does *not* reach this ta
 Forgetting this leaves search returning ids of recipes that no longer exist —
 `RecipeDaoTest.deletingARecipeTakesItsChildrenWithIt` guards it.
 
-Ingredients contribute their parsed `name` when there is one and their `originalText`
-otherwise, so an unstructurable line like "Sal al gust" is still findable.
+Ingredients contribute translated `displayText`, parsed `name`, and `originalText`, so
+search matches both what is visible and the remembered source wording, while an
+unstructurable line like "Sal al gust" remains findable.
 
 ---
 
@@ -212,3 +234,11 @@ keys or `position` columns; ordering is expressed by list order, and the mapper 
   NULL DEFAULT 'OLIVE'` and `ADD COLUMN icon TEXT NOT NULL DEFAULT 'FOLDER'`, so every folder
   created before this version gets the same default a new folder starts with. Covered by
   `MigrationTest.migrate2To3`.
+- `Migration(3, 4)` adds the nullable translation display fields: `recipes.displayLanguage`,
+  `ingredients.displayText`, and `originalName` on both section tables. Null defaults keep
+  every existing recipe rendering exactly as before. Covered by
+  `MigrationTest.migrate3To4AddsTranslationDisplayFields`.
+- `Migration(4, 5)` creates `recipe_translations`. If a v4 recipe already has an active
+  translated display, the migration converts it into the first cached overlay and
+  fingerprints its canonical source; recipes without a translation create no cache rows.
+  Covered by `MigrationTest.migrate4To5CachesTheExistingTranslatedDisplay`.

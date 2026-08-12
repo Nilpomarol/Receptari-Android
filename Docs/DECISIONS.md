@@ -117,39 +117,50 @@ switcher for free.
 
 ---
 
-## ADR-005 — Translation is in-place, with original text preserved per field
+## ADR-005 — One active translation, with language overlays cached locally
 
-**Date:** 2026-08-10 · **Status:** Accepted
+**Date:** 2026-08-10 · **Amended:** 2026-08-12 · **Status:** Accepted
 
 ### Context
 PRD §11 requires translating recipes while "retaining the original language and original
-content whenever practical". A full translation table (one row per recipe per language)
-would satisfy this completely but adds significant complexity to every read path.
+content whenever practical". Keeping only one translated display makes switching languages
+repeat the same paid model call, while making the entire recipe read path language-aware is
+unnecessary for a three-language, local-only app.
 
 ### Decision
-Translation writes the translated values into the recipe's normal fields. The original is
-preserved via `Ingredient.originalText` (already mandatory), a nullable `Step.originalText`,
-a nullable `Recipe.originalTitle`, and `Recipe.originalLanguage`. Quantities, units, URLs,
-and source information are never sent to the model.
+Translation writes translated values into the recipe's normal display fields. The source is
+preserved via immutable `Ingredient.originalText`, nullable `Step.originalText`, section
+`originalName` fields, `Recipe.originalTitle`, and `Recipe.originalLanguage`. Ingredients
+gain a nullable `displayText`, and the recipe gains `displayLanguage`. Quantities, units,
+URLs, and source information are never sent to the model.
+
+Selecting a language on recipe detail immediately saves that display and caches it as an
+id-keyed overlay in `recipe_translations`, keyed by recipe and language. The main aggregate
+still owns the one active display version. A fingerprint over canonical source text and
+stable ids prevents a cached overlay from being applied after the source changes. The normal
+Edit action can correct the active overlay afterward without replacing the canonical source.
 
 ### Rationale
-Keeps every read path — list, detail, search, scaling — working on a single set of fields
-with no language dimension. Satisfies "retain whenever practical" without a translation
-table the MVP does not need.
+Keeps every read path — list, detail, search, scaling, and cook mode — working on a single
+set of fields with no language dimension, while avoiding repeat API cost for an available
+language. The overlay table is only consulted by the translation use case and is written
+transactionally when a language is applied or its active display is edited.
 
 ### Consequences
-- A recipe exists in exactly one display language at a time. Re-translating overwrites.
-- Reverting to the original is possible field-by-field but is not a v1 feature.
-- If multi-language display is ever wanted, a `RecipeTranslation` table supersedes this ADR.
-- **Open problem for Phase 5.** Ingredient lines are rendered from `Ingredient.originalText`
-  rather than rebuilt from `quantity + unit + name`, because the source text carries the
-  connector and plural agreement that Catalan and Spanish need ("2 grans **d'**all", not
-  "2 grans all") — see `ScaledIngredient.displayText`. Translation breaks that assumption:
-  once `name` is Catalan and `originalText` is still English, showing `originalText` shows
-  the untranslated line. Translation must therefore either rewrite `originalText` into the
-  target language (and preserve the pre-translation text elsewhere), or Phase 5 must add a
-  structured renderer with localized unit labels and a connector rule. Decide before
-  building the translate action, not after.
+- A recipe has one active display language, but every still-valid Catalan, Spanish,
+  and English overlay can be selected again without an API call.
+- The picker labels the canonical original, cached translations, and current display so the
+  cost and effect of each choice are visible before selection.
+- Selecting the canonical source language restores the source locally and also requires no
+  API call.
+- Editing canonical source content invalidates older overlays by fingerprint; it does not
+  silently show a stale translation.
+- Tags are not translated. They form a library-wide taxonomy, so translating them per
+  recipe would create near-duplicate global tags.
+- The model receives only ingredient meaning. Kotlin preserves the numeric quantity,
+  localizes known unit labels and plural forms, and supplies `de`, `d'`, or `of` when
+  rebuilding `displayText`. This fixes the lossy strip-and-reattach pipeline while keeping
+  `Ingredient.originalText` untouched.
 
 ---
 

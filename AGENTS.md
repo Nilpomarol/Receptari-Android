@@ -154,8 +154,10 @@ Full detail: [`Docs/AI_INTEGRATION.md`](Docs/AI_INTEGRATION.md).
 - The API key is user-supplied, stored encrypted (Android Keystore-backed AES-GCM over
   DataStore), and **never logged, never included in error messages, never sent anywhere
   except `api.anthropic.com`**.
-- AI output is **assistance, not truth** (PRD §14). Every AI response lands in an editable
-  preview. Never persist a model response directly to the database.
+- AI output is **assistance, not truth** (PRD §14). Import extraction always lands in an
+  editable preview and is never persisted directly. Recipe translation is the deliberate
+  exception: it applies immediately as a reversible, language-keyed display overlay; the
+  canonical source is retained and the user can correct the active overlay with Edit.
 - Website import tries in order: JSON-LD / schema.org Recipe → microdata → AI fallback on
   extracted text. Do not call the model when structured metadata already answered the
   question.

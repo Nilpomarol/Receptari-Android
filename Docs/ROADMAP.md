@@ -152,8 +152,9 @@ finishes, taking the seeded database with it.
 - **Ingredient lines render from the source text, not rebuilt from parsed fields.**
   Rebuilding produced broken Catalan — "3 grans all" instead of "3 grans d'all" — because
   the parser strips the connector to isolate the name. Scaling substitutes only the leading
-  quantity, so connectors, elisions and plurals survive. See `ScaledIngredient.displayText`,
-  and ADR-005 for the consequence this has for Phase 5 translation.
+  quantity, so connectors, elisions and plurals survive. Translation keeps the same
+  rendering rule with a separate translated display line; see `ScaledIngredient.displayText`
+  and ADR-005.
 - **Scaled quantities are rounded to suit what is measured** (`QuantityFormatter`):
   countable items round to whole above 5 (no 10.67 egg yolks), grams and millilitres round
   to what a kitchen scale shows (266.67 g → 265 g), spoons and cups keep their fractions.
@@ -241,12 +242,28 @@ whatever was recovered, never in an error dead end.
 
 ---
 
-## Phase 5 — Translation ☐
+## Phase 5 — Translation ☑
 
-- ☐ `translate()` on `AiClient`, structured-field payload
-- ☐ Preserve `originalTitle`, `Step.originalText`, `originalLanguage` (ADR-005)
-- ☐ Translate action on recipe detail, with target-language picker (ca / es / en)
-- ☐ Never send or alter quantities, units, URLs, source info
+- ☑ `translate()` on `AiClient`, structured-field payload
+- ☑ Preserve the earliest source title, ingredient lines, section names, step text, and
+  source language (ADR-005)
+- ☑ Translate action on recipe detail, with target-language picker (ca / es / en)
+- ☑ Keep quantities, units, URLs, source info, times, servings, and personal notes out of
+  the translation payload
+- ☑ Apply language changes directly on recipe detail; use the ordinary editor only for
+  optional corrections afterward
+- ☑ Label the original, available translations, and current display in the language picker
+- ☑ Cache every language overlay locally and reuse it while its source fingerprint
+  remains current
+- ☑ Translate only ingredient meaning; render quantity, localized unit grammar, and
+  connectors deterministically in Kotlin
+
+Translation defaults to Claude Haiku 4.5 for cost and latency, with a single Sonnet 5
+fallback only when Haiku violates the structured field contract. Room 3→4 adds the nullable
+active-display fields; Room 4→5 adds the overlay cache and backfills an existing v4
+translation. Tags remain untouched because they are global library metadata. Unit,
+use-case, persistence, and migration tests cover the pipeline; live API quality remains a
+manual dogfood check because it uses the owner's key and incurs a charge.
 
 ---
 

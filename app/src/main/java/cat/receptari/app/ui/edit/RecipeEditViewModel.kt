@@ -39,12 +39,14 @@ import javax.inject.Inject
 data class FormLine(
     val id: String = UUID.randomUUID().toString(),
     val text: String = "",
+    val originalText: String? = null,
 )
 
 data class FormSection(
     val id: String = UUID.randomUUID().toString(),
     val name: String = "",
     val lines: List<FormLine> = listOf(FormLine()),
+    val originalName: String? = null,
 )
 
 data class RecipeEditUiState(
@@ -153,6 +155,7 @@ class RecipeEditViewModel @Inject constructor(
     private var existingTagIds: Map<String, String> = emptyMap()
     private var originalTitle: String? = null
     private var originalLanguage: String? = null
+    private var displayLanguage: String? = null
 
     init {
         viewModelScope.launch {
@@ -184,52 +187,76 @@ class RecipeEditViewModel @Inject constructor(
             return@launch
         }
 
+        loadRecipe(recipe)
+    }
+
+    private fun loadRecipe(recipe: Recipe, updateSavedSnapshot: Boolean = true) {
         createdAt = recipe.createdAt
         originalTitle = recipe.originalTitle
         originalLanguage = recipe.originalLanguage
+        displayLanguage = recipe.displayLanguage
         existingTagIds = recipe.tags.associate { it.name to it.id }
 
-        _uiState.value = RecipeEditUiState(
-            id = recipe.id,
+        _uiState.value = recipe.toEditState(_uiState.value.availableFolders)
+        if (updateSavedSnapshot) savedSnapshot = _uiState.value
+    }
+
+    private fun Recipe.toEditState(availableFolders: List<Folder>): RecipeEditUiState {
+        val preserveSourceText = displayLanguage != null
+        return RecipeEditUiState(
+            id = id,
             isNew = false,
             isLoading = false,
-            title = recipe.title,
-            imagePath = recipe.imagePath,
-            imageDisplayPath = recipe.imagePath?.let(imageStore::absolutePathOf),
-            prepTime = recipe.prepTimeMinutes?.toString().orEmpty(),
-            cookTime = recipe.cookTimeMinutes?.toString().orEmpty(),
-            totalTime = recipe.totalTimeMinutes?.toString().orEmpty(),
-            servings = recipe.baseServings?.toString().orEmpty(),
-            rating = recipe.rating,
-            notes = recipe.notes.orEmpty(),
-            sourceName = recipe.sourceName.orEmpty(),
-            sourceUrl = recipe.sourceUrl.orEmpty(),
-            tags = recipe.tags.map { it.name },
-            folder = recipe.folder,
-            availableFolders = _uiState.value.availableFolders,
+            title = title,
+            imagePath = imagePath,
+            imageDisplayPath = imagePath?.let(imageStore::absolutePathOf),
+            prepTime = prepTimeMinutes?.toString().orEmpty(),
+            cookTime = cookTimeMinutes?.toString().orEmpty(),
+            totalTime = totalTimeMinutes?.toString().orEmpty(),
+            servings = baseServings?.toString().orEmpty(),
+            rating = rating,
+            notes = notes.orEmpty(),
+            sourceName = sourceName.orEmpty(),
+            sourceUrl = sourceUrl.orEmpty(),
+            tags = tags.map { it.name },
+            folder = folder,
+            availableFolders = availableFolders,
             // The editor works on the text the user (or the import) actually wrote. Parsing
             // happens on save, so `originalText` is whatever is on screen — never a
             // re-rendered approximation of it.
-            ingredientSections = recipe.ingredientSections.map { section ->
+            ingredientSections = ingredientSections.map { section ->
                 FormSection(
                     id = section.id,
                     name = section.name.orEmpty(),
                     lines = section.ingredients
-                        .map { FormLine(it.id, it.originalText) }
+                        .map {
+                            FormLine(
+                                id = it.id,
+                                text = it.displayText ?: it.originalText,
+                                originalText = it.originalText.takeIf { preserveSourceText },
+                            )
+                        }
                         .ifEmpty { listOf(FormLine()) },
+                    originalName = section.originalName,
                 )
             }.ifEmpty { listOf(FormSection()) },
-            instructionSections = recipe.instructionSections.map { section ->
+            instructionSections = instructionSections.map { section ->
                 FormSection(
                     id = section.id,
                     name = section.name.orEmpty(),
                     lines = section.steps
-                        .map { FormLine(it.id, it.text) }
+                        .map {
+                            FormLine(
+                                id = it.id,
+                                text = it.text,
+                                originalText = it.originalText.takeIf { preserveSourceText },
+                            )
+                        }
                         .ifEmpty { listOf(FormLine()) },
+                    originalName = section.originalName,
                 )
             }.ifEmpty { listOf(FormSection()) },
         )
-        savedSnapshot = _uiState.value
     }
 
     /**
@@ -370,6 +397,7 @@ class RecipeEditViewModel @Inject constructor(
                 sourceName = state.sourceName.trim().takeIf { it.isNotEmpty() },
                 sourceUrl = state.sourceUrl.trim().takeIf { it.isNotEmpty() },
                 originalLanguage = originalLanguage,
+                displayLanguage = displayLanguage,
                 createdAt = createdAt,
                 updatedAt = now,
                 ingredientSections = state.ingredientSections.toIngredientSections(),
@@ -416,6 +444,7 @@ class RecipeEditViewModel @Inject constructor(
         mapNotNull { section ->
             val ingredients = section.lines.mapNotNull { line ->
                 IngredientParser.parse(line.text)?.let { parsed ->
+                    val sourceText = line.originalText ?: parsed.originalText
                     Ingredient(
                         id = line.id,
                         quantity = parsed.quantity,
@@ -423,7 +452,8 @@ class RecipeEditViewModel @Inject constructor(
                         unit = parsed.unit,
                         name = parsed.name,
                         note = parsed.note,
-                        originalText = parsed.originalText,
+                        originalText = sourceText,
+                        displayText = parsed.originalText.takeIf { sourceText != parsed.originalText },
                     )
                 }
             }
@@ -434,6 +464,7 @@ class RecipeEditViewModel @Inject constructor(
                     id = section.id,
                     name = section.name.trim().takeIf { it.isNotEmpty() },
                     ingredients = ingredients,
+                    originalName = section.originalName,
                 )
             }
         }
@@ -443,7 +474,10 @@ class RecipeEditViewModel @Inject constructor(
             val steps = section.lines
                 .map { it.id to it.text.trim() }
                 .filter { it.second.isNotEmpty() }
-                .map { (id, text) -> Step(id = id, text = text) }
+                .map { (id, text) ->
+                    val original = section.lines.first { it.id == id }.originalText
+                    Step(id = id, text = text, originalText = original)
+                }
 
             if (steps.isEmpty()) {
                 null
@@ -452,6 +486,7 @@ class RecipeEditViewModel @Inject constructor(
                     id = section.id,
                     name = section.name.trim().takeIf { it.isNotEmpty() },
                     steps = steps,
+                    originalName = section.originalName,
                 )
             }
         }

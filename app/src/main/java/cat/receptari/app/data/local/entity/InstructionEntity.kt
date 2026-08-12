@@ -21,6 +21,7 @@ data class InstructionSectionEntity(
     @PrimaryKey val id: String,
     val recipeId: String,
     val name: String?,
+    val originalName: String?,
     val position: Int,
 )
 

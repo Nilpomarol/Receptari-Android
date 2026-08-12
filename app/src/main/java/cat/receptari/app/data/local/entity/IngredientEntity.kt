@@ -21,6 +21,7 @@ data class IngredientSectionEntity(
     @PrimaryKey val id: String,
     val recipeId: String,
     val name: String?,
+    val originalName: String?,
     val position: Int,
 )
 
@@ -50,4 +51,5 @@ data class IngredientEntity(
     val name: String?,
     val note: String?,
     val originalText: String,
+    val displayText: String?,
 )

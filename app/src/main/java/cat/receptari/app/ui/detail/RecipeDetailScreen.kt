@@ -38,15 +38,18 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,6 +68,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -88,6 +93,8 @@ import cat.receptari.app.core.designsystem.ingredientLine
 import cat.receptari.app.core.designsystem.pageFrame
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.domain.model.Ingredient
+import cat.receptari.app.domain.ai.RecipeLanguage
+import cat.receptari.app.domain.ai.AiError
 import cat.receptari.app.domain.model.IngredientSection
 import cat.receptari.app.domain.model.InstructionSection
 import cat.receptari.app.domain.model.Recipe
@@ -96,6 +103,7 @@ import cat.receptari.app.domain.scaling.ServingScaler
 import cat.receptari.app.domain.timer.InstructionDurationParser
 import cat.receptari.app.ui.timer.ActiveTimerDock
 import cat.receptari.app.ui.timer.TimerSetupSheet
+import cat.receptari.app.ui.common.aiMessageRes
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -106,6 +114,7 @@ fun RecipeDetailRoute(
     onNavigateBack: () -> Unit,
     onEditRecipe: (String) -> Unit,
     onStartCooking: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecipeDetailViewModel = hiltViewModel(),
 ) {
@@ -118,6 +127,18 @@ fun RecipeDetailRoute(
     val timerStartedMessage = stringResource(R.string.timer_started)
     val exactAlarmDeniedMessage = stringResource(R.string.timer_exact_alarm_denied)
     val notificationDeniedMessage = stringResource(R.string.timer_notification_permission_denied)
+    val translationAppliedMessage = stringResource(R.string.translation_applied)
+    val settingsActionLabel = stringResource(R.string.settings_title)
+    val aiErrorMessages = mapOf(
+        R.string.ai_error_no_key to stringResource(R.string.ai_error_no_key),
+        R.string.ai_error_invalid_key to stringResource(R.string.ai_error_invalid_key),
+        R.string.ai_error_rate_limited to stringResource(R.string.ai_error_rate_limited),
+        R.string.ai_error_quota to stringResource(R.string.ai_error_quota),
+        R.string.ai_error_offline to stringResource(R.string.ai_error_offline),
+        R.string.ai_error_refused to stringResource(R.string.ai_error_refused),
+        R.string.ai_error_unreadable to stringResource(R.string.ai_error_unreadable),
+        R.string.ai_error_unexpected to stringResource(R.string.ai_error_unexpected),
+    )
     var showExactAlarmPermissionDialog by remember { mutableStateOf(false) }
     var pendingNotificationEvent by remember { mutableStateOf<RecipeDetailEvent?>(null) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -186,6 +207,21 @@ fun RecipeDetailRoute(
                 RecipeDetailEffect.ExactAlarmPermissionDenied -> {
                     snackbarHostState.showSnackbar(exactAlarmDeniedMessage)
                 }
+                RecipeDetailEffect.TranslationApplied -> {
+                    snackbarHostState.showSnackbar(translationAppliedMessage)
+                }
+                is RecipeDetailEffect.TranslationFailed -> {
+                    val missingKey = effect.error is AiError.NoApiKey
+                    val result = snackbarHostState.showSnackbar(
+                        message = aiErrorMessages.getValue(effect.error.aiMessageRes()),
+                        actionLabel = if (missingKey) {
+                            settingsActionLabel
+                        } else {
+                            null
+                        },
+                    )
+                    if (missingKey && result == SnackbarResult.ActionPerformed) onOpenSettings()
+                }
             }
         }
     }
@@ -250,6 +286,7 @@ fun RecipeDetailScreen(
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     var timerSetup by remember { mutableStateOf<TimerSetupRequest?>(null) }
+    var showTranslationPicker by remember { mutableStateOf(false) }
 
     PaperScaffold(
         modifier = modifier,
@@ -281,6 +318,7 @@ fun RecipeDetailScreen(
                 },
                 actions = {
                     state.recipe?.let { recipe ->
+                        val translateDescription = stringResource(R.string.translation_action)
                         IconButton(onClick = { onEvent(RecipeDetailEvent.ToggleFavorite) }) {
                             Icon(
                                 imageVector = if (recipe.isFavorite) {
@@ -307,6 +345,26 @@ fun RecipeDetailScreen(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = stringResource(R.string.detail_edit),
                             )
+                        }
+                        IconButton(
+                            onClick = { showTranslationPicker = true },
+                            enabled = !state.isTranslating,
+                        ) {
+                            if (state.isTranslating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .semantics {
+                                            contentDescription = translateDescription
+                                        },
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Outlined.Translate,
+                                    contentDescription = translateDescription,
+                                )
+                            }
                         }
                         IconButton(onClick = { confirmDelete = true }) {
                             Icon(
@@ -388,7 +446,91 @@ fun RecipeDetailScreen(
             },
         )
     }
+
+    if (showTranslationPicker) {
+        TranslationPickerDialog(
+            currentLanguage = state.recipe?.displayLanguage ?: state.recipe?.originalLanguage,
+            originalLanguage = state.recipe?.originalLanguage,
+            translatedLanguages = state.translatedLanguages,
+            onDismiss = { showTranslationPicker = false },
+            onSelect = { language ->
+                showTranslationPicker = false
+                onEvent(RecipeDetailEvent.Translate(language))
+            },
+        )
+    }
 }
+
+@Composable
+private fun TranslationPickerDialog(
+    currentLanguage: String?,
+    originalLanguage: String?,
+    translatedLanguages: Set<RecipeLanguage>,
+    onDismiss: () -> Unit,
+    onSelect: (RecipeLanguage) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        title = { Text(stringResource(R.string.translation_choose_language)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                RecipeLanguage.entries.forEach { language ->
+                    val isCurrent = language.matches(currentLanguage)
+                    val isOriginal = language.matches(originalLanguage)
+                    TextButton(
+                        onClick = { onSelect(language) },
+                        enabled = !isCurrent,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    when (language) {
+                                        RecipeLanguage.CATALAN -> R.string.settings_language_ca
+                                        RecipeLanguage.SPANISH -> R.string.settings_language_es
+                                        RecipeLanguage.ENGLISH -> R.string.settings_language_en
+                                    },
+                                ),
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Start,
+                            )
+                            if (isOriginal) {
+                                LanguageIndicator(stringResource(R.string.translation_original))
+                            }
+                            if (language in translatedLanguages) {
+                                LanguageIndicator(stringResource(R.string.translation_available))
+                            }
+                            if (isCurrent) {
+                                LanguageIndicator(stringResource(R.string.translation_current))
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
+}
+
+@Composable
+private fun LanguageIndicator(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
+    )
+}
+
+private fun RecipeLanguage.matches(languageTag: String?): Boolean =
+    languageTag?.startsWith(prefix = this.languageTag, ignoreCase = true) == true
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

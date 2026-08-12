@@ -50,6 +50,12 @@
     <string name="detail_favorite_remove">Remove from favourites</string>
     <string name="detail_edit">Edit</string>
     <string name="detail_delete">Delete</string>
+    <string name="translation_action">Translate</string>
+    <string name="translation_choose_language">Translate the recipe to…</string>
+    <string name="translation_original">Original</string>
+    <string name="translation_available">Translated</string>
+    <string name="translation_current">Current</string>
+    <string name="translation_applied">Recipe language updated</string>
     <string name="detail_delete_confirm_title">Delete this recipe?</string>
     <string name="detail_delete_confirm_body">This cannot be undone.</string>
     <string name="detail_prep_time">Prep</string>

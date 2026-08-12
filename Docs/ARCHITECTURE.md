@@ -159,6 +159,20 @@ can ever bypass review, because saving is only reachable from the edit screen.
 Failure handling: extraction failures downgrade rather than abort. A website that yields
 only a title still opens the editor with a title filled in and the URL stored.
 
+Translation is the deliberate exception to the import review boundary. `TranslateRecipe`
+builds an id-keyed payload
+from the canonical source recipe, validates that the response has exactly the requested
+ids, and merges a translated display copy. Ingredient quantities and units never enter the
+AI payload: the domain renderer reconstructs them with localized unit labels and connectors.
+The detail ViewModel saves that reversible overlay immediately; the source remains intact,
+and the normal Edit action can correct the active language afterward.
+
+The repository transaction that saves a translated display also upserts a compact
+`recipe_translations` overlay for that language. `TranslateRecipe` reuses a matching cached
+overlay before calling the model; a fingerprint of canonical source text and stable field ids
+prevents stale translations from being applied. The active display remains denormalized in
+the normal recipe aggregate, keeping every existing read path language-agnostic.
+
 ---
 
 ## 5. Serving scaling

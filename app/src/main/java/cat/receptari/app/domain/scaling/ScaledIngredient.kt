@@ -21,6 +21,7 @@ data class ScaledIngredient(
     val name: String?,
     val note: String?,
     val originalText: String,
+    val displayText: String?,
     val wasScaled: Boolean,
 ) {
     /** True when nothing was recovered by parsing and the raw text is all there is. */
@@ -45,15 +46,16 @@ data class ScaledIngredient(
      * gets shown.
      */
     fun displayText(locale: Locale = Locale.getDefault()): String {
+        val sourceText = displayText ?: originalText
         val scaled = if (!wasScaled || quantity == null) {
-            originalText
+            sourceText
         } else {
-            val range = IngredientParser.leadingQuantityRange(originalText)
+            val range = IngredientParser.leadingQuantityRange(sourceText)
             if (range == null) {
-                originalText
+                sourceText
             } else {
                 QuantityFormatter.formatRange(quantity, quantityMax, unit, locale) +
-                    originalText.substring(range.last + 1)
+                    sourceText.substring(range.last + 1)
             }
         }
 

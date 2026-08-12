@@ -492,7 +492,7 @@ private fun IngredientsSheet(recipe: Recipe, onDismiss: () -> Unit) {
                 }
                 items(section.ingredients, key = { it.id }) { ingredient ->
                     Text(
-                        text = ingredient.originalText,
+                        text = ingredient.displayText ?: ingredient.originalText,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     )

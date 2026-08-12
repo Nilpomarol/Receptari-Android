@@ -39,6 +39,7 @@ object ServingScaler {
             name = ingredient.name,
             note = ingredient.note,
             originalText = ingredient.originalText,
+            displayText = ingredient.displayText,
             wasScaled = applies,
         )
     }
