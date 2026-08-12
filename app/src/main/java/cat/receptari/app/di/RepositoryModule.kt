@@ -6,6 +6,7 @@ import cat.receptari.app.data.remote.web.OkHttpWebPageSource
 import cat.receptari.app.data.repository.CookHistoryRepositoryImpl
 import cat.receptari.app.data.repository.FolderRepositoryImpl
 import cat.receptari.app.data.repository.RecipeRepositoryImpl
+import cat.receptari.app.data.repository.RecipeTranslationRepositoryImpl
 import cat.receptari.app.data.repository.TagRepositoryImpl
 import cat.receptari.app.data.settings.ApiKeyStore
 import cat.receptari.app.domain.ai.AiClient
@@ -15,6 +16,7 @@ import cat.receptari.app.domain.repository.CookHistoryRepository
 import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
+import cat.receptari.app.domain.repository.RecipeTranslationRepository
 import cat.receptari.app.domain.repository.TagRepository
 import dagger.Binds
 import dagger.Module
@@ -29,6 +31,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindRecipeRepository(impl: RecipeRepositoryImpl): RecipeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRecipeTranslationRepository(
+        impl: RecipeTranslationRepositoryImpl,
+    ): RecipeTranslationRepository
 
     @Binds
     @Singleton

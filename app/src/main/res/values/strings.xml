@@ -61,6 +61,12 @@
     <string name="detail_favorite_remove">Treu de preferides</string>
     <string name="detail_edit">Edita</string>
     <string name="detail_delete">Elimina</string>
+    <string name="translation_action">Tradueix</string>
+    <string name="translation_choose_language">Tradueix la recepta a…</string>
+    <string name="translation_original">Original</string>
+    <string name="translation_available">Traduïda</string>
+    <string name="translation_current">Actual</string>
+    <string name="translation_applied">Idioma de la recepta actualitzat</string>
     <string name="detail_delete_confirm_title">Vols eliminar la recepta?</string>
     <string name="detail_delete_confirm_body">Aquesta acció no es pot desfer.</string>
     <string name="detail_prep_time">Preparació</string>

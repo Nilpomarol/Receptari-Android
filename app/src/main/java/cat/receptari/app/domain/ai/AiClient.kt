@@ -22,6 +22,9 @@ interface AiClient {
 
     /** @param content page text already stripped of markup by the caller. */
     suspend fun extractFromWebContent(url: String, content: String): Result<DraftRecipe>
+
+    /** Translates only the structured, user-reviewable fields in [request] (PRD §11). */
+    suspend fun translate(request: TranslationRequest): Result<TranslationResult>
 }
 
 /**

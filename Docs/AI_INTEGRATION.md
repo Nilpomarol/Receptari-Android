@@ -3,7 +3,8 @@
 Covers PRD §8–§11: website import, image import, text import, and translation.
 
 **Governing principle (PRD §14): AI output is assistance, not authoritative data.** No model
-response is ever written straight to the database. Every one lands in an editable preview.
+import response is ever written straight to the database. Imports land in an editable
+preview; translation is the deliberate exception described in §7.
 
 ---
 
@@ -125,16 +126,35 @@ Operates on the **structured recipe**, not on raw HTML or a whole page.
 |---|---|
 | title | quantities |
 | ingredient names | units |
-| ingredient notes | URLs |
-| step text | source name |
-| tags, only when meaningful | `originalText` fields |
+| ingredient notes | times and servings |
+| section names and step text | URLs and source metadata |
+| | tags and approved `Ingredient.originalText` fields |
 
-Targets: Catalan, Spanish, English (ADR-004). Per ADR-005, translation writes in place and
-preserves the original in `originalTitle`, `Step.originalText`, and
-`Ingredient.originalText`.
+Targets: Catalan, Spanish, English (ADR-004). Translation uses Claude Haiku 4.5 because this
+is a tightly constrained language task. If Haiku returns the wrong ids or blank fields,
+Sonnet 5 gets one fallback attempt; ordinary API failures are not silently retried with the
+more expensive model.
 
-Send only the translatable fields as a structured payload, keyed by id, and merge the
-response back by id. Do not send the whole recipe object.
+Every new translation starts from the canonical source fields, never from the currently
+displayed translation. Send only the translatable fields as a structured payload keyed by
+stable id, and merge the response back by id. For ingredients, send only the parsed semantic
+name and note. Kotlin preserves the quantity, chooses a localized unit label and plural,
+and adds the target language's measurement connector (`de`, `d'`, or `of`). Measurement-only
+lines never go to the model. Do not send the whole recipe object.
+
+Per ADR-005, the result is a reversible display version: `Recipe.displayLanguage`,
+`Ingredient.displayText`, translated section names, title, and steps. Tags remain the
+user's library-wide taxonomy rather than being duplicated per recipe. The earliest
+known source survives in `originalTitle`, `Ingredient.originalText`, `Step.originalText`,
+the section `originalName` fields, and `originalLanguage`. Selecting a language applies and
+saves the display version directly on the detail screen. If wording needs correction, the
+normal Edit action edits the active overlay without changing the canonical source.
+
+Saving also caches the language overlay in `recipe_translations`, keyed by recipe and
+language. Returning to a cached language does not call the API. A source fingerprint
+invalidates all overlays whose canonical title, section structure, ingredient source lines,
+or source steps no longer match. The normal recipe tables still hold the one active display
+version, so list, search, detail, scaling, and cook mode do not acquire a language dimension.
 
 ---
 

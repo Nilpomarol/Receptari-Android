@@ -45,6 +45,7 @@ data class RecipeEntity(
     val sourceName: String?,
     val sourceUrl: String?,
     val originalLanguage: String?,
+    val displayLanguage: String?,
     val folderId: String?,
     val createdAt: Long,
     val updatedAt: Long,

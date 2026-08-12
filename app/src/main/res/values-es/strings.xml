@@ -51,6 +51,12 @@
     <string name="detail_favorite_remove">Quitar de favoritas</string>
     <string name="detail_edit">Editar</string>
     <string name="detail_delete">Eliminar</string>
+    <string name="translation_action">Traducir</string>
+    <string name="translation_choose_language">Traducir la receta a…</string>
+    <string name="translation_original">Original</string>
+    <string name="translation_available">Traducida</string>
+    <string name="translation_current">Actual</string>
+    <string name="translation_applied">Idioma de la receta actualizado</string>
     <string name="detail_delete_confirm_title">¿Eliminar la receta?</string>
     <string name="detail_delete_confirm_body">Esta acción no se puede deshacer.</string>
     <string name="detail_prep_time">Preparación</string>

@@ -5,13 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.CookingTimer
+import cat.receptari.app.domain.ai.RecipeLanguage
 import cat.receptari.app.domain.repository.CookHistoryRepository
 import cat.receptari.app.domain.repository.CookingTimerRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
+import cat.receptari.app.domain.repository.RecipeTranslationRepository
 import cat.receptari.app.domain.scaling.ScaledIngredientSection
 import cat.receptari.app.domain.scaling.ServingScaler
 import cat.receptari.app.domain.timer.TimerMath
+import cat.receptari.app.domain.translation.TranslateRecipe
+import cat.receptari.app.domain.translation.translationSourceFingerprint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +40,8 @@ data class RecipeDetailUiState(
     val timers: List<CookingTimer> = emptyList(),
     val timerRemainingSeconds: Map<String, Long> = emptyMap(),
     val isLoading: Boolean = true,
+    val isTranslating: Boolean = false,
+    val translatedLanguages: Set<RecipeLanguage> = emptySet(),
 ) {
     val isMissing: Boolean
         get() = !isLoading && recipe == null
@@ -60,6 +66,7 @@ sealed interface RecipeDetailEvent {
     data object RetryPendingTimerAction : RecipeDetailEvent
     data object CancelPendingTimerAction : RecipeDetailEvent
     data object RefreshTimerNotifications : RecipeDetailEvent
+    data class Translate(val target: RecipeLanguage) : RecipeDetailEvent
 }
 
 sealed interface RecipeDetailEffect {
@@ -68,6 +75,8 @@ sealed interface RecipeDetailEffect {
     data object RequestExactAlarmPermission : RecipeDetailEffect
     data object TimerStarted : RecipeDetailEffect
     data object ExactAlarmPermissionDenied : RecipeDetailEffect
+    data object TranslationApplied : RecipeDetailEffect
+    data class TranslationFailed(val error: Throwable) : RecipeDetailEffect
 }
 
 @HiltViewModel
@@ -77,6 +86,8 @@ class RecipeDetailViewModel @Inject constructor(
     private val cookHistoryRepository: CookHistoryRepository,
     private val cookingTimerRepository: CookingTimerRepository,
     imageStore: ImageStore,
+    private val translateRecipe: TranslateRecipe,
+    private val translationRepository: RecipeTranslationRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -87,6 +98,8 @@ class RecipeDetailViewModel @Inject constructor(
      * changing it must never write to storage (PRD §3.3).
      */
     private val targetServings = MutableStateFlow<Int?>(null)
+    private val isTranslating = MutableStateFlow(false)
+    private val translatedLanguages = MutableStateFlow<Set<RecipeLanguage>>(emptySet())
     private var pendingTimerAction: PendingTimerAction? = null
 
     private val effectChannel = Channel<RecipeDetailEffect>(Channel.BUFFERED)
@@ -99,12 +112,18 @@ class RecipeDetailViewModel @Inject constructor(
         }
     }
 
+    private val translationState = combine(
+        isTranslating,
+        translatedLanguages,
+    ) { translating, languages -> translating to languages }
+
     val uiState: StateFlow<RecipeDetailUiState> = combine(
         recipeRepository.observeRecipe(recipeId),
         targetServings,
         cookingTimerRepository.observeTimers(),
         clockTicks,
-    ) { recipe, target, timers, now ->
+        translationState,
+    ) { recipe, target, timers, now, translation ->
         if (recipe == null) return@combine RecipeDetailUiState(isLoading = false)
 
         val servings = target ?: recipe.baseServings
@@ -121,12 +140,28 @@ class RecipeDetailViewModel @Inject constructor(
                 timer.id to TimerMath.remainingSeconds(timer, now)
             },
             isLoading = false,
+            isTranslating = translation.first,
+            translatedLanguages = translation.second,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
         initialValue = RecipeDetailUiState(),
     )
+
+    init {
+        viewModelScope.launch {
+            val recipe = recipeRepository.getRecipe(recipeId) ?: return@launch
+            val languages = translationRepository.getAvailableLanguages(
+                recipeId = recipeId,
+                sourceFingerprint = recipe.translationSourceFingerprint(),
+            )
+            translatedLanguages.value = RecipeLanguage.entries
+                .filterTo(mutableSetOf()) { language ->
+                    languages.any { it.matches(language) }
+                }
+        }
+    }
 
     fun onEvent(event: RecipeDetailEvent) {
         when (event) {
@@ -179,6 +214,33 @@ class RecipeDetailViewModel @Inject constructor(
             RecipeDetailEvent.RefreshTimerNotifications -> viewModelScope.launch {
                 cookingTimerRepository.refreshNotifications()
             }
+            is RecipeDetailEvent.Translate -> translate(event.target)
+        }
+    }
+
+    private fun translate(target: RecipeLanguage) {
+        if (isTranslating.value) return
+        val recipe = uiState.value.recipe ?: return
+        isTranslating.value = true
+        viewModelScope.launch {
+            translateRecipe(recipe, target)
+                .onSuccess { translated ->
+                    runCatching { recipeRepository.save(translated) }
+                        .onSuccess {
+                            if (translated.displayLanguage != null) {
+                                translatedLanguages.value += target
+                            }
+                            effectChannel.send(RecipeDetailEffect.TranslationApplied)
+                        }
+                        .onFailure { error ->
+                            effectChannel.send(RecipeDetailEffect.TranslationFailed(error))
+                        }
+                    isTranslating.value = false
+                }
+                .onFailure { error ->
+                    isTranslating.value = false
+                    effectChannel.send(RecipeDetailEffect.TranslationFailed(error))
+                }
         }
     }
 
@@ -251,3 +313,6 @@ private sealed interface PendingTimerAction {
 
     data class Resume(val timerId: String) : PendingTimerAction
 }
+
+private fun String.matches(language: RecipeLanguage): Boolean =
+    startsWith(language.languageTag, ignoreCase = true)

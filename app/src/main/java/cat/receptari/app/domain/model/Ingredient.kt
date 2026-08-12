@@ -8,6 +8,7 @@ data class IngredientSection(
     val id: String,
     val name: String? = null,
     val ingredients: List<Ingredient> = emptyList(),
+    val originalName: String? = null,
 )
 
 /**
@@ -26,6 +27,7 @@ data class Ingredient(
     val name: String? = null,
     val note: String? = null,
     val originalText: String,
+    val displayText: String? = null,
 ) {
     /** True when this line has a numeric quantity and can therefore be scaled. */
     val isScalable: Boolean

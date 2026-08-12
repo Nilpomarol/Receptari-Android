@@ -5,6 +5,7 @@ import cat.receptari.app.data.local.RecipeQueryBuilder
 import cat.receptari.app.data.local.dao.RecipeDao
 import cat.receptari.app.data.local.mapper.toDomain
 import cat.receptari.app.data.local.mapper.toWriteModel
+import cat.receptari.app.data.translation.toTranslationEntity
 import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.RecipeQuery
 import cat.receptari.app.domain.model.RecipeSummary
@@ -19,6 +20,7 @@ import kotlinx.coroutines.withContext
 import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.serialization.json.Json
 
 class RecipeRepositoryImpl @Inject constructor(
     private val recipeDao: RecipeDao,
@@ -27,6 +29,8 @@ class RecipeRepositoryImpl @Inject constructor(
     private val clock: Clock,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : RecipeRepository {
+
+    private val json = Json { encodeDefaults = true }
 
     override fun observeSummaries(query: RecipeQuery): Flow<List<RecipeSummary>> =
         recipeDao.observeSummaries(RecipeQueryBuilder.build(query))
@@ -49,6 +53,7 @@ class RecipeRepositoryImpl @Inject constructor(
 
         val stamped = recipe.copy(updatedAt = Instant.now(clock))
         val write = stamped.toWriteModel(resolvedTags)
+        val translation = stamped.toTranslationEntity(json)
 
         recipeDao.saveAggregate(
             recipe = write.recipe,
@@ -58,6 +63,7 @@ class RecipeRepositoryImpl @Inject constructor(
             steps = write.steps,
             tagLinks = write.tagLinks,
             searchIndex = write.searchIndex,
+            translation = translation,
         )
     }
 

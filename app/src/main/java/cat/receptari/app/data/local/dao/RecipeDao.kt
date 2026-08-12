@@ -18,6 +18,7 @@ import cat.receptari.app.data.local.entity.RecipeEntity
 import cat.receptari.app.data.local.entity.RecipeFtsEntity
 import cat.receptari.app.data.local.entity.RecipeSummaryProjection
 import cat.receptari.app.data.local.entity.RecipeTagCrossRef
+import cat.receptari.app.data.local.entity.RecipeTranslationEntity
 import cat.receptari.app.data.local.entity.StepEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -31,6 +32,15 @@ interface RecipeDao {
     @Transaction
     @Query("SELECT * FROM recipes WHERE id = :id")
     suspend fun getAggregate(id: String): RecipeAggregate?
+
+    @Query(
+        "SELECT * FROM recipe_translations " +
+            "WHERE recipeId = :recipeId AND language = :language",
+    )
+    suspend fun getTranslation(recipeId: String, language: String): RecipeTranslationEntity?
+
+    @Query("SELECT * FROM recipe_translations WHERE recipeId = :recipeId")
+    suspend fun getTranslations(recipeId: String): List<RecipeTranslationEntity>
 
     /**
      * The filtered/sorted library list. Raw because the WHERE and ORDER BY vary with the
@@ -116,6 +126,9 @@ interface RecipeDao {
     @Insert
     suspend fun insertSearchIndex(entry: RecipeFtsEntity)
 
+    @Upsert
+    suspend fun upsertTranslation(translation: RecipeTranslationEntity)
+
     /**
      * Writes a recipe and its entire object graph atomically, including the search index —
      * a half-written recipe or a stale index must never be observable.
@@ -129,6 +142,7 @@ interface RecipeDao {
         steps: List<StepEntity>,
         tagLinks: List<RecipeTagCrossRef>,
         searchIndex: RecipeFtsEntity,
+        translation: RecipeTranslationEntity? = null,
     ) {
         upsertRecipe(recipe)
 
@@ -144,5 +158,7 @@ interface RecipeDao {
 
         deleteSearchIndex(recipe.id)
         insertSearchIndex(searchIndex)
+
+        translation?.let { upsertTranslation(it) }
     }
 }

@@ -23,6 +23,7 @@ data class Recipe(
     val sourceName: String? = null,
     val sourceUrl: String? = null,
     val originalLanguage: String? = null,
+    val displayLanguage: String? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
     val ingredientSections: List<IngredientSection> = emptyList(),

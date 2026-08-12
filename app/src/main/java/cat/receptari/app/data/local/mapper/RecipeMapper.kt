@@ -60,6 +60,7 @@ fun RecipeAggregate.toDomain(): Recipe = Recipe(
     sourceName = recipe.sourceName,
     sourceUrl = recipe.sourceUrl,
     originalLanguage = recipe.originalLanguage,
+    displayLanguage = recipe.displayLanguage,
     createdAt = Instant.ofEpochMilli(recipe.createdAt),
     updatedAt = Instant.ofEpochMilli(recipe.updatedAt),
     // Room makes no ordering promise for @Relation collections, so sort explicitly.
@@ -69,6 +70,7 @@ fun RecipeAggregate.toDomain(): Recipe = Recipe(
             IngredientSection(
                 id = sectionWithIngredients.section.id,
                 name = sectionWithIngredients.section.name,
+                originalName = sectionWithIngredients.section.originalName,
                 ingredients = sectionWithIngredients.ingredients
                     .sortedBy { it.position }
                     .map { it.toDomain() },
@@ -80,6 +82,7 @@ fun RecipeAggregate.toDomain(): Recipe = Recipe(
             InstructionSection(
                 id = sectionWithSteps.section.id,
                 name = sectionWithSteps.section.name,
+                originalName = sectionWithSteps.section.originalName,
                 steps = sectionWithSteps.steps
                     .sortedBy { it.position }
                     .map { it.toDomain() },
@@ -99,6 +102,7 @@ fun IngredientEntity.toDomain(): Ingredient = Ingredient(
     name = name,
     note = note,
     originalText = originalText,
+    displayText = displayText,
 )
 
 fun StepEntity.toDomain(): Step = Step(id = id, text = text, originalText = originalText)
@@ -175,6 +179,7 @@ fun Recipe.toWriteModel(resolvedTags: List<Tag>): RecipeWriteModel {
         sourceName = sourceName,
         sourceUrl = sourceUrl,
         originalLanguage = originalLanguage,
+        displayLanguage = displayLanguage,
         folderId = folder?.id,
         createdAt = createdAt.toEpochMilli(),
         updatedAt = updatedAt.toEpochMilli(),
@@ -185,6 +190,7 @@ fun Recipe.toWriteModel(resolvedTags: List<Tag>): RecipeWriteModel {
             id = section.id,
             recipeId = id,
             name = section.name,
+            originalName = section.originalName,
             position = index,
         )
     }
@@ -201,6 +207,7 @@ fun Recipe.toWriteModel(resolvedTags: List<Tag>): RecipeWriteModel {
                 name = ingredient.name,
                 note = ingredient.note,
                 originalText = ingredient.originalText,
+                displayText = ingredient.displayText,
             )
         }
     }
@@ -210,6 +217,7 @@ fun Recipe.toWriteModel(resolvedTags: List<Tag>): RecipeWriteModel {
             id = section.id,
             recipeId = id,
             name = section.name,
+            originalName = section.originalName,
             position = index,
         )
     }
@@ -238,14 +246,19 @@ fun Recipe.toWriteModel(resolvedTags: List<Tag>): RecipeWriteModel {
 }
 
 /**
- * Ingredients contribute their parsed name when there is one and their raw text otherwise,
- * so "Sal al gust" is still findable even though nothing was structured out of it.
+ * Index both the translated display line and the source text. A user can therefore find what
+ * is visible on screen or the wording they originally remember, while unstructured source
+ * lines remain searchable through [Ingredient.originalText].
  */
 private fun Recipe.buildSearchIndex(resolvedTags: List<Tag>) = RecipeFtsEntity(
     recipeId = id,
     title = title,
     notes = notes.orEmpty(),
-    ingredientNames = allIngredients
-        .joinToString(" ") { it.name ?: it.originalText },
+    ingredientNames = allIngredients.joinToString(" ") { ingredient ->
+        listOfNotNull(ingredient.displayText, ingredient.name, ingredient.originalText)
+            .filter { it.isNotBlank() }
+            .distinct()
+            .joinToString(" ")
+    },
     tagNames = resolvedTags.joinToString(" ") { it.name },
 )

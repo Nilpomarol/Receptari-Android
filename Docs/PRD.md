@@ -418,7 +418,7 @@ Translate:
 - Ingredient names.
 - Ingredient notes.
 - Instruction text.
-- Tags only when appropriate.
+- Ingredient and instruction section names.
 
 Do not unnecessarily modify:
 
@@ -426,8 +426,20 @@ Do not unnecessarily modify:
 - Measurements.
 - URLs.
 - Source information.
+- Tags, which are a library-wide taxonomy rather than recipe prose.
 
 The original language and original content should be retained whenever practical.
+
+Selecting a language applies its display version directly on the recipe detail screen; the
+translation flow does not route through the edit form. The canonical source title,
+ingredient lines, step text, and section names always remain intact, so the switch is
+reversible. If a translation needs correction, the user edits the active display version
+through the ordinary Edit action afterward.
+
+Catalan, Spanish, and English display versions are cached locally per recipe, so switching
+back to an available language does not spend another API call. The picker identifies the
+original language, available translations, and the currently displayed language. Editing
+canonical source content makes older cached versions stale and forces a fresh translation.
 
 ---
 
