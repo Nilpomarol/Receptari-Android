@@ -169,6 +169,22 @@ While following a recipe, the user can start multiple independent cooking timers
 - Timer state is transient application state. It does not modify the recipe, its base times,
   its ingredients, or its cooked-history event log.
 
+## 3.6 Focused Cook Mode
+
+The recipe detail screen offers an optional focused mode for following instructions while
+cooking.
+
+- The mode presents one instruction at a time using large, high-contrast text, with clear
+  previous and next controls and the current position in the recipe.
+- Section names remain visible so grouped instructions keep their context.
+- Ingredients remain available in a temporary sheet without leaving the current step.
+- A timer can be started directly from the current instruction, and all active timers remain
+  accessible in the safe-area-aware timer dock.
+- The device screen stays awake for the entire time focused cook mode is visible. Normal
+  system screen-sleep behaviour resumes immediately after leaving it.
+- Entering, navigating, or closing cook mode never edits the recipe or records a cooked-history
+  event. The explicit final-step Finish action records one event and then leaves cook mode.
+
 ---
 
 # 4. Recipe History

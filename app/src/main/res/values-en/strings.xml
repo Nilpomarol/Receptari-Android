@@ -64,6 +64,15 @@
     <string name="detail_last_cooked">Last time: %1$s</string>
     <string name="detail_not_found">Recipe not found</string>
 
+    <!-- Cook mode -->
+    <string name="cook_mode_start">Start cooking</string>
+    <string name="cook_mode_exit">Exit cook mode</string>
+    <string name="cook_mode_progress">Step %1$d of %2$d</string>
+    <string name="cook_mode_previous">Previous</string>
+    <string name="cook_mode_next">Next</string>
+    <string name="cook_mode_finish">Finish</string>
+    <string name="cook_mode_no_steps">This recipe does not have any cooking steps.</string>
+
     <!-- Cooking timer -->
     <string name="timer_set">Set a timer</string>
     <string name="timer_setup_title">Timer</string>

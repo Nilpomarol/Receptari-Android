@@ -75,6 +75,15 @@
     <string name="detail_last_cooked">Darrera vegada: %1$s</string>
     <string name="detail_not_found">No s\'ha trobat la recepta</string>
 
+    <!-- Mode de cuina -->
+    <string name="cook_mode_start">Comença a cuinar</string>
+    <string name="cook_mode_exit">Surt del mode de cuina</string>
+    <string name="cook_mode_progress">Pas %1$d de %2$d</string>
+    <string name="cook_mode_previous">Anterior</string>
+    <string name="cook_mode_next">Següent</string>
+    <string name="cook_mode_finish">Acaba</string>
+    <string name="cook_mode_no_steps">Aquesta recepta no té passos de preparació.</string>
+
     <!-- Cooking timer -->
     <string name="timer_set">Posa un temporitzador</string>
     <string name="timer_setup_title">Temporitzador</string>

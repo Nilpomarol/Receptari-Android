@@ -105,6 +105,7 @@ import java.time.Instant
 fun RecipeDetailRoute(
     onNavigateBack: () -> Unit,
     onEditRecipe: (String) -> Unit,
+    onStartCooking: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecipeDetailViewModel = hiltViewModel(),
 ) {
@@ -195,6 +196,7 @@ fun RecipeDetailRoute(
         onEvent = dispatchEvent,
         onNavigateBack = onNavigateBack,
         onEditRecipe = { state.recipe?.id?.let(onEditRecipe) },
+        onStartCooking = { state.recipe?.id?.let(onStartCooking) },
         modifier = modifier,
     )
 
@@ -243,6 +245,7 @@ fun RecipeDetailScreen(
     onEvent: (RecipeDetailEvent) -> Unit,
     onNavigateBack: () -> Unit,
     onEditRecipe: () -> Unit,
+    onStartCooking: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
@@ -335,6 +338,7 @@ fun RecipeDetailScreen(
                 state = state,
                 onEvent = onEvent,
                 onSetTimer = { timerSetup = it },
+                onStartCooking = onStartCooking,
                 contentPadding = innerPadding,
             )
         }
@@ -392,6 +396,7 @@ private fun RecipeContent(
     state: RecipeDetailUiState,
     onEvent: (RecipeDetailEvent) -> Unit,
     onSetTimer: (TimerSetupRequest) -> Unit,
+    onStartCooking: () -> Unit,
     contentPadding: PaddingValues,
 ) {
     val recipe = state.recipe ?: return
@@ -483,22 +488,38 @@ private fun RecipeContent(
                     title = stringResource(R.string.detail_instructions),
                     modifier = Modifier.padding(horizontal = PagePadding, vertical = 12.dp),
                 )
-                TextButton(
-                    onClick = {
-                        onSetTimer(
-                            TimerSetupRequest(
-                                stepId = null,
-                                label = recipe.title,
-                                initialMinutes = null,
-                            ),
-                        )
-                    },
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = PagePadding),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Outlined.Timer, contentDescription = null)
-                    Text(
-                        text = stringResource(R.string.timer_set),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
+                    Button(onClick = onStartCooking) {
+                        Icon(Icons.Outlined.Restaurant, contentDescription = null)
+                        Text(
+                            text = stringResource(R.string.cook_mode_start),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            onSetTimer(
+                                TimerSetupRequest(
+                                    stepId = null,
+                                    label = recipe.title,
+                                    initialMinutes = null,
+                                ),
+                            )
+                        },
+                        modifier = Modifier.padding(start = 4.dp),
+                    ) {
+                        Icon(Icons.Outlined.Timer, contentDescription = null)
+                        Text(
+                            text = stringResource(R.string.timer_set),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
                 }
             }
         }
@@ -870,6 +891,7 @@ private fun RecipeDetailScreenPreview() {
             onEvent = {},
             onNavigateBack = {},
             onEditRecipe = {},
+            onStartCooking = {},
         )
     }
 }
