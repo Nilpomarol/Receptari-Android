@@ -2,6 +2,7 @@ package cat.receptari.app.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Fts4
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -13,10 +14,20 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "recipes",
+    foreignKeys = [
+        ForeignKey(
+            entity = FolderEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["folderId"],
+            // Deleting a folder unfiles its recipes; it must never delete them.
+            onDelete = ForeignKey.SET_NULL,
+        ),
+    ],
     indices = [
         Index("title"),
         Index("isFavorite"),
         Index("updatedAt"),
+        Index("folderId"),
     ],
 )
 data class RecipeEntity(
@@ -34,6 +45,7 @@ data class RecipeEntity(
     val sourceName: String?,
     val sourceUrl: String?,
     val originalLanguage: String?,
+    val folderId: String?,
     val createdAt: Long,
     val updatedAt: Long,
 )

@@ -50,6 +50,9 @@ data class RecipeAggregate(
     )
     val tags: List<TagEntity>,
 
+    @Relation(parentColumn = "folderId", entityColumn = "id")
+    val folder: FolderEntity?,
+
     @Relation(parentColumn = "id", entityColumn = "recipeId")
     val cookEvents: List<CookEventEntity>,
 )

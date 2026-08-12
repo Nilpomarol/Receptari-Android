@@ -49,6 +49,12 @@ internal val GoldOn = Color(0xFF2A1C00)
 /** Favourites. Deep sealing-wax red — related to error, deliberately not the same. */
 internal val Claret = Color(0xFF9E2B24)
 
+/** Additional inks reserved for folder stamps. Muted enough to sit on aged paper. */
+internal val Forest = Color(0xFF386447)
+internal val Indigo = Color(0xFF4B547D)
+internal val Cocoa = Color(0xFF73513A)
+internal val Slate = Color(0xFF5C6670)
+
 internal val ErrorInk = Color(0xFF8E2A20)
 internal val ErrorInkOn = Color(0xFFFBF3E4)
 internal val ErrorTint = Color(0xFFF3D9CF)
@@ -82,6 +88,11 @@ internal val GoldDark = Color(0xFFDDB25C)
 internal val GoldDarkOn = Color(0xFF3A2800)
 
 internal val ClaretDark = Color(0xFFE08A80)
+
+internal val ForestDark = Color(0xFF8AB69A)
+internal val IndigoDark = Color(0xFFA6AED8)
+internal val CocoaDark = Color(0xFFC7A68D)
+internal val SlateDark = Color(0xFFAEB7C0)
 
 internal val ErrorInkDark = Color(0xFFE79489)
 internal val ErrorInkDarkOn = Color(0xFF56100A)

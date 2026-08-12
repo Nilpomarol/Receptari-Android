@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
 import cat.receptari.app.data.local.entity.CookEventEntity
+import cat.receptari.app.data.local.entity.FolderEntity
 import cat.receptari.app.data.local.entity.IngredientEntity
 import cat.receptari.app.data.local.entity.IngredientSectionEntity
 import cat.receptari.app.data.local.entity.InstructionSectionEntity
@@ -46,6 +47,7 @@ interface RecipeDao {
             CookEventEntity::class,
             RecipeTagCrossRef::class,
             RecipeFtsEntity::class,
+            FolderEntity::class,
         ],
     )
     fun observeSummaries(query: SupportSQLiteQuery): Flow<List<RecipeSummaryProjection>>

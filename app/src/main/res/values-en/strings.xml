@@ -121,6 +121,10 @@
     <string name="edit_tag_add_hint">Add a tag</string>
     <string name="edit_tag_add">Add</string>
     <string name="edit_tag_remove">Remove tag %1$s</string>
+    <string name="edit_field_folder">Folder</string>
+    <string name="edit_folder_none">No folder</string>
+    <string name="edit_folder_add_hint">Folder name</string>
+    <string name="edit_folder_add">New folder</string>
     <string name="edit_section_ingredients">Ingredients</string>
     <string name="edit_section_instructions">Instructions</string>
     <string name="edit_section_name_hint">Section name (optional)</string>
@@ -140,6 +144,51 @@
     <string name="edit_discard_title">Discard changes?</string>
     <string name="edit_discard_body">The changes you made will be lost.</string>
     <string name="edit_discard_confirm">Discard</string>
+
+    <string name="folders_title">Folders</string>
+    <string name="folders_library_empty">You do not have any folders yet. Create one to start organising the recipe book.</string>
+    <plurals name="folders_count">
+        <item quantity="one">%1$d folder</item>
+        <item quantity="other">%1$d folders</item>
+    </plurals>
+    <string name="folder_empty_title">This folder is empty</string>
+    <string name="folder_empty_body">Add recipes to it from the editor.</string>
+    <string name="folders_add_hint">Folder name</string>
+    <string name="folders_add">Create</string>
+    <string name="folders_rename">Rename</string>
+    <string name="folders_delete">Delete folder</string>
+    <string name="folders_delete_confirm_title">Delete this folder?</string>
+    <string name="folders_delete_confirm_body">Recipes in “%1$s” will not be deleted, but will become unfiled.</string>
+    <plurals name="folders_recipe_count">
+        <item quantity="one">%1$d recipe</item>
+        <item quantity="other">%1$d recipes</item>
+    </plurals>
+    <string name="folder_color_label">Colour</string>
+    <string name="folder_color_olive">Olive</string>
+    <string name="folder_color_terracotta">Terracotta</string>
+    <string name="folder_color_gold">Gold</string>
+    <string name="folder_color_claret">Red</string>
+    <string name="folder_color_forest">Forest</string>
+    <string name="folder_color_indigo">Indigo</string>
+    <string name="folder_color_cocoa">Cocoa</string>
+    <string name="folder_color_slate">Slate</string>
+    <string name="folder_preview_label">Preview</string>
+    <string name="folder_preview_untitled">Untitled folder</string>
+    <string name="folder_icon_label">Icon</string>
+    <string name="folder_icon_folder">Folder</string>
+    <string name="folder_icon_restaurant">Restaurant</string>
+    <string name="folder_icon_cake">Cake</string>
+    <string name="folder_icon_cookie">Cookie</string>
+    <string name="folder_icon_pizza">Pizza</string>
+    <string name="folder_icon_ice_cream">Ice cream</string>
+    <string name="folder_icon_bakery">Bakery</string>
+    <string name="folder_icon_coffee">Coffee</string>
+    <string name="folder_icon_soup">Soups</string>
+    <string name="folder_icon_grill">Grill</string>
+    <string name="folder_icon_seafood">Fish and seafood</string>
+    <string name="folder_icon_vegetarian">Vegetarian</string>
+    <string name="folder_icon_celebration">Celebrations</string>
+    <string name="folder_icon_family">Family</string>
 
     <string name="import_title">Add a recipe</string>
     <string name="import_where_from">Where is it coming from?</string>

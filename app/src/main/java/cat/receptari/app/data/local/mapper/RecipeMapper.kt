@@ -1,6 +1,8 @@
 package cat.receptari.app.data.local.mapper
 
 import cat.receptari.app.data.local.entity.CookEventEntity
+import cat.receptari.app.data.local.entity.FolderEntity
+import cat.receptari.app.data.local.entity.FolderWithCount
 import cat.receptari.app.data.local.entity.IngredientEntity
 import cat.receptari.app.data.local.entity.IngredientSectionEntity
 import cat.receptari.app.data.local.entity.InstructionSectionEntity
@@ -12,6 +14,10 @@ import cat.receptari.app.data.local.entity.RecipeTagCrossRef
 import cat.receptari.app.data.local.entity.StepEntity
 import cat.receptari.app.data.local.entity.TagEntity
 import cat.receptari.app.domain.model.CookEvent
+import cat.receptari.app.domain.model.Folder
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
+import cat.receptari.app.domain.model.FolderSummary
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.model.IngredientSection
 import cat.receptari.app.domain.model.InstructionSection
@@ -80,6 +86,7 @@ fun RecipeAggregate.toDomain(): Recipe = Recipe(
             )
         },
     tags = tags.map { it.toDomain() }.sortedBy { it.normalizedName },
+    folder = folder?.toDomain(),
     cookCount = cookEvents.size,
     lastCookedAt = cookEvents.maxOfOrNull { it.cookedAt }?.let(Instant::ofEpochMilli),
 )
@@ -97,6 +104,32 @@ fun IngredientEntity.toDomain(): Ingredient = Ingredient(
 fun StepEntity.toDomain(): Step = Step(id = id, text = text, originalText = originalText)
 
 fun TagEntity.toDomain(): Tag = Tag(id = id, name = name, normalizedName = normalizedName)
+
+fun FolderEntity.toDomain(): Folder = Folder(
+    id = id,
+    name = name,
+    normalizedName = normalizedName,
+    color = color.toFolderColor(),
+    icon = icon.toFolderIcon(),
+)
+
+fun FolderWithCount.toDomain(): FolderSummary = FolderSummary(
+    folder = Folder(
+        id = id,
+        name = name,
+        normalizedName = normalizedName,
+        color = color.toFolderColor(),
+        icon = icon.toFolderIcon(),
+    ),
+    recipeCount = recipeCount,
+)
+
+/** Falls back to the default rather than crashing on a value an older/newer build wrote. */
+private fun String.toFolderColor(): FolderColor =
+    FolderColor.entries.find { it.name == this } ?: FolderColor.OLIVE
+
+private fun String.toFolderIcon(): FolderIcon =
+    FolderIcon.entries.find { it.name == this } ?: FolderIcon.FOLDER
 
 fun CookEventEntity.toDomain(): CookEvent = CookEvent(
     id = id,
@@ -142,6 +175,7 @@ fun Recipe.toWriteModel(resolvedTags: List<Tag>): RecipeWriteModel {
         sourceName = sourceName,
         sourceUrl = sourceUrl,
         originalLanguage = originalLanguage,
+        folderId = folder?.id,
         createdAt = createdAt.toEpochMilli(),
         updatedAt = updatedAt.toEpochMilli(),
     )

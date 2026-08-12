@@ -14,6 +14,8 @@ Recipe ──1:n──► IngredientSection ──1:n──► Ingredient
    │
    ├──n:m──► Tag            (via RecipeTagCrossRef)
    │
+   ├──n:1──► Folder          (nullable, at most one)
+   │
    └──1:n──► CookEvent
 
 RecipeFts   (FTS4, derived — rebuilt on save)
@@ -41,10 +43,11 @@ RecipeFts   (FTS4, derived — rebuilt on save)
 | `sourceName` | `String?` | e.g. "Cuinar amb la iaia", "NYT Cooking" |
 | `sourceUrl` | `String?` | required for website imports (PRD §8) |
 | `originalLanguage` | `String?` | BCP-47, e.g. `en`, `es`, `ca` |
+| `folderId` | `String?` FK → `folders.id` | `ON DELETE SET NULL` — deleting a folder unfiles its recipes, never deletes them |
 | `createdAt` | `Long` | epoch ms |
 | `updatedAt` | `Long` | epoch ms |
 
-Indexes: `title`, `isFavorite`, `updatedAt`.
+Indexes: `title`, `isFavorite`, `updatedAt`, `folderId`.
 
 ### `ingredient_sections`
 
@@ -107,6 +110,22 @@ User-defined and flat. No hierarchy, no colours, no categories (PRD §5).
 
 Composite PK `(recipeId, tagId)`, both indexed, both `ON DELETE CASCADE`.
 
+### `folders`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `String` PK | |
+| `name` | `String` | display form, e.g. `Postres de Nadal` |
+| `normalizedName` | `String` UNIQUE | lowercased, accent-stripped — dedupe key |
+| `color` | `String` | `FolderColor` enum name — one of a fixed eight-ink palette, not a free colour picker |
+| `icon` | `String` | `FolderIcon` enum name — a curated pictogram set, not a free image |
+
+User-created, flat — no nesting (PRD §5). A recipe references at most one folder via
+`recipes.folderId`; this is a plain FK, not a join table, because membership is single, not
+many-to-many like tags. Colour and icon are stored as enum names rather than raw values so a
+future rename of a palette entry doesn't require a data migration; the mapper falls back to
+the defaults (`OLIVE` / `FOLDER`) on an unrecognised value.
+
 ### `cook_events`
 
 | Column | Type | Notes |
@@ -145,7 +164,7 @@ otherwise, so an unstructurable line like "Sal al gust" is still findable.
 | PRD ref | Query |
 |---|---|
 | §5 sort | alphabetical, recently added (`createdAt`), recently cooked (`MAX(cookedAt)`), most cooked (`COUNT(cook_events)`), highest rated, cooking time |
-| §5 filter | favourite, by tag, by ingredient, never cooked (`NOT EXISTS` on `cook_events`), recently cooked |
+| §5 filter | favourite, by tag, by folder (`recipes.folderId = :id`), by ingredient, never cooked (`NOT EXISTS` on `cook_events`), recently cooked |
 | §6 search | prefix match across title / ingredient names / tags / notes via `recipe_fts` |
 
 The list screen reads a `RecipeSummary` projection (id, title, imagePath, totalTime,
@@ -186,3 +205,10 @@ keys or `position` columns; ordering is expressed by list order, and the mapper 
   `fallbackToDestructiveMigration()` outside debug builds.
 - Version 1 is whatever ships at the end of Roadmap Phase 2; there are no users before then,
   so get it right rather than migrating early.
+- `Migration(1, 2)` adds folders: `CREATE TABLE folders(...)`, a unique index on its
+  `normalizedName`, `ALTER TABLE recipes ADD COLUMN folderId TEXT REFERENCES folders(id)`,
+  and an index on `recipes.folderId`. Covered by `MigrationTest.migrate1To2`.
+- `Migration(2, 3)` adds folder appearance: `ALTER TABLE folders ADD COLUMN color TEXT NOT
+  NULL DEFAULT 'OLIVE'` and `ADD COLUMN icon TEXT NOT NULL DEFAULT 'FOLDER'`, so every folder
+  created before this version gets the same default a new folder starts with. Covered by
+  `MigrationTest.migrate2To3`.

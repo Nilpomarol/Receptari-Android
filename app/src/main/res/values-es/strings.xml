@@ -123,6 +123,10 @@
     <string name="edit_tag_add_hint">Añadir una etiqueta</string>
     <string name="edit_tag_add">Añadir</string>
     <string name="edit_tag_remove">Quitar la etiqueta %1$s</string>
+    <string name="edit_field_folder">Carpeta</string>
+    <string name="edit_folder_none">Sin carpeta</string>
+    <string name="edit_folder_add_hint">Nombre de la carpeta</string>
+    <string name="edit_folder_add">Nueva carpeta</string>
     <string name="edit_section_ingredients">Ingredientes</string>
     <string name="edit_section_instructions">Preparación</string>
     <string name="edit_section_name_hint">Nombre de la sección (opcional)</string>
@@ -142,6 +146,53 @@
     <string name="edit_discard_title">¿Descartar los cambios?</string>
     <string name="edit_discard_body">Se perderán los cambios que has hecho.</string>
     <string name="edit_discard_confirm">Descartar</string>
+
+    <string name="folders_title">Carpetas</string>
+    <string name="folders_library_empty">Todavía no tienes carpetas. Crea una para empezar a ordenar el recetario.</string>
+    <plurals name="folders_count">
+        <item quantity="one">%1$d carpeta</item>
+        <item quantity="many">%1$d carpetas</item>
+        <item quantity="other">%1$d carpetas</item>
+    </plurals>
+    <string name="folder_empty_title">Esta carpeta está vacía</string>
+    <string name="folder_empty_body">Añade recetas desde el editor.</string>
+    <string name="folders_add_hint">Nombre de la carpeta</string>
+    <string name="folders_add">Crear</string>
+    <string name="folders_rename">Cambiar el nombre</string>
+    <string name="folders_delete">Eliminar la carpeta</string>
+    <string name="folders_delete_confirm_title">¿Eliminar la carpeta?</string>
+    <string name="folders_delete_confirm_body">Las recetas de «%1$s» no se eliminarán, pero dejarán de tener carpeta.</string>
+    <plurals name="folders_recipe_count">
+        <item quantity="one">%1$d receta</item>
+        <item quantity="many">%1$d recetas</item>
+        <item quantity="other">%1$d recetas</item>
+    </plurals>
+    <string name="folder_color_label">Color</string>
+    <string name="folder_color_olive">Oliva</string>
+    <string name="folder_color_terracotta">Terracota</string>
+    <string name="folder_color_gold">Oro</string>
+    <string name="folder_color_claret">Rojo</string>
+    <string name="folder_color_forest">Bosque</string>
+    <string name="folder_color_indigo">Índigo</string>
+    <string name="folder_color_cocoa">Cacao</string>
+    <string name="folder_color_slate">Pizarra</string>
+    <string name="folder_preview_label">Vista previa</string>
+    <string name="folder_preview_untitled">Carpeta sin título</string>
+    <string name="folder_icon_label">Icono</string>
+    <string name="folder_icon_folder">Carpeta</string>
+    <string name="folder_icon_restaurant">Restaurante</string>
+    <string name="folder_icon_cake">Tarta</string>
+    <string name="folder_icon_cookie">Galleta</string>
+    <string name="folder_icon_pizza">Pizza</string>
+    <string name="folder_icon_ice_cream">Helado</string>
+    <string name="folder_icon_bakery">Horno</string>
+    <string name="folder_icon_coffee">Café</string>
+    <string name="folder_icon_soup">Sopas</string>
+    <string name="folder_icon_grill">Parrilla</string>
+    <string name="folder_icon_seafood">Pescado y marisco</string>
+    <string name="folder_icon_vegetarian">Vegetariano</string>
+    <string name="folder_icon_celebration">Celebraciones</string>
+    <string name="folder_icon_family">Familia</string>
 
     <string name="import_title">Añadir una receta</string>
     <string name="import_where_from">¿De dónde la sacas?</string>

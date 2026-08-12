@@ -4,6 +4,7 @@ import cat.receptari.app.data.image.FileImageStore
 import cat.receptari.app.data.remote.claude.ClaudeAiClient
 import cat.receptari.app.data.remote.web.OkHttpWebPageSource
 import cat.receptari.app.data.repository.CookHistoryRepositoryImpl
+import cat.receptari.app.data.repository.FolderRepositoryImpl
 import cat.receptari.app.data.repository.RecipeRepositoryImpl
 import cat.receptari.app.data.repository.TagRepositoryImpl
 import cat.receptari.app.data.settings.ApiKeyStore
@@ -11,6 +12,7 @@ import cat.receptari.app.domain.ai.AiClient
 import cat.receptari.app.domain.importer.WebPageSource
 import cat.receptari.app.domain.repository.ApiKeyRepository
 import cat.receptari.app.domain.repository.CookHistoryRepository
+import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.domain.repository.TagRepository
@@ -31,6 +33,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTagRepository(impl: TagRepositoryImpl): TagRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFolderRepository(impl: FolderRepositoryImpl): FolderRepository
 
     @Binds
     @Singleton

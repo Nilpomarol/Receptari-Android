@@ -13,9 +13,13 @@ object Destination {
     const val SETTINGS = "settings"
 
     const val RECIPE_ID_ARG = "recipeId"
+    const val FOLDER_ID_ARG = "folderId"
 
     const val DETAIL_ROUTE = "recipe/{$RECIPE_ID_ARG}"
     fun detail(recipeId: String) = "recipe/$recipeId"
+
+    const val FOLDER_ROUTE = "folder/{$FOLDER_ID_ARG}"
+    fun folder(folderId: String) = "folder/$folderId"
 
     /** Editing an existing recipe carries an id; creating a new one does not. */
     const val EDIT_ROUTE = "edit?$RECIPE_ID_ARG={$RECIPE_ID_ARG}"

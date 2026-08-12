@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cat.receptari.app.ui.detail.RecipeDetailRoute
 import cat.receptari.app.ui.edit.RecipeEditRoute
+import cat.receptari.app.ui.folders.FolderRoute
 import cat.receptari.app.ui.importer.ImportRoute
 import cat.receptari.app.ui.importer.image.ImageImportRoute
 import cat.receptari.app.ui.importer.text.TextImportRoute
@@ -44,6 +45,7 @@ fun ReceptariNavHost(
                 onOpenRecipe = { navController.navigate(Destination.detail(it)) },
                 onAddRecipe = { navController.navigate(Destination.IMPORT) },
                 onOpenSettings = { navController.navigate(Destination.SETTINGS) },
+                onOpenFolder = { navController.navigate(Destination.folder(it)) },
             )
         }
 
@@ -124,6 +126,16 @@ fun ReceptariNavHost(
 
         composable(Destination.SETTINGS) {
             SettingsRoute(onNavigateBack = navController::popBackStack)
+        }
+
+        composable(
+            route = Destination.FOLDER_ROUTE,
+            arguments = listOf(navArgument(Destination.FOLDER_ID_ARG) { type = NavType.StringType }),
+        ) {
+            FolderRoute(
+                onNavigateBack = navController::popBackStack,
+                onOpenRecipe = { navController.navigate(Destination.detail(it)) },
+            )
         }
     }
 }

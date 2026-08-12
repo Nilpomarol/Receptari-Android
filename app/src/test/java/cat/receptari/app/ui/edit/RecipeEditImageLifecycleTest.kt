@@ -1,9 +1,14 @@
 package cat.receptari.app.ui.edit
 
 import androidx.lifecycle.SavedStateHandle
+import cat.receptari.app.domain.model.Folder
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
+import cat.receptari.app.domain.model.FolderSummary
 import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.RecipeQuery
 import cat.receptari.app.domain.model.RecipeSummary
+import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.ui.importer.ImportDraftHandoff
@@ -151,6 +156,7 @@ class RecipeEditImageLifecycleTest {
         return RecipeEditViewModel(
             savedStateHandle = SavedStateHandle(mapOf("recipeId" to RECIPE_ID)),
             recipeRepository = repository,
+            folderRepository = FakeFolderRepository(),
             imageStore = imageStore,
             clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
             importDraftHandoff = ImportDraftHandoff(),
@@ -191,6 +197,19 @@ class RecipeEditImageLifecycleTest {
         override suspend fun delete(id: String) = Unit
 
         override suspend fun setFavorite(id: String, isFavorite: Boolean) = Unit
+    }
+
+    private class FakeFolderRepository : FolderRepository {
+        override fun observeAll(): Flow<List<Folder>> = flowOf(emptyList())
+
+        override fun observeAllWithCounts(): Flow<List<FolderSummary>> = flowOf(emptyList())
+
+        override suspend fun create(name: String, color: FolderColor, icon: FolderIcon): Folder =
+            Folder(id = name, name = name, color = color, icon = icon)
+
+        override suspend fun update(id: String, name: String, color: FolderColor, icon: FolderIcon) = Unit
+
+        override suspend fun delete(id: String) = Unit
     }
 
     private companion object {

@@ -133,6 +133,10 @@
     <string name="edit_tag_add_hint">Afegeix una etiqueta</string>
     <string name="edit_tag_add">Afegeix</string>
     <string name="edit_tag_remove">Treu l\'etiqueta %1$s</string>
+    <string name="edit_field_folder">Carpeta</string>
+    <string name="edit_folder_none">Sense carpeta</string>
+    <string name="edit_folder_add_hint">Nom de la carpeta</string>
+    <string name="edit_folder_add">Nova carpeta</string>
     <string name="edit_section_ingredients">Ingredients</string>
     <string name="edit_section_instructions">Preparació</string>
     <string name="edit_section_name_hint">Nom de la secció (opcional)</string>
@@ -152,6 +156,52 @@
     <string name="edit_discard_title">Vols descartar els canvis?</string>
     <string name="edit_discard_body">Els canvis que has fet es perdran.</string>
     <string name="edit_discard_confirm">Descarta</string>
+
+    <!-- Folders -->
+    <string name="folders_title">Carpetes</string>
+    <string name="folders_library_empty">Encara no tens cap carpeta. Crea\'n una per començar a ordenar el receptari.</string>
+    <plurals name="folders_count">
+        <item quantity="one">%1$d carpeta</item>
+        <item quantity="other">%1$d carpetes</item>
+    </plurals>
+    <string name="folder_empty_title">Aquesta carpeta és buida</string>
+    <string name="folder_empty_body">Afegeix-hi receptes des de l\'editor.</string>
+    <string name="folders_add_hint">Nom de la carpeta</string>
+    <string name="folders_add">Crea</string>
+    <string name="folders_rename">Canvia el nom</string>
+    <string name="folders_delete">Elimina la carpeta</string>
+    <string name="folders_delete_confirm_title">Vols eliminar la carpeta?</string>
+    <string name="folders_delete_confirm_body">Les receptes de «%1$s» no s\'eliminaran, però deixaran de tenir carpeta.</string>
+    <plurals name="folders_recipe_count">
+        <item quantity="one">%1$d recepta</item>
+        <item quantity="other">%1$d receptes</item>
+    </plurals>
+    <string name="folder_color_label">Color</string>
+    <string name="folder_color_olive">Oliva</string>
+    <string name="folder_color_terracotta">Terracota</string>
+    <string name="folder_color_gold">Or</string>
+    <string name="folder_color_claret">Vermell</string>
+    <string name="folder_color_forest">Bosc</string>
+    <string name="folder_color_indigo">Índigo</string>
+    <string name="folder_color_cocoa">Cacau</string>
+    <string name="folder_color_slate">Pissarra</string>
+    <string name="folder_preview_label">Vista prèvia</string>
+    <string name="folder_preview_untitled">Carpeta sense títol</string>
+    <string name="folder_icon_label">Icona</string>
+    <string name="folder_icon_folder">Carpeta</string>
+    <string name="folder_icon_restaurant">Restaurant</string>
+    <string name="folder_icon_cake">Pastís</string>
+    <string name="folder_icon_cookie">Galeta</string>
+    <string name="folder_icon_pizza">Pizza</string>
+    <string name="folder_icon_ice_cream">Gelat</string>
+    <string name="folder_icon_bakery">Forn</string>
+    <string name="folder_icon_coffee">Cafè</string>
+    <string name="folder_icon_soup">Sopes</string>
+    <string name="folder_icon_grill">Graella</string>
+    <string name="folder_icon_seafood">Peix i marisc</string>
+    <string name="folder_icon_vegetarian">Vegetarià</string>
+    <string name="folder_icon_celebration">Celebracions</string>
+    <string name="folder_icon_family">Família</string>
 
     <!-- Import -->
     <string name="import_title">Afegeix una recepta</string>

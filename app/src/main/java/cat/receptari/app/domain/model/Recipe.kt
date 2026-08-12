@@ -28,6 +28,7 @@ data class Recipe(
     val ingredientSections: List<IngredientSection> = emptyList(),
     val instructionSections: List<InstructionSection> = emptyList(),
     val tags: List<Tag> = emptyList(),
+    val folder: Folder? = null,
     val cookCount: Int = 0,
     val lastCookedAt: Instant? = null,
 ) {
