@@ -4,4 +4,8 @@
     <exclude
         domain="file"
         path="datastore/secrets.preferences_pb" />
+    <!-- A running countdown is device-session state, not user data to restore elsewhere. -->
+    <exclude
+        domain="file"
+        path="datastore/cooking_timer.preferences_pb" />
 </full-backup-content>

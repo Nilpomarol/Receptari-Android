@@ -1,6 +1,7 @@
 package cat.receptari.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -21,7 +22,18 @@ import cat.receptari.app.ui.settings.SettingsRoute
 fun ReceptariNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
+    openRecipeId: String? = null,
+    onRecipeOpened: () -> Unit = {},
 ) {
+    LaunchedEffect(openRecipeId) {
+        openRecipeId?.let { recipeId ->
+            navController.navigate(Destination.detail(recipeId)) {
+                launchSingleTop = true
+            }
+            onRecipeOpened()
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Destination.LIBRARY,

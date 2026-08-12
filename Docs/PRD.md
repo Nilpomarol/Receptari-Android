@@ -153,6 +153,22 @@ Example:
 3. Add chicken.
 4. Cook for 10 minutes.
 
+## 3.5 Cooking Timer
+
+While following a recipe, the user can start multiple independent cooking timers.
+
+- A timer can be started manually or from an instruction step.
+- When a supported duration is present in a step, the app may prefill it using deterministic
+  local parsing; the user always confirms or changes the duration before starting.
+- The timer remains active when the recipe is scrolled, the app is backgrounded, or its
+  process is recreated.
+- Active timers live in a safe-area-aware horizontal dock so they remain accessible without
+  covering the recipe. The user can pause, resume, add one minute, or cancel each timer.
+- Every timer has its own ongoing system notification with its remaining time and controls.
+- Finishing a timer alerts the user but never marks the recipe as cooked automatically.
+- Timer state is transient application state. It does not modify the recipe, its base times,
+  its ingredients, or its cooked-history event log.
+
 ---
 
 # 4. Recipe History

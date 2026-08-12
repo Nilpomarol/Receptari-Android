@@ -1,6 +1,16 @@
 package cat.receptari.app.ui.detail
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
+import android.view.WindowManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +35,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,23 +50,29 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.FilterPill
@@ -75,8 +93,12 @@ import cat.receptari.app.domain.model.InstructionSection
 import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.Step
 import cat.receptari.app.domain.scaling.ServingScaler
+import cat.receptari.app.domain.timer.InstructionDurationParser
+import cat.receptari.app.ui.timer.ActiveTimerDock
+import cat.receptari.app.ui.timer.TimerSetupSheet
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.time.Instant
 
 @Composable
@@ -88,13 +110,81 @@ fun RecipeDetailRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
     val cookedMessage = stringResource(R.string.detail_marked_cooked)
+    val timerStartedMessage = stringResource(R.string.timer_started)
+    val exactAlarmDeniedMessage = stringResource(R.string.timer_exact_alarm_denied)
+    val notificationDeniedMessage = stringResource(R.string.timer_notification_permission_denied)
+    var showExactAlarmPermissionDialog by remember { mutableStateOf(false) }
+    var pendingNotificationEvent by remember { mutableStateOf<RecipeDetailEvent?>(null) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            pendingNotificationEvent?.let(viewModel::onEvent)
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(notificationDeniedMessage)
+            }
+        }
+        pendingNotificationEvent = null
+    }
+    val dispatchEvent: (RecipeDetailEvent) -> Unit = { event ->
+        val requiresNotification = event is RecipeDetailEvent.StartTimer ||
+            event is RecipeDetailEvent.ResumeTimer
+        if (requiresNotification && ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingNotificationEvent = event
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.onEvent(event)
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(RecipeDetailEvent.RetryPendingTimerAction)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val timerIsRunning = state.timers.any { timer ->
+        timer.status == cat.receptari.app.domain.model.CookingTimerStatus.RUNNING
+    }
+    DisposableEffect(timerIsRunning) {
+        val activity = context as? Activity
+        if (timerIsRunning) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            if (timerIsRunning) {
+                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 RecipeDetailEffect.MarkedCooked -> snackbarHostState.showSnackbar(cookedMessage)
                 RecipeDetailEffect.Deleted -> onNavigateBack()
+                RecipeDetailEffect.RequestExactAlarmPermission -> {
+                    showExactAlarmPermissionDialog = true
+                }
+                RecipeDetailEffect.TimerStarted -> {
+                    snackbarHostState.showSnackbar(timerStartedMessage)
+                }
+                RecipeDetailEffect.ExactAlarmPermissionDenied -> {
+                    snackbarHostState.showSnackbar(exactAlarmDeniedMessage)
+                }
             }
         }
     }
@@ -102,11 +192,48 @@ fun RecipeDetailRoute(
     RecipeDetailScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        onEvent = viewModel::onEvent,
+        onEvent = dispatchEvent,
         onNavigateBack = onNavigateBack,
         onEditRecipe = { state.recipe?.id?.let(onEditRecipe) },
         modifier = modifier,
     )
+
+    if (showExactAlarmPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showExactAlarmPermissionDialog = false
+                viewModel.onEvent(RecipeDetailEvent.CancelPendingTimerAction)
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            title = { Text(stringResource(R.string.timer_exact_alarm_title)) },
+            text = { Text(stringResource(R.string.timer_exact_alarm_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExactAlarmPermissionDialog = false
+                        context.startActivity(
+                            Intent(
+                                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                Uri.parse("package:${context.packageName}"),
+                            ),
+                        )
+                    },
+                ) {
+                    Text(stringResource(R.string.timer_open_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showExactAlarmPermissionDialog = false
+                        viewModel.onEvent(RecipeDetailEvent.CancelPendingTimerAction)
+                    },
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -119,15 +246,28 @@ fun RecipeDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var timerSetup by remember { mutableStateOf<TimerSetupRequest?>(null) }
 
     PaperScaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            if (state.timers.isNotEmpty()) {
+                ActiveTimerDock(
+                    timers = state.timers,
+                    remainingSeconds = state.timerRemainingSeconds,
+                    onPause = { onEvent(RecipeDetailEvent.PauseTimer(it)) },
+                    onResume = { onEvent(RecipeDetailEvent.ResumeTimer(it)) },
+                    onAddMinute = { onEvent(RecipeDetailEvent.AddTimerMinute(it)) },
+                    onCancel = { onEvent(RecipeDetailEvent.CancelTimer(it)) },
+                )
+            }
+        },
         topBar = {
             PaperTopBar(
                 // No title: the recipe names itself in display type a few dp below, and
                 // printing it twice makes the page look like a form.
-                showRule = false,
+                showRule = true,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -194,6 +334,7 @@ fun RecipeDetailScreen(
             else -> RecipeContent(
                 state = state,
                 onEvent = onEvent,
+                onSetTimer = { timerSetup = it },
                 contentPadding = innerPadding,
             )
         }
@@ -225,6 +366,24 @@ fun RecipeDetailScreen(
             },
         )
     }
+
+    timerSetup?.let { request ->
+        TimerSetupSheet(
+            title = request.label,
+            initialMinutes = request.initialMinutes,
+            onDismiss = { timerSetup = null },
+            onStart = { minutes ->
+                timerSetup = null
+                onEvent(
+                    RecipeDetailEvent.StartTimer(
+                        stepId = request.stepId,
+                        label = request.label,
+                        durationMinutes = minutes,
+                    ),
+                )
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -232,6 +391,7 @@ fun RecipeDetailScreen(
 private fun RecipeContent(
     state: RecipeDetailUiState,
     onEvent: (RecipeDetailEvent) -> Unit,
+    onSetTimer: (TimerSetupRequest) -> Unit,
     contentPadding: PaddingValues,
 ) {
     val recipe = state.recipe ?: return
@@ -311,10 +471,29 @@ private fun RecipeContent(
         }
 
         item(key = "instructions-heading") {
-            OrnamentHeading(
-                title = stringResource(R.string.detail_instructions),
-                modifier = Modifier.padding(horizontal = PagePadding, vertical = 12.dp),
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                OrnamentHeading(
+                    title = stringResource(R.string.detail_instructions),
+                    modifier = Modifier.padding(horizontal = PagePadding, vertical = 12.dp),
+                )
+                TextButton(
+                    onClick = {
+                        onSetTimer(
+                            TimerSetupRequest(
+                                stepId = null,
+                                label = recipe.title,
+                                initialMinutes = null,
+                            ),
+                        )
+                    },
+                ) {
+                    Icon(Icons.Outlined.Timer, contentDescription = null)
+                    Text(
+                        text = stringResource(R.string.timer_set),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
         }
 
         // Step numbers run continuously across sections (PRD §3.4): "Prepare sauce" 1–2,
@@ -338,7 +517,22 @@ private fun RecipeContent(
             section.steps.forEach { step ->
                 stepNumber += 1
                 val number = stepNumber
-                item(key = "step-${step.id}") { StepRow(number = number, text = step.text) }
+                item(key = "step-${step.id}") {
+                    val label = stringResource(R.string.timer_step_label, number, recipe.title)
+                    StepRow(
+                        number = number,
+                        text = step.text,
+                        onSetTimer = {
+                            onSetTimer(
+                                TimerSetupRequest(
+                                    stepId = step.id,
+                                    label = label,
+                                    initialMinutes = InstructionDurationParser.parseMinutes(step.text),
+                                ),
+                            )
+                        },
+                    )
+                }
             }
         }
 
@@ -480,7 +674,12 @@ private fun IngredientRow(text: String, modifier: Modifier = Modifier) {
 
 /** One step, opened by its number set in a ruled roundel. */
 @Composable
-private fun StepRow(number: Int, text: String, modifier: Modifier = Modifier) {
+private fun StepRow(
+    number: Int,
+    text: String,
+    onSetTimer: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -501,8 +700,20 @@ private fun StepRow(number: Int, text: String, modifier: Modifier = Modifier) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = 12.dp),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp),
         )
+        IconButton(
+            onClick = onSetTimer,
+            modifier = Modifier.size(40.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Timer,
+                contentDescription = stringResource(R.string.timer_for_step, number),
+                tint = MaterialTheme.colorScheme.secondary,
+            )
+        }
     }
 }
 
@@ -598,6 +809,12 @@ private fun labelledTime(@StringRes labelRes: Int, minutes: Int): String =
 
 private val PagePadding = 20.dp
 private const val TimeSeparator = "   ·   " // i18n-exempt: punctuation, identical in every locale
+
+private data class TimerSetupRequest(
+    val stepId: String?,
+    val label: String,
+    val initialMinutes: Int?,
+)
 
 @Preview
 @Composable

@@ -66,6 +66,46 @@
     <string name="detail_last_cooked">Última vez: %1$s</string>
     <string name="detail_not_found">No se ha encontrado la receta</string>
 
+    <!-- Cooking timer -->
+    <string name="timer_set">Poner un temporizador</string>
+    <string name="timer_setup_title">Temporizador</string>
+    <string name="timer_minutes_label">Minutos</string>
+    <string name="timer_start">Iniciar</string>
+    <string name="timer_step_label">Paso %1$d · %2$s</string>
+    <string name="timer_for_step">Poner un temporizador para el paso %1$d</string>
+    <string name="timer_started">Temporizador iniciado</string>
+    <string name="timer_pause">Pausar</string>
+    <string name="timer_resume">Reanudar</string>
+    <string name="timer_cancel">Cancelar el temporizador</string>
+    <string name="timer_add_minute">Añadir un minuto</string>
+    <string name="timer_add_minute_short">+1 min</string>
+    <string name="timer_cancel_short">Cancelar</string>
+    <string name="timer_decrease_minute">Restar un minuto</string>
+    <string name="timer_increase_minute">Añadir un minuto</string>
+    <string name="timer_decrease_five_minutes">−5</string>
+    <string name="timer_increase_five_minutes">+5</string>
+    <string name="timer_paused_time">En pausa · %1$s</string>
+    <string name="timer_exact_alarm_title">Permitir temporizadores puntuales</string>
+    <string name="timer_exact_alarm_body">Para avisarte a la hora exacta aunque la pantalla esté apagada, Receptari necesita permiso para programar alarmas.</string>
+    <string name="timer_open_settings">Abrir ajustes</string>
+    <string name="timer_exact_alarm_denied">No se ha iniciado el temporizador porque falta el permiso de alarmas.</string>
+    <string name="timer_notification_permission_denied">No se ha iniciado el temporizador porque las notificaciones están desactivadas.</string>
+    <string name="timer_notification_running">Temporizador en marcha</string>
+    <string name="timer_notification_paused">En pausa · %1$s</string>
+    <string name="timer_notification_finished">Se ha acabado el tiempo</string>
+    <string name="timer_channel_running_name">Temporizadores en marcha</string>
+    <string name="timer_channel_running_description">Muestra el tiempo restante mientras cocinas.</string>
+    <string name="timer_channel_finished_name">Avisos del temporizador</string>
+    <string name="timer_channel_finished_description">Avisa cuando termina un temporizador de cocina.</string>
+    <plurals name="timer_dock_count">
+        <item quantity="one">%1$d temporizador</item>
+        <item quantity="other">%1$d temporizadores</item>
+    </plurals>
+    <plurals name="timer_notification_summary">
+        <item quantity="one">%1$d temporizador de cocina</item>
+        <item quantity="other">%1$d temporizadores de cocina</item>
+    </plurals>
+
     <string name="edit_title_new">Nueva receta</string>
     <string name="edit_title_existing">Editar la receta</string>
     <string name="edit_save">Guardar</string>

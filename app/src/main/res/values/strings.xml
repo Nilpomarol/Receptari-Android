@@ -75,6 +75,46 @@
     <string name="detail_last_cooked">Darrera vegada: %1$s</string>
     <string name="detail_not_found">No s\'ha trobat la recepta</string>
 
+    <!-- Cooking timer -->
+    <string name="timer_set">Posa un temporitzador</string>
+    <string name="timer_setup_title">Temporitzador</string>
+    <string name="timer_minutes_label">Minuts</string>
+    <string name="timer_start">Inicia</string>
+    <string name="timer_step_label">Pas %1$d · %2$s</string>
+    <string name="timer_for_step">Posa un temporitzador per al pas %1$d</string>
+    <string name="timer_started">Temporitzador iniciat</string>
+    <string name="timer_pause">Pausa</string>
+    <string name="timer_resume">Reprèn</string>
+    <string name="timer_cancel">Cancel·la el temporitzador</string>
+    <string name="timer_add_minute">Afegeix un minut</string>
+    <string name="timer_add_minute_short">+1 min</string>
+    <string name="timer_cancel_short">Cancel·la</string>
+    <string name="timer_decrease_minute">Resta un minut</string>
+    <string name="timer_increase_minute">Afegeix un minut</string>
+    <string name="timer_decrease_five_minutes">−5</string>
+    <string name="timer_increase_five_minutes">+5</string>
+    <string name="timer_paused_time">En pausa · %1$s</string>
+    <string name="timer_exact_alarm_title">Permet temporitzadors puntuals</string>
+    <string name="timer_exact_alarm_body">Per avisar-te a l\'hora exacta encara que la pantalla estigui apagada, Receptari necessita permís per programar alarmes.</string>
+    <string name="timer_open_settings">Obre la configuració</string>
+    <string name="timer_exact_alarm_denied">No s\'ha iniciat el temporitzador perquè falta el permís d\'alarmes.</string>
+    <string name="timer_notification_permission_denied">No s\'ha iniciat el temporitzador perquè les notificacions estan desactivades.</string>
+    <string name="timer_notification_running">Temporitzador en marxa</string>
+    <string name="timer_notification_paused">En pausa · %1$s</string>
+    <string name="timer_notification_finished">El temps s\'ha acabat</string>
+    <string name="timer_channel_running_name">Temporitzadors en marxa</string>
+    <string name="timer_channel_running_description">Mostra el temps restant mentre cuines.</string>
+    <string name="timer_channel_finished_name">Avisos de temporitzador</string>
+    <string name="timer_channel_finished_description">Avisa quan s\'acaba un temporitzador de cuina.</string>
+    <plurals name="timer_dock_count">
+        <item quantity="one">%1$d temporitzador</item>
+        <item quantity="other">%1$d temporitzadors</item>
+    </plurals>
+    <plurals name="timer_notification_summary">
+        <item quantity="one">%1$d temporitzador de cuina</item>
+        <item quantity="other">%1$d temporitzadors de cuina</item>
+    </plurals>
+
     <!-- Editor -->
     <string name="edit_title_new">Nova recepta</string>
     <string name="edit_title_existing">Edita la recepta</string>
