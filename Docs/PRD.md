@@ -193,6 +193,7 @@ This is preferred over a simple completed/not-completed status because recipes c
 Recipes must support:
 
 - Tags.
+- Folders.
 - Favorites.
 - Sorting.
 - Filtering.
@@ -210,6 +211,7 @@ Possible filters:
 
 - Favorite.
 - Tags.
+- Folder.
 - Ingredients.
 - Never cooked.
 - Recently cooked.
@@ -225,6 +227,22 @@ Examples:
 - Christmas
 - Grandma
 - Asian
+
+## Folders
+
+A second, simpler way to file a recipe, alongside tags:
+
+- A recipe belongs to **at most one folder** (never several).
+- Folders are a **flat list** — no subfolders, no nesting.
+- Folders are user-created, renamed, and deleted; a folder's own screen carries those actions
+  rather than a separate management screen.
+- Each folder carries a colour and an icon, both chosen from a small curated set (a fixed set
+  of bookish ink colours and a fixed pictogram set) — never a free colour picker or an uploaded
+  image, consistent with the fixed design system (ADR-009).
+- Deleting a folder never deletes its recipes — they simply become unfiled.
+
+Folders answer "which one book is this recipe in", where tags answer "what is true about
+this recipe" — the two are complementary, not competing.
 
 ---
 
@@ -489,7 +507,9 @@ The following features are intentionally excluded from the initial scope:
 - Recipe recommendations.
 - Meal planning.
 - Advanced household permissions.
-- Complex categories or taxonomies.
+- Nested or multi-level folder hierarchies, and a recipe belonging to more than one folder
+  at once — folders stay a flat list with single membership (§5). Beyond that, complex
+  categories or taxonomies remain out of scope.
 
 These features may be considered later but must not complicate the initial implementation.
 

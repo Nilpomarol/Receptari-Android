@@ -44,6 +44,11 @@ object RecipeQueryBuilder {
             arguments.addAll(query.filter.tagIds)
         }
 
+        query.filter.folderId?.let { folderId ->
+            conditions += "r.folderId = ?"
+            arguments += folderId
+        }
+
         if (query.filter.neverCooked) {
             conditions += "NOT EXISTS (SELECT 1 FROM cook_events e WHERE e.recipeId = r.id)"
         }

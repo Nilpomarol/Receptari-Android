@@ -8,14 +8,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,16 +36,20 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,16 +78,25 @@ import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.CornerFlourish
 import cat.receptari.app.core.designsystem.FilterPill
+import cat.receptari.app.core.designsystem.Hairline
+import cat.receptari.app.core.designsystem.OrnamentHeading
 import cat.receptari.app.core.designsystem.OrnamentalDivider
 import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.StarRating
 import cat.receptari.app.core.designsystem.Wordmark
 import cat.receptari.app.core.designsystem.pageFrame
+import cat.receptari.app.core.designsystem.paperGrain
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
+import cat.receptari.app.domain.model.FolderSummary
 import cat.receptari.app.domain.model.RecipeSort
 import cat.receptari.app.domain.model.RecipeSummary
 import cat.receptari.app.domain.model.Tag
+import cat.receptari.app.ui.folders.FolderEditorSheet
+import cat.receptari.app.ui.folders.toColor
+import cat.receptari.app.ui.folders.toImageVector
 import coil3.compose.AsyncImage
 
 @Composable
@@ -85,6 +104,7 @@ fun LibraryRoute(
     onOpenRecipe: (String) -> Unit,
     onAddRecipe: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenFolder: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
@@ -96,6 +116,7 @@ fun LibraryRoute(
         onOpenRecipe = onOpenRecipe,
         onAddRecipe = onAddRecipe,
         onOpenSettings = onOpenSettings,
+        onOpenFolder = onOpenFolder,
         modifier = modifier,
     )
 }
@@ -107,8 +128,12 @@ fun LibraryScreen(
     onOpenRecipe: (String) -> Unit,
     onAddRecipe: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenFolder: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var foldersOpen by remember { mutableStateOf(false) }
+    var creatingFolder by remember { mutableStateOf(false) }
+
     PaperScaffold(
         modifier = modifier,
         topBar = { Masthead(onOpenSettings = onOpenSettings) },
@@ -143,6 +168,8 @@ fun LibraryScreen(
             SortRow(
                 sort = state.sort,
                 onSelect = { onEvent(LibraryEvent.SortChanged(it)) },
+                folderCount = state.availableFolders.size,
+                onOpenFolders = { foldersOpen = true },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
             )
 
@@ -180,6 +207,47 @@ fun LibraryScreen(
                 }
             }
         }
+    }
+
+    if (foldersOpen) {
+        FolderLibrarySheet(
+            folders = state.availableFolders,
+            onOpenFolder = { folderId ->
+                foldersOpen = false
+                onOpenFolder(folderId)
+            },
+            onCreateFolder = {
+                foldersOpen = false
+                creatingFolder = true
+            },
+            onDismiss = { foldersOpen = false },
+        )
+    }
+
+    if (creatingFolder) {
+        var draftName by remember { mutableStateOf("") }
+        var draftColor by remember(state.availableFolders.size) {
+            mutableStateOf(
+                FolderColor.entries[state.availableFolders.size % FolderColor.entries.size],
+            )
+        }
+        var draftIcon by remember { mutableStateOf(FolderIcon.FOLDER) }
+
+        FolderEditorSheet(
+            title = stringResource(R.string.edit_folder_add),
+            name = draftName,
+            onNameChange = { draftName = it },
+            color = draftColor,
+            onColorChange = { draftColor = it },
+            icon = draftIcon,
+            onIconChange = { draftIcon = it },
+            confirmLabel = stringResource(R.string.folders_add),
+            onConfirm = {
+                onEvent(LibraryEvent.FolderCreateRequested(draftName, draftColor, draftIcon))
+                creatingFolder = false
+            },
+            onDismiss = { creatingFolder = false },
+        )
     }
 }
 
@@ -353,15 +421,151 @@ private fun FilterPills(
     }
 }
 
+/**
+ * The shelf of folders, above the recipe list rather than folded into the filter row — a
+ * folder is a place you go into, not a toggle you leave on.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FolderLibrarySheet(
+    folders: List<FolderSummary>,
+    onOpenFolder: (String) -> Unit,
+    onCreateFolder: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ModalBottomSheet(
+        modifier = modifier,
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .paperGrain()
+                    .padding(top = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Hairline(modifier = Modifier.width(54.dp))
+            }
+        },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
+                .paperGrain()
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp),
+        ) {
+            OrnamentHeading(title = stringResource(R.string.folders_title))
+            Button(
+                onClick = onCreateFolder,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.edit_folder_add),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+
+            if (folders.isEmpty()) {
+                Aside(
+                    text = stringResource(R.string.folders_library_empty),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                )
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 148.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp, max = 430.dp)
+                        .padding(top = 12.dp),
+                    contentPadding = PaddingValues(bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    gridItems(folders, key = { it.folder.id }) { summary ->
+                        FolderTile(
+                            summary = summary,
+                            onClick = { onOpenFolder(summary.folder.id) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderTile(summary: FolderSummary, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    PaperCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 108.dp),
+        onClick = onClick,
+        contentPadding = PaddingValues(14.dp),
+    ) {
+        Column {
+            Icon(
+                imageVector = summary.folder.icon.toImageVector(),
+                contentDescription = null,
+                tint = summary.folder.color.toColor(),
+            )
+            Text(
+                text = summary.folder.name,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            Text(
+                text = pluralStringResource(
+                    R.plurals.folders_recipe_count,
+                    summary.recipeCount,
+                    summary.recipeCount,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
 @Composable
 private fun SortRow(
     sort: RecipeSort,
     onSelect: (RecipeSort) -> Unit,
+    folderCount: Int,
+    onOpenFolders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onOpenFolders) {
+            Icon(
+                imageVector = Icons.Outlined.Folder,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
+            )
+            Text(
+                text = pluralStringResource(R.plurals.folders_count, folderCount, folderCount),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
         Text(
             text = stringResource(R.string.library_sort),
             style = MaterialTheme.typography.bodyMedium,
@@ -403,7 +607,7 @@ private fun SortRow(
 }
 
 @Composable
-private fun RecipeCard(
+internal fun RecipeCard(
     recipe: RecipeSummary,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -650,6 +854,7 @@ private fun LibraryScreenPreview() {
             onOpenRecipe = {},
             onAddRecipe = {},
             onOpenSettings = {},
+            onOpenFolder = {},
         )
     }
 }
@@ -664,6 +869,7 @@ private fun LibraryScreenEmptyPreview() {
             onOpenRecipe = {},
             onAddRecipe = {},
             onOpenSettings = {},
+            onOpenFolder = {},
         )
     }
 }

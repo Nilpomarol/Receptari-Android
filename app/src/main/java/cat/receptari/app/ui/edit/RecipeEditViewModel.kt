@@ -3,6 +3,9 @@ package cat.receptari.app.ui.edit
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cat.receptari.app.domain.model.Folder
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.model.IngredientSection
 import cat.receptari.app.domain.model.InstructionSection
@@ -10,6 +13,7 @@ import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.Step
 import cat.receptari.app.domain.model.Tag
 import cat.receptari.app.domain.parser.IngredientParser
+import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.ui.importer.ImportDraftHandoff
@@ -59,6 +63,8 @@ data class RecipeEditUiState(
     val sourceName: String = "",
     val sourceUrl: String = "",
     val tags: List<String> = emptyList(),
+    val folder: Folder? = null,
+    val availableFolders: List<Folder> = emptyList(),
     val ingredientSections: List<FormSection> = listOf(FormSection()),
     val instructionSections: List<FormSection> = listOf(FormSection()),
     val showTitleError: Boolean = false,
@@ -79,6 +85,9 @@ sealed interface RecipeEditEvent {
 
     data class TagAdded(val name: String) : RecipeEditEvent
     data class TagRemoved(val name: String) : RecipeEditEvent
+
+    data class FolderSelected(val folder: Folder?) : RecipeEditEvent
+    data class FolderCreateRequested(val name: String) : RecipeEditEvent
 
     data class ImagePicked(val bytes: ByteArray) : RecipeEditEvent {
         override fun equals(other: Any?) = this === other
@@ -108,6 +117,7 @@ sealed interface RecipeEditEffect {
 class RecipeEditViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val recipeRepository: RecipeRepository,
+    private val folderRepository: FolderRepository,
     private val imageStore: ImageStore,
     private val clock: Clock,
     importDraftHandoff: ImportDraftHandoff,
@@ -145,6 +155,12 @@ class RecipeEditViewModel @Inject constructor(
     private var originalLanguage: String? = null
 
     init {
+        viewModelScope.launch {
+            folderRepository.observeAll().collect { folders ->
+                _uiState.update { it.copy(availableFolders = folders) }
+            }
+        }
+
         if (editingRecipeId != null) {
             load(editingRecipeId)
         } else {
@@ -154,6 +170,7 @@ class RecipeEditViewModel @Inject constructor(
             // a filled-in import warns rather than silently discarding the extraction.
             importDraftHandoff.consume()?.let { draft ->
                 _uiState.value = draft.toFormState()
+                    .copy(availableFolders = _uiState.value.availableFolders)
                 // Recorded now because the source language is only knowable at import time,
                 // and Phase 5 translation needs to know what it is translating from.
                 originalLanguage = draft.originalLanguage
@@ -188,6 +205,8 @@ class RecipeEditViewModel @Inject constructor(
             sourceName = recipe.sourceName.orEmpty(),
             sourceUrl = recipe.sourceUrl.orEmpty(),
             tags = recipe.tags.map { it.name },
+            folder = recipe.folder,
+            availableFolders = _uiState.value.availableFolders,
             // The editor works on the text the user (or the import) actually wrote. Parsing
             // happens on save, so `originalText` is whatever is on screen — never a
             // re-rendered approximation of it.
@@ -263,6 +282,18 @@ class RecipeEditViewModel @Inject constructor(
 
             is RecipeEditEvent.TagRemoved ->
                 _uiState.update { it.copy(tags = it.tags - event.name) }
+
+            is RecipeEditEvent.FolderSelected ->
+                _uiState.update { it.copy(folder = event.folder) }
+
+            is RecipeEditEvent.FolderCreateRequested -> viewModelScope.launch {
+                val name = event.name.trim()
+                if (name.isEmpty()) return@launch
+                // Colour and icon are picked afterwards from the folder's own screen; a
+                // quick add from the editor should not ask for more than a name.
+                val folder = folderRepository.create(name, FolderColor.OLIVE, FolderIcon.FOLDER)
+                _uiState.update { it.copy(folder = folder) }
+            }
 
             is RecipeEditEvent.ImagePicked -> viewModelScope.launch {
                 val path = imageStore.save(_uiState.value.id, event.bytes)
@@ -346,6 +377,7 @@ class RecipeEditViewModel @Inject constructor(
                 tags = state.tags.map { name ->
                     Tag(id = existingTagIds[name] ?: UUID.randomUUID().toString(), name = name)
                 },
+                folder = state.folder,
             )
 
             val merged = if (state.isNew) {
@@ -377,8 +409,8 @@ class RecipeEditViewModel @Inject constructor(
      * form look dirty.
      */
     private fun RecipeEditUiState.differsFrom(other: RecipeEditUiState): Boolean =
-        copy(showTitleError = false, isLoading = false) !=
-            other.copy(showTitleError = false, isLoading = false)
+        copy(showTitleError = false, isLoading = false, availableFolders = emptyList()) !=
+            other.copy(showTitleError = false, isLoading = false, availableFolders = emptyList())
 
     private fun List<FormSection>.toIngredientSections(): List<IngredientSection> =
         mapNotNull { section ->

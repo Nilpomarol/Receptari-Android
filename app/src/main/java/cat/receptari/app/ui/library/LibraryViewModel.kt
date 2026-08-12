@@ -2,11 +2,15 @@ package cat.receptari.app.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
+import cat.receptari.app.domain.model.FolderSummary
 import cat.receptari.app.domain.model.RecipeFilter
 import cat.receptari.app.domain.model.RecipeQuery
 import cat.receptari.app.domain.model.RecipeSort
 import cat.receptari.app.domain.model.RecipeSummary
 import cat.receptari.app.domain.model.Tag
+import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.domain.repository.TagRepository
@@ -28,6 +32,7 @@ import javax.inject.Inject
 data class LibraryUiState(
     val recipes: List<RecipeSummary> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
+    val availableFolders: List<FolderSummary> = emptyList(),
     val searchQuery: String = "",
     val sort: RecipeSort = RecipeSort.RecentlyAdded,
     val filter: RecipeFilter = RecipeFilter(),
@@ -47,6 +52,8 @@ sealed interface LibraryEvent {
     data class ToggleTagFilter(val tagId: String) : LibraryEvent
     data object ClearFilters : LibraryEvent
     data class ToggleFavorite(val id: String, val isFavorite: Boolean) : LibraryEvent
+    data class FolderCreateRequested(val name: String, val color: FolderColor, val icon: FolderIcon) :
+        LibraryEvent
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -54,6 +61,7 @@ sealed interface LibraryEvent {
 class LibraryViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     tagRepository: TagRepository,
+    private val folderRepository: FolderRepository,
     private val imageStore: ImageStore,
     private val clock: Clock,
 ) : ViewModel() {
@@ -64,7 +72,8 @@ class LibraryViewModel @Inject constructor(
         query,
         query.flatMapLatest { recipeRepository.observeSummaries(it) },
         tagRepository.observeAll(),
-    ) { currentQuery, recipes, tags ->
+        folderRepository.observeAllWithCounts(),
+    ) { currentQuery, recipes, tags, folders ->
         LibraryUiState(
             // Stored image paths are relative so they survive a reinstall; the image
             // loader needs a real location, so they are resolved here on the way to the UI.
@@ -72,6 +81,7 @@ class LibraryViewModel @Inject constructor(
                 summary.copy(imagePath = summary.imagePath?.let(imageStore::absolutePathOf))
             },
             availableTags = tags,
+            availableFolders = folders,
             searchQuery = currentQuery.searchQuery,
             sort = currentQuery.sort,
             filter = currentQuery.filter,
@@ -131,6 +141,12 @@ class LibraryViewModel @Inject constructor(
 
             is LibraryEvent.ToggleFavorite -> viewModelScope.launch {
                 recipeRepository.setFavorite(event.id, !event.isFavorite)
+            }
+
+            is LibraryEvent.FolderCreateRequested -> {
+                val name = event.name.trim()
+                if (name.isEmpty()) return
+                viewModelScope.launch { folderRepository.create(name, event.color, event.icon) }
             }
         }
     }

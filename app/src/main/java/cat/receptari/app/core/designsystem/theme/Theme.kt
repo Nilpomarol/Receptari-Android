@@ -27,6 +27,11 @@ data class ReceptariPalette(
     val gold: Color,
     /** Favourites. Sealing-wax red, deliberately distinct from the error red. */
     val heart: Color,
+    /** Secondary inks used only for user-selected folder stamps. */
+    val folderForest: Color,
+    val folderIndigo: Color,
+    val folderCocoa: Color,
+    val folderSlate: Color,
     /** How strongly the paper texture prints over the base colour. Zero is a flat fill. */
     val paperIntensity: Float,
 )
@@ -36,6 +41,10 @@ private val LightPalette = ReceptariPalette(
     rule = Rule,
     gold = Gold,
     heart = Claret,
+    folderForest = Forest,
+    folderIndigo = Indigo,
+    folderCocoa = Cocoa,
+    folderSlate = Slate,
     paperIntensity = 0.42f,
 )
 
@@ -44,6 +53,10 @@ private val DarkPalette = ReceptariPalette(
     rule = RuleDark,
     gold = GoldDark,
     heart = ClaretDark,
+    folderForest = ForestDark,
+    folderIndigo = IndigoDark,
+    folderCocoa = CocoaDark,
+    folderSlate = SlateDark,
     // Texture on a dark ground reads as sensor noise long before it reads as paper.
     paperIntensity = 0.18f,
 )

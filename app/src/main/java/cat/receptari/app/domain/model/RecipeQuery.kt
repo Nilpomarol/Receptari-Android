@@ -14,16 +14,19 @@ enum class RecipeSort {
 data class RecipeFilter(
     val favoritesOnly: Boolean = false,
     val tagIds: Set<String> = emptySet(),
+    val folderId: String? = null,
     val neverCooked: Boolean = false,
     val cookedSinceEpochMillis: Long? = null,
 ) {
     val isActive: Boolean
-        get() = favoritesOnly || tagIds.isNotEmpty() || neverCooked || cookedSinceEpochMillis != null
+        get() = favoritesOnly || tagIds.isNotEmpty() || folderId != null || neverCooked ||
+            cookedSinceEpochMillis != null
 
     val activeCount: Int
         get() = listOf(
             favoritesOnly,
             tagIds.isNotEmpty(),
+            folderId != null,
             neverCooked,
             cookedSinceEpochMillis != null,
         ).count { it }

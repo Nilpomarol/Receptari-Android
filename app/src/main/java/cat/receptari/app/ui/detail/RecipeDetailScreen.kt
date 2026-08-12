@@ -400,7 +400,7 @@ private fun RecipeContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             top = contentPadding.calculateTopPadding(),
-            bottom = 40.dp,
+            bottom = contentPadding.calculateBottomPadding() + 40.dp,
         ),
     ) {
         state.imagePath?.let { path ->
@@ -421,7 +421,7 @@ private fun RecipeContent(
 
         item(key = "title") { RecipeHeader(recipe = recipe) }
 
-        if (recipe.tags.isNotEmpty()) {
+        if (recipe.tags.isNotEmpty() || recipe.folder != null) {
             item(key = "tags") {
                 FlowRow(
                     modifier = Modifier
@@ -430,9 +430,16 @@ private fun RecipeContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
+                    // Read-only here: both are edited in the editor, and a tappable chip that
+                    // does nothing is worse than a label.
+                    recipe.folder?.let { folder ->
+                        FilterPill(
+                            label = folder.name,
+                            selected = false,
+                            icon = Icons.Outlined.Folder,
+                        )
+                    }
                     recipe.tags.forEach { tag ->
-                        // Read-only here: tags are edited in the editor, and a tappable chip
-                        // that does nothing is worse than a label.
                         FilterPill(label = tag.name, selected = false)
                     }
                 }

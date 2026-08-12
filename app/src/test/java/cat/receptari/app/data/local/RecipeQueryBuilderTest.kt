@@ -94,6 +94,16 @@ class RecipeQueryBuilderTest {
     }
 
     @Test
+    fun `folder filter binds the folder id as an argument`() {
+        val query = RecipeQueryBuilder.build(
+            RecipeQuery(filter = RecipeFilter(folderId = "f1")),
+        )
+
+        assertTrue(query.sql.contains("r.folderId = ?"))
+        assertEquals(1, query.argCount)
+    }
+
+    @Test
     fun `never cooked filters on the absence of any cook event`() {
         val query = RecipeQueryBuilder.build(RecipeQuery(filter = RecipeFilter(neverCooked = true)))
 

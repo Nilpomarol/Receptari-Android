@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
@@ -32,6 +33,8 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -67,6 +70,7 @@ import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
+import cat.receptari.app.domain.model.Folder
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import java.io.File
@@ -294,6 +298,13 @@ fun RecipeEditScreen(
 
             item { RatingField(rating = state.rating, onEvent = onEvent) }
             item { TagsField(tags = state.tags, onEvent = onEvent) }
+            item {
+                FolderField(
+                    folder = state.folder,
+                    availableFolders = state.availableFolders,
+                    onEvent = onEvent,
+                )
+            }
 
             sectionEditor(
                 titleRes = R.string.edit_section_ingredients,
@@ -602,6 +613,84 @@ private fun TagsField(tags: List<String>, onEvent: (RecipeEditEvent) -> Unit) {
                         )
                     },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderField(
+    folder: Folder?,
+    availableFolders: List<Folder>,
+    onEvent: (RecipeEditEvent) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var creating by remember { mutableStateOf(false) }
+    var draft by remember { mutableStateOf("") }
+
+    Column(Modifier.padding(horizontal = 16.dp)) {
+        Text(
+            text = stringResource(R.string.edit_field_folder),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Box(modifier = Modifier.padding(top = 4.dp)) {
+            OutlinedButton(onClick = { expanded = true }) {
+                Text(folder?.name ?: stringResource(R.string.edit_folder_none))
+                Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+            }
+
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.edit_folder_none)) },
+                    onClick = {
+                        onEvent(RecipeEditEvent.FolderSelected(null))
+                        expanded = false
+                    },
+                )
+                availableFolders.forEach { candidate ->
+                    DropdownMenuItem(
+                        text = { Text(candidate.name) },
+                        onClick = {
+                            onEvent(RecipeEditEvent.FolderSelected(candidate))
+                            expanded = false
+                        },
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.edit_folder_add)) },
+                    onClick = {
+                        expanded = false
+                        creating = true
+                    },
+                )
+            }
+        }
+
+        if (creating) {
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    colors = paperFieldColors(),
+                    value = draft,
+                    onValueChange = { draft = it },
+                    placeholder = { Text(stringResource(R.string.edit_folder_add_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    onClick = {
+                        onEvent(RecipeEditEvent.FolderCreateRequested(draft))
+                        draft = ""
+                        creating = false
+                    },
+                ) {
+                    Text(stringResource(R.string.edit_folder_add))
+                }
             }
         }
     }
