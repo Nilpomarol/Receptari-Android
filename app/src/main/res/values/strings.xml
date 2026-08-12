@@ -168,6 +168,8 @@
     <string name="edit_image_remove">Treu la imatge</string>
     <string name="edit_image_from_gallery">Tria de la galeria</string>
     <string name="edit_image_from_camera">Fes una foto</string>
+    <string name="edit_camera_unavailable_title">No s’ha trobat cap càmera</string>
+    <string name="edit_camera_unavailable_body">No hi ha cap aplicació de càmera disponible per fer la foto.</string>
     <string name="edit_discard_title">Vols descartar els canvis?</string>
     <string name="edit_discard_body">Els canvis que has fet es perdran.</string>
     <string name="edit_discard_confirm">Descarta</string>

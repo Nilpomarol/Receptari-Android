@@ -102,7 +102,7 @@ intact. ✅
 
 ---
 
-## Phase 3 — MVP, manual recipe book ◐
+## Phase 3 — MVP, manual recipe book ☑
 
 Deliverable: **an app worth using every day**, with no AI and no network.
 
@@ -115,7 +115,8 @@ Deliverable: **an app worth using every day**, with no AI and no network.
 6. ☑ **Mark as cooked** + history (times cooked, last cooked)
 7. ☑ **Search** — FTS over title, ingredients, tags, notes, prefix matching
 8. ☑ **Sort and filter** — the six sorts and five filters of PRD §5
-9. ◐ **Images** — photo picker, replace, remove. **Camera capture not built yet**
+9. ☑ **Images** — photo picker and external camera capture; replace and remove with
+   save-or-discard file lifecycle
 10. ☑ **Settings** — app language, about
 
 - ☑ Verify the whole flow on a real device
@@ -123,7 +124,7 @@ Deliverable: **an app worth using every day**, with no AI and no network.
 **Exit criteria:** you can add a real recipe by hand, find it, scale it, cook from it, and
 mark it cooked. Dogfood for a week before starting Phase 4.
 
-`./gradlew build` passes (60 unit tests, lint, guardrail) and 14 instrumented tests pass.
+`./gradlew build` passes, including unit tests, lint, and the localization guardrail.
 Verified on a Pixel 10 Pro XL with seeded sample data: library, detail with three ingredient
 sections, continuous step numbering across sections, scaling, and the editor round-trip.
 
@@ -162,6 +163,10 @@ finishes, taking the seeded database with it.
   FTS4 operators; passing them through makes SQLite throw on ordinary typing.
 - The editor deliberately does not write `isFavorite` or cooked history — those are owned
   by the detail screen and the event log, and an edit must not clobber them.
+- **Camera capture delegates to the installed camera app.** A FileProvider grants it access
+  to one temporary cache file, so Receptari requests no camera permission. The full-size
+  scratch file is consumed into the same downscaled `ImageStore` path as a gallery image and
+  is removed after success, cancellation, or recovery from an abandoned capture.
 
 ---
 

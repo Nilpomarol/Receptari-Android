@@ -156,6 +156,8 @@
     <string name="edit_image_remove">Remove image</string>
     <string name="edit_image_from_gallery">Choose from gallery</string>
     <string name="edit_image_from_camera">Take a photo</string>
+    <string name="edit_camera_unavailable_title">No camera found</string>
+    <string name="edit_camera_unavailable_body">No camera app is available to take the photo.</string>
     <string name="edit_discard_title">Discard changes?</string>
     <string name="edit_discard_body">The changes you made will be lost.</string>
     <string name="edit_discard_confirm">Discard</string>

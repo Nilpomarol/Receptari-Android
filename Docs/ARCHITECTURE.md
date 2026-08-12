@@ -212,6 +212,13 @@ Stored as files in app-internal storage (`filesDir/images/<recipeId>.jpg`), neve
 in the database. `Recipe.imagePath` holds a relative path. `ImageStore` owns copy,
 downscale/compress on import, and delete-on-recipe-delete. Coil renders them.
 
+Gallery selection uses Android Photo Picker without storage permission. Camera capture uses
+the installed camera app through `TakePicture` and a narrowly scoped FileProvider URI under
+`cacheDir/camera`; Receptari therefore does not request `CAMERA`. The capture is a scratch
+file only: it is removed on success or cancellation, and abandoned files are cleared when
+the editor returns. The editor's normal image lifecycle decides whether the downscaled
+internal copy survives Save or is removed on discard.
+
 ---
 
 ## 8. Threading

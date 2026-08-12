@@ -1,7 +1,10 @@
 package cat.receptari.app.ui.edit
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -85,8 +88,12 @@ fun RecipeEditRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val captureScratch = remember(context) {
+        CameraCaptureScratch(File(context.cacheDir, CAMERA_DIRECTORY))
+    }
 
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showCameraUnavailableDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
@@ -111,19 +118,17 @@ fun RecipeEditRoute(
     // the screen — including process death — so only its name is held, and the file is
     // resolved again on the way back.
     var pendingCapture by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        captureScratch.clearAbandoned(pendingCapture)
+    }
     val takePhoto = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture(),
     ) { captured ->
         val fileName = pendingCapture
         pendingCapture = null
-        if (!captured || fileName == null) return@rememberLauncherForActivityResult
-
-        val file = context.captureFile(fileName)
-        if (file.exists()) {
-            viewModel.onEvent(RecipeEditEvent.ImagePicked(file.readBytes()))
-            // ImageStore has its own downscaled copy now; this one is scratch.
-            file.delete()
-        }
+        fileName
+            ?.let { captureScratch.consume(it, captured) }
+            ?.let { bytes -> viewModel.onEvent(RecipeEditEvent.ImagePicked(bytes)) }
     }
 
     val leaveEditor = {
@@ -142,9 +147,20 @@ fun RecipeEditRoute(
             )
         },
         onTakePhoto = {
-            val fileName = "capture-${System.currentTimeMillis()}.jpg"
-            pendingCapture = fileName
-            takePhoto.launch(context.captureUri(fileName))
+            val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            if (cameraIntent.resolveActivity(context.packageManager) == null) {
+                showCameraUnavailableDialog = true
+            } else {
+                val fileName = captureScratch.createFileName(System.currentTimeMillis())
+                pendingCapture = fileName
+                try {
+                    takePhoto.launch(context.captureUri(captureScratch.file(fileName)))
+                } catch (_: ActivityNotFoundException) {
+                    captureScratch.discard(fileName)
+                    pendingCapture = null
+                    showCameraUnavailableDialog = true
+                }
+            }
         },
         modifier = modifier,
     )
@@ -172,14 +188,26 @@ fun RecipeEditRoute(
             },
         )
     }
+
+    if (showCameraUnavailableDialog) {
+        AlertDialog(
+            onDismissRequest = { showCameraUnavailableDialog = false },
+            title = { Text(stringResource(R.string.edit_camera_unavailable_title)) },
+            text = { Text(stringResource(R.string.edit_camera_unavailable_body)) },
+            confirmButton = {
+                TextButton(onClick = { showCameraUnavailableDialog = false }) {
+                    Text(stringResource(R.string.common_done))
+                }
+            },
+        )
+    }
 }
 
-private fun Context.captureFile(fileName: String): File =
-    File(File(cacheDir, "camera").apply { mkdirs() }, fileName)
-
 /** Must match the `file_paths.xml` cache-path and the manifest authority. */
-private fun Context.captureUri(fileName: String): Uri =
-    FileProvider.getUriForFile(this, "$packageName.fileprovider", captureFile(fileName))
+private fun Context.captureUri(file: File): Uri =
+    FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+
+private const val CAMERA_DIRECTORY = "camera"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
