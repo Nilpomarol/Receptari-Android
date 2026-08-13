@@ -14,7 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
+import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -185,18 +185,13 @@ fun FolderScreen(
     }
 
     if (confirmDelete) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.folders_delete_confirm_title),
+            subtitle = stringResource(
+                R.string.folders_delete_confirm_body,
+                state.folder?.name.orEmpty(),
+            ),
             onDismissRequest = { confirmDelete = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            title = { Text(stringResource(R.string.folders_delete_confirm_title)) },
-            text = {
-                Text(
-                    stringResource(
-                        R.string.folders_delete_confirm_body,
-                        state.folder?.name.orEmpty(),
-                    ),
-                )
-            },
             confirmButton = {
                 TextButton(
                     onClick = {

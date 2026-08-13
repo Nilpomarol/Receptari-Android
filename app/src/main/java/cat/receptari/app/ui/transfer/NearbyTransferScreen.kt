@@ -27,8 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.WifiTethering
-import androidx.compose.material3.AlertDialog
+import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -141,6 +142,7 @@ fun NearbyTransferRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NearbyTransferScreen(
     mode: NearbyTransferMode,
@@ -211,11 +213,14 @@ fun NearbyTransferScreen(
     }
 
     if (state.phase == NearbyTransferPhase.CONFIRMING) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.nearby_confirm_title, state.peerName.orEmpty()),
             onDismissRequest = onRejectConnection,
-            title = { Text(stringResource(R.string.nearby_confirm_title, state.peerName.orEmpty())) },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            body = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(stringResource(R.string.nearby_confirm_body))
                     Text(
                         text = state.authenticationDigits.orEmpty(), // i18n-exempt: security code

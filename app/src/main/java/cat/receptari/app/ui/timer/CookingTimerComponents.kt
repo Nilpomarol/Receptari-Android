@@ -27,7 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -185,28 +185,12 @@ fun TimerSetupSheet(
         mutableIntStateOf((initialMinutes ?: DEFAULT_TIMER_MINUTES).coerceIn(1, MAX_TIMER_MINUTES))
     }
 
-    ModalBottomSheet(
+    PaperModalBottomSheet(
         modifier = modifier,
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .paperGrain(intensity = 1f)
-                    .padding(top = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Hairline(modifier = Modifier.width(54.dp))
-            }
-        },
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .paperGrain(intensity = 1f),
+            modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.TopCenter,
         ) {
             Column(

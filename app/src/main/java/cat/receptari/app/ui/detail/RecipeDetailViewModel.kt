@@ -70,7 +70,11 @@ sealed interface RecipeDetailEvent {
     data class SetFolder(val folder: Folder?) : RecipeDetailEvent
     data class AddTag(val tagName: String) : RecipeDetailEvent
     data class RemoveTag(val tagName: String) : RecipeDetailEvent
-    data class FolderCreateRequested(val name: String) : RecipeDetailEvent
+    data class FolderCreateRequested(
+        val name: String,
+        val color: FolderColor = FolderColor.OLIVE,
+        val icon: FolderIcon = FolderIcon.FOLDER,
+    ) : RecipeDetailEvent
     data class StartTimer(
         val stepId: String?,
         val label: String,
@@ -220,7 +224,7 @@ class RecipeDetailViewModel @Inject constructor(
                 val name = event.name.trim()
                 if (name.isEmpty()) return@launch
                 val recipe = uiState.value.recipe ?: return@launch
-                val folder = folderRepository.create(name, FolderColor.OLIVE, FolderIcon.FOLDER)
+                val folder = folderRepository.create(name, event.color, event.icon)
                 recipeRepository.save(recipe.copy(folder = folder))
             }
 

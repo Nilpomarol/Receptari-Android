@@ -19,13 +19,18 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,6 +41,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -43,11 +49,31 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.FolderOff
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.Surface
+import cat.receptari.app.core.designsystem.pageFrame
+import cat.receptari.app.core.designsystem.paperGrain
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
+import cat.receptari.app.ui.folders.FolderEditorSheet
+import cat.receptari.app.ui.folders.toColor
+import cat.receptari.app.ui.folders.toImageVector
+import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
+import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,13 +97,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -124,6 +154,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Instant
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailRoute(
     onNavigateBack: () -> Unit,
@@ -270,14 +301,13 @@ fun RecipeDetailRoute(
     }
 
     if (showExactAlarmPermissionDialog) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.timer_exact_alarm_title),
+            subtitle = stringResource(R.string.timer_exact_alarm_body),
             onDismissRequest = {
                 showExactAlarmPermissionDialog = false
                 viewModel.onEvent(RecipeDetailEvent.CancelPendingTimerAction)
             },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            title = { Text(stringResource(R.string.timer_exact_alarm_title)) },
-            text = { Text(stringResource(R.string.timer_exact_alarm_body)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -307,6 +337,7 @@ fun RecipeDetailRoute(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailScreen(
     state: RecipeDetailUiState,
@@ -452,11 +483,10 @@ fun RecipeDetailScreen(
     }
 
     if (confirmDelete) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.detail_delete_confirm_title),
+            subtitle = stringResource(R.string.detail_delete_confirm_body),
             onDismissRequest = { confirmDelete = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            title = { Text(stringResource(R.string.detail_delete_confirm_title)) },
-            text = { Text(stringResource(R.string.detail_delete_confirm_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -510,6 +540,7 @@ fun RecipeDetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TranslationPickerDialog(
     currentLanguage: String?,
@@ -518,11 +549,16 @@ private fun TranslationPickerDialog(
     onDismiss: () -> Unit,
     onSelect: (RecipeLanguage) -> Unit,
 ) {
-    AlertDialog(
+    PaperModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        title = { Text(stringResource(R.string.translation_choose_language)) },
-        text = {
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OrnamentHeading(title = stringResource(R.string.translation_choose_language))
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 RecipeLanguage.entries.forEach { language ->
                     val isCurrent = language.matches(currentLanguage)
@@ -561,12 +597,8 @@ private fun TranslationPickerDialog(
                     }
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -592,6 +624,9 @@ private fun RecipeContent(
 ) {
     val recipe = state.recipe ?: return
 
+    var showFolderSheet by remember { mutableStateOf(false) }
+    var showTagSheet by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -615,77 +650,20 @@ private fun RecipeContent(
             }
         }
 
-        item(key = "title") { RecipeHeader(recipe = recipe, onEvent = onEvent) }
-
-        item(key = "tags-and-folder") {
-            var showFolderSheet by remember { mutableStateOf(false) }
-            var showTagSheet by remember { mutableStateOf(false) }
-
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PagePadding, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                FilterPill(
-                    label = recipe.folder?.name ?: stringResource(R.string.detail_add_folder),
-                    selected = recipe.folder != null,
-                    onClick = { showFolderSheet = true },
-                    icon = Icons.Outlined.Folder,
-                )
-
-                recipe.tags.forEach { tag ->
-                    FilterPill(
-                        label = tag.name,
-                        selected = false,
-                        onClick = { showTagSheet = true },
-                    )
-                }
-
-                FilterPill(
-                    label = stringResource(R.string.detail_add_tag),
-                    selected = false,
-                    onClick = { showTagSheet = true },
-                    icon = Icons.Default.Add,
-                )
-            }
-
-            if (showFolderSheet) {
-                QuickFolderSheet(
-                    currentFolder = recipe.folder,
-                    availableFolders = state.availableFolders,
-                    onDismiss = { showFolderSheet = false },
-                    onSelectFolder = { folder ->
-                        onEvent(RecipeDetailEvent.SetFolder(folder))
-                        showFolderSheet = false
-                    },
-                    onCreateFolder = { name ->
-                        onEvent(RecipeDetailEvent.FolderCreateRequested(name))
-                        showFolderSheet = false
-                    },
-                )
-            }
-
-            if (showTagSheet) {
-                QuickTagSheet(
-                    currentTags = recipe.tags.map { it.name },
-                    availableTags = state.availableTags.map { it.name },
-                    onDismiss = { showTagSheet = false },
-                    onAddTag = { tag -> onEvent(RecipeDetailEvent.AddTag(tag)) },
-                    onRemoveTag = { tag -> onEvent(RecipeDetailEvent.RemoveTag(tag)) },
-                )
-            }
+        item(key = "title") {
+            RecipeHeader(
+                recipe = recipe,
+                onEvent = onEvent,
+                onOpenFolderSheet = { showFolderSheet = true },
+                onOpenTagSheet = { showTagSheet = true },
+            )
         }
 
-        if (recipe.isScalable) {
-            item(key = "servings") { ServingsSelector(state = state, onEvent = onEvent) }
-        }
-
-        item(key = "ingredients-heading") {
-            OrnamentHeading(
-                title = stringResource(R.string.detail_ingredients),
-                modifier = Modifier.padding(horizontal = PagePadding, vertical = 12.dp),
+        item(key = "ingredients-header") {
+            IngredientsHeader(
+                isScalable = recipe.isScalable,
+                state = state,
+                onEvent = onEvent,
             )
         }
 
@@ -846,13 +824,42 @@ private fun RecipeContent(
             }
         }
     }
+
+    if (showFolderSheet) {
+        QuickFolderSheet(
+            currentFolder = recipe.folder,
+            availableFolders = state.availableFolders,
+            onDismiss = { showFolderSheet = false },
+            onSelectFolder = { folder ->
+                onEvent(RecipeDetailEvent.SetFolder(folder))
+                showFolderSheet = false
+            },
+            onCreateFolder = { name, color, icon ->
+                onEvent(RecipeDetailEvent.FolderCreateRequested(name, color, icon))
+                showFolderSheet = false
+            },
+        )
+    }
+
+    if (showTagSheet) {
+        QuickTagSheet(
+            currentTags = recipe.tags.map { it.name },
+            availableTags = state.availableTags.map { it.name },
+            onDismiss = { showTagSheet = false },
+            onAddTag = { tag -> onEvent(RecipeDetailEvent.AddTag(tag)) },
+            onRemoveTag = { tag -> onEvent(RecipeDetailEvent.RemoveTag(tag)) },
+        )
+    }
 }
 
-/** Title, times, rating and history — the recipe's own title page. */
+/** Title, times, rating, folder, tags and history — the recipe's own title page. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RecipeHeader(
     recipe: Recipe,
     onEvent: (RecipeDetailEvent) -> Unit,
+    onOpenFolderSheet: () -> Unit,
+    onOpenTagSheet: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -918,10 +925,100 @@ private fun RecipeHeader(
             } else {
                 pluralStringResource(R.plurals.detail_cook_count, recipe.cookCount, recipe.cookCount)
             },
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = 4.dp),
         )
 
-        OrnamentalDivider(modifier = Modifier.padding(top = 12.dp))
+        // Folder & Tags metadata chips
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            // Folder chip
+            Surface(
+                onClick = onOpenFolderSheet,
+                shape = CircleShape,
+                color = if (recipe.folder != null) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerLow
+                },
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (recipe.folder != null) MaterialTheme.colorScheme.primary else ReceptariTheme.palette.rule,
+                ),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        imageVector = recipe.folder?.icon?.toImageVector() ?: Icons.Outlined.Folder,
+                        contentDescription = null,
+                        tint = recipe.folder?.color?.toColor() ?: MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        text = recipe.folder?.name ?: stringResource(R.string.detail_add_folder),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+
+            // Recipe tags
+            recipe.tags.forEach { tag ->
+                Surface(
+                    onClick = onOpenTagSheet,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    border = BorderStroke(1.dp, ReceptariTheme.palette.rule),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "#${tag.name}", // i18n-exempt: tag prefix and name
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            // Add tag pill button
+            Surface(
+                onClick = onOpenTagSheet,
+                shape = CircleShape,
+                color = Color.Transparent,
+                border = BorderStroke(1.dp, ReceptariTheme.palette.rule.copy(alpha = 0.6f)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = stringResource(R.string.detail_add_tag),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+
+        OrnamentalDivider(modifier = Modifier.padding(top = 10.dp))
     }
 }
 
@@ -989,66 +1086,111 @@ private fun StepRow(
 }
 
 @Composable
-private fun ServingsSelector(
+private fun IngredientsHeader(
+    isScalable: Boolean,
     state: RecipeDetailUiState,
     onEvent: (RecipeDetailEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    PaperCard(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = PagePadding, vertical = 6.dp),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+            .padding(start = PagePadding, top = 6.dp, end = PagePadding, bottom = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.detail_servings),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
+        Text(
+            text = stringResource(R.string.detail_ingredients),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
 
-                OutlinedIconButton(
-                    onClick = { onEvent(RecipeDetailEvent.DecreaseServings) },
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Remove,
-                        contentDescription = stringResource(R.string.detail_servings_decrease),
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                Text(
-                    text = state.servings?.toString().orEmpty(), // i18n-exempt: a numeral
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 18.dp),
-                )
-                OutlinedIconButton(
-                    onClick = { onEvent(RecipeDetailEvent.IncreaseServings) },
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.detail_servings_increase),
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-            }
-
-            if (state.isScaled) {
-                Hairline(modifier = Modifier.padding(vertical = 8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Aside(
-                        text = stringResource(R.string.detail_scaled_notice, state.servings ?: 0),
-                        color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = { onEvent(RecipeDetailEvent.ResetServings) }) {
-                        Text(
-                            text = stringResource(R.string.detail_servings_reset),
-                            style = MaterialTheme.typography.labelMedium,
+        if (isScalable) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (state.isScaled) {
+                    IconButton(
+                        onClick = { onEvent(RecipeDetailEvent.ResetServings) },
+                        modifier = Modifier.size(30.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.RotateLeft,
+                            contentDescription = stringResource(R.string.detail_servings_reset),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(16.dp),
                         )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (state.isScaled) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerLow
+                    },
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = if (state.isScaled) MaterialTheme.colorScheme.primary else ReceptariTheme.palette.rule,
+                    ),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .paperGrain()
+                            .height(32.dp)
+                            .padding(horizontal = 2.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clickable(onClick = { onEvent(RecipeDetailEvent.DecreaseServings) }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Remove,
+                                contentDescription = stringResource(R.string.detail_servings_decrease),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp),
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .defaultMinSize(minWidth = 32.dp)
+                                .padding(horizontal = 4.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = "${state.servings ?: 0}", // i18n-exempt: numeral
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontStyle = FontStyle.Italic,
+                                ),
+                                color = if (state.isScaled) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clickable(onClick = { onEvent(RecipeDetailEvent.IncreaseServings) }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = stringResource(R.string.detail_servings_increase),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -1139,106 +1281,211 @@ private fun RecipeDetailScreenPreview() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuickFolderSheet(
     currentFolder: Folder?,
     availableFolders: List<Folder>,
     onDismiss: () -> Unit,
     onSelectFolder: (Folder?) -> Unit,
-    onCreateFolder: (String) -> Unit,
+    onCreateFolder: (String, FolderColor, FolderIcon) -> Unit,
 ) {
-    var creating by remember { mutableStateOf(false) }
-    var draft by remember { mutableStateOf("") }
+    var creatingFolder by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        title = { OrnamentHeading(title = stringResource(R.string.detail_quick_folder_title)) },
-        text = {
+    if (creatingFolder) {
+        var draftName by remember { mutableStateOf("") }
+        var draftColor by remember(availableFolders.size) {
+            mutableStateOf(FolderColor.entries[availableFolders.size % FolderColor.entries.size])
+        }
+        var draftIcon by remember { mutableStateOf(FolderIcon.FOLDER) }
+
+        FolderEditorSheet(
+            title = stringResource(R.string.edit_folder_add),
+            name = draftName,
+            onNameChange = { draftName = it },
+            color = draftColor,
+            onColorChange = { draftColor = it },
+            icon = draftIcon,
+            onIconChange = { draftIcon = it },
+            confirmLabel = stringResource(R.string.folders_add),
+            onConfirm = {
+                if (draftName.isNotBlank()) {
+                    onCreateFolder(draftName, draftColor, draftIcon)
+                    creatingFolder = false
+                }
+            },
+            onDismiss = { creatingFolder = false },
+        )
+    } else {
+        PaperModalBottomSheet(
+            onDismissRequest = onDismiss,
+        ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
             ) {
-                TextButton(
-                    onClick = { onSelectFolder(null) },
-                    modifier = Modifier.fillMaxWidth(),
+                OrnamentHeading(title = stringResource(R.string.detail_quick_folder_title))
+                Button(
+                    onClick = { creatingFolder = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 14.dp),
                 ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
                     Text(
-                        text = stringResource(R.string.edit_folder_none),
-                        color = if (currentFolder == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        text = stringResource(R.string.edit_folder_add),
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
 
-                availableFolders.forEach { folder ->
-                    val isCurrent = folder.id == currentFolder?.id
-                    TextButton(
-                        onClick = { onSelectFolder(folder) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Folder,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                            Text(
-                                text = folder.name,
-                                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                }
-
-                if (creating) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OutlinedTextField(
-                            colors = paperFieldColors(),
-                            value = draft,
-                            onValueChange = { draft = it },
-                            placeholder = { Text(stringResource(R.string.edit_folder_add_hint)) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 140.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    contentPadding = PaddingValues(bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    item(key = "no-folder") {
+                        NoFolderTile(
+                            isSelected = currentFolder == null,
                             onClick = {
-                                if (draft.isNotBlank()) onCreateFolder(draft)
+                                onSelectFolder(null)
+                                onDismiss()
                             },
-                        ) {
-                            Text(stringResource(R.string.folders_add))
-                        }
+                        )
                     }
-                } else {
-                    OutlinedButton(
-                        onClick = { creating = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Text(
-                            text = stringResource(R.string.edit_folder_add),
-                            modifier = Modifier.padding(start = 8.dp),
+                    items(availableFolders, key = { it.id }) { folder ->
+                        FolderSelectorTile(
+                            folder = folder,
+                            isSelected = folder.id == currentFolder?.id,
+                            onClick = {
+                                onSelectFolder(folder)
+                                onDismiss()
+                            },
                         )
                     }
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_close))
+        }
+    }
+}
+
+@Composable
+private fun FolderSelectorTile(
+    folder: Folder,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = ReceptariTheme.palette
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 96.dp)
+            .pageFrame(
+                shape = MaterialTheme.shapes.large,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else palette.rule,
+            ),
+        shape = MaterialTheme.shapes.large,
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Box(
+            modifier = Modifier
+                .paperGrain()
+                .clickable(onClick = onClick)
+                .padding(14.dp),
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = folder.icon.toImageVector(),
+                        contentDescription = null,
+                        tint = folder.color.toColor(),
+                    )
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+                Text(
+                    text = folder.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
-        },
-    )
+        }
+    }
+}
+
+@Composable
+private fun NoFolderTile(
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = ReceptariTheme.palette
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 96.dp)
+            .pageFrame(
+                shape = MaterialTheme.shapes.large,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else palette.rule,
+            ),
+        shape = MaterialTheme.shapes.large,
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Box(
+            modifier = Modifier
+                .paperGrain()
+                .clickable(onClick = onClick)
+                .padding(14.dp),
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.FolderOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+                Text(
+                    text = stringResource(R.string.edit_folder_none),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -1251,98 +1498,201 @@ private fun QuickTagSheet(
     onRemoveTag: (String) -> Unit,
 ) {
     var draft by remember { mutableStateOf("") }
-    val candidateTags = remember(availableTags, currentTags) {
-        (availableTags - currentTags.toSet()).distinct()
+    val candidateTags = remember(availableTags, currentTags, draft) {
+        val unassigned = (availableTags - currentTags.toSet()).distinct()
+        if (draft.isBlank()) {
+            unassigned
+        } else {
+            unassigned.filter { it.contains(draft.trim(), ignoreCase = true) }
+        }
     }
 
-    AlertDialog(
+    PaperModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        title = { OrnamentHeading(title = stringResource(R.string.detail_quick_tags_title)) },
-        text = {
-            Column(
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            OrnamentHeading(title = stringResource(R.string.detail_quick_tags_title))
+
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        colors = paperFieldColors(),
-                        value = draft,
-                        onValueChange = { draft = it },
-                        placeholder = { Text(stringResource(R.string.edit_tag_add_hint)) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(
-                        onClick = {
+                OutlinedTextField(
+                    colors = paperFieldColors(),
+                    value = draft,
+                    onValueChange = { draft = it },
+                    placeholder = { Text(stringResource(R.string.edit_tag_add_hint)) },
+                    singleLine = true,
+                    shape = CircleShape,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Label,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    },
+                    trailingIcon = if (draft.isNotBlank()) {
+                        {
+                            IconButton(onClick = { draft = "" }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    } else null,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
                             if (draft.isNotBlank()) {
-                                onAddTag(draft)
+                                onAddTag(draft.trim())
                                 draft = ""
                             }
                         },
-                    ) {
-                        Text(stringResource(R.string.edit_tag_add))
-                    }
-                }
+                    ),
+                    modifier = Modifier.weight(1f),
+                )
 
-                if (currentTags.isNotEmpty()) {
+                Button(
+                    enabled = draft.isNotBlank(),
+                    onClick = {
+                        if (draft.isNotBlank()) {
+                            onAddTag(draft.trim())
+                            draft = ""
+                        }
+                    },
+                    shape = CircleShape,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        text = stringResource(R.string.edit_tag_add),
+                        modifier = Modifier.padding(start = 4.dp),
+                    )
+                }
+            }
+
+            if (currentTags.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
                         text = stringResource(R.string.edit_field_tags),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
                     )
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         currentTags.forEach { tag ->
-                            FilterChip(
-                                selected = true,
-                                onClick = { onRemoveTag(tag) },
-                                label = { Text(tag) },
-                                trailingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.edit_tag_remove, tag),
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                },
+                            ActiveTagPill(
+                                tag = tag,
+                                onRemove = { onRemoveTag(tag) },
                             )
                         }
                     }
                 }
+            }
 
-                if (candidateTags.isNotEmpty()) {
+            if (candidateTags.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
                         text = stringResource(R.string.filter_tags),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         candidateTags.forEach { tag ->
-                            FilterChip(
-                                selected = false,
-                                onClick = { onAddTag(tag) },
-                                label = { Text(tag) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                },
+                            CandidateTagPill(
+                                tag = tag,
+                                onSelect = { onAddTag(tag) },
                             )
                         }
                     }
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_close))
-            }
-        },
-    )
+        }
+    }
+}
+
+@Composable
+private fun ActiveTagPill(
+    tag: String,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.clickable(onClick = onRemove),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = tag,
+                style = MaterialTheme.typography.labelMedium,
+            )
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.edit_tag_remove, tag),
+                modifier = Modifier.size(14.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CandidateTagPill(
+    tag: String,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = ReceptariTheme.palette
+    Surface(
+        modifier = modifier.clickable(onClick = onSelect),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, palette.rule),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(
+                text = tag,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+    }
 }
 

@@ -42,7 +42,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -146,30 +146,13 @@ fun FolderEditorSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ModalBottomSheet(
+    PaperModalBottomSheet(
         modifier = modifier,
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .paperGrain()
-                    .padding(top = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Hairline(modifier = Modifier.width(54.dp))
-            }
-        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .paperGrain()
-                .navigationBarsPadding()
-                .heightIn(max = 720.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
         ) {
