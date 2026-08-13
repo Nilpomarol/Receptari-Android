@@ -617,30 +617,6 @@ private fun RecipeContent(
 
         item(key = "title") { RecipeHeader(recipe = recipe, onEvent = onEvent) }
 
-        item(key = "share-recipe") {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PagePadding, vertical = 6.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                OutlinedButton(
-                    onClick = { onEvent(RecipeDetailEvent.Share) },
-                    enabled = !state.isSharing,
-                ) {
-                    if (state.isSharing) {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.Share, contentDescription = null)
-                    }
-                    Text(
-                        text = stringResource(R.string.detail_send_this_recipe),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-            }
-        }
-
         item(key = "tags-and-folder") {
             var showFolderSheet by remember { mutableStateOf(false) }
             var showTagSheet by remember { mutableStateOf(false) }
