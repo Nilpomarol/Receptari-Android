@@ -15,6 +15,14 @@
     <string name="library_no_results_body">Try different words, or clear the filters.</string>
     <string name="library_sort">Sort by</string>
     <string name="library_filters_clear">Clear filters</string>
+    <string name="library_send_recipes">Send recipes</string>
+    <string name="library_select_all_visible">Select all visible recipes</string>
+    <string name="library_send_selected">Send selected recipes</string>
+    <string name="library_selection_help">Tap the recipes you want to send. Use the top-bar icon to select every recipe currently shown.</string>
+    <plurals name="library_selected_count">
+        <item quantity="one">%1$d recipe selected</item>
+        <item quantity="other">%1$d recipes selected</item>
+    </plurals>
     <plurals name="library_recipe_count">
         <item quantity="one">%1$d recipe</item>
         <item quantity="other">%1$d recipes</item>
@@ -212,6 +220,8 @@
     <string name="import_from_website">From a website</string>
     <string name="import_from_image">From an image</string>
     <string name="import_from_text">From text</string>
+    <string name="import_from_shared_copy">From a shared copy</string>
+    <string name="import_from_shared_copy_explanation">Choose the .receptari-share file you received. All valid recipes and translations will be added automatically.</string>
     <string name="import_manual">Create manually</string>
     <string name="import_text_title">Paste the text</string>
     <string name="import_text_label">Recipe text</string>
@@ -219,7 +229,7 @@
     <string name="import_action_extract">Extract the recipe</string>
     <string name="import_extracting">Extracting…</string>
     <string name="import_nothing_found">No recipe was found in that text.</string>
-    <string name="import_review_notice">Always review it before saving.</string>
+    <string name="import_review_notice">Website, image, and text imports are reviewed before saving. Validated Receptari copies import automatically.</string>
     <string name="import_website_title">From a website</string>
     <string name="import_website_label">Page address</string>
     <string name="import_website_explanation">Paste the recipe\'s address. If the page already publishes the recipe in a structured format it is read directly; otherwise Claude extracts it.</string>
@@ -301,4 +311,66 @@
         <item quantity="other">%1$d servings</item>
     </plurals>
 
+    <string name="common_close">Close</string>
+    <string name="transfer_method_title">How do you want to send them?</string>
+    <string name="transfer_method_explanation">Send them directly to a nearby Receptari, or create a copy to share with another app.</string>
+    <string name="transfer_send_nearby">To a nearby Receptari</string>
+    <string name="transfer_other_apps">With another app</string>
+    <string name="import_receive_nearby">Receive from a nearby Receptari</string>
+    <string name="import_receive_nearby_explanation">Keep this screen open while the other person searches for your device.</string>
+    <string name="nearby_send_title">Send nearby</string>
+    <string name="nearby_receive_title">Receive nearby</string>
+    <string name="nearby_permission_title">Permission needed</string>
+    <string name="nearby_permission_body">Receptari needs permission to find nearby devices. It does not share your location.</string>
+    <string name="nearby_error_title">The transfer didn’t finish</string>
+    <string name="nearby_error_start">The nearby connection could not be started.</string>
+    <string name="nearby_error_connection">The devices could not connect. Move them closer and try again.</string>
+    <string name="nearby_error_transfer">The copy could not be sent completely.</string>
+    <string name="nearby_error_import">The copy arrived, but it could not be imported.</string>
+    <string name="nearby_error_disconnected">The other device disconnected before finishing.</string>
+    <string name="nearby_sent_title">Copy sent</string>
+    <string name="nearby_received_title">Recipes received</string>
+    <string name="nearby_choose_device">Choose the other device</string>
+    <string name="nearby_sender_help">On the other phone, open Receptari and go to Add a recipe → Receive from a nearby Receptari.</string>
+    <string name="nearby_searching">Looking for nearby Receptaris…</string>
+    <string name="nearby_confirm_title">Connect to %1$s?</string>
+    <string name="nearby_confirm_body">Check that this code is the same on both phones.</string>
+    <string name="nearby_code_matches">The codes match</string>
+    <string name="nearby_starting">Preparing the connection…</string>
+    <string name="nearby_receiver_waiting">Waiting for the other Receptari…</string>
+    <string name="nearby_connecting">Connecting the devices…</string>
+    <string name="nearby_waiting_for_import">Waiting for the other phone to finish importing…</string>
+    <string name="nearby_waiting_for_recipes">Waiting for recipes…</string>
+    <string name="nearby_transferring">Sending the copy…</string>
+    <string name="nearby_importing">Saving recipes and translations…</string>
+    <string name="detail_share">Send a copy</string>
+    <string name="detail_send_this_recipe">Send this recipe</string>
+    <string name="transfer_share_chooser">Send with…</string>
+    <string name="transfer_receive_title">Receive Receptari recipes</string>
+    <string name="transfer_importing">Importing recipes…</string>
+    <string name="transfer_import_complete">Recipes imported</string>
+    <string name="transfer_open_library">Open library</string>
+    <string name="transfer_import_failed_title">Couldn’t import recipes</string>
+    <string name="transfer_empty">There are no recipes to send.</string>
+    <string name="transfer_invalid">This file is not a valid Receptari package.</string>
+    <string name="transfer_newer_version">This package was created by a newer Receptari version.</string>
+    <string name="transfer_storage_error">The recipe package could not be read or saved.</string>
+    <string name="transfer_preparing">Preparing recipes…</string>
+    <string name="transfer_share_failed">The recipe package could not be prepared.</string>
+    <string name="settings_sharing_title">Share recipes</string>
+    <string name="settings_sharing_explanation">Send your whole library to another Receptari user. Recipes, images, and translations are included; notes, favorites, ratings, folders, and cooking history stay private.</string>
+    <string name="settings_sharing_flow">To send a subset, tap the send icon in the library and select the recipes. To receive directly, go to Add a recipe → Receive from a nearby Receptari. You can also open a shared copy with Receptari. After validation, it imports automatically.</string>
+    <string name="settings_share_library">Send entire library</string>
+    <plurals name="transfer_recipes_imported">
+        <item quantity="one">Imported %1$d recipe.</item>
+        <item quantity="other">Imported %1$d recipes.</item>
+    </plurals>
+    <plurals name="transfer_translations_imported">
+        <item quantity="one">Preserved %1$d translation.</item>
+        <item quantity="other">Preserved %1$d translations.</item>
+    </plurals>
+    <plurals name="transfer_duplicates_skipped">
+        <item quantity="one">Skipped %1$d duplicate.</item>
+        <item quantity="other">Skipped %1$d duplicates.</item>
+    </plurals>
 </resources>

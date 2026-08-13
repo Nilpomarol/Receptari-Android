@@ -66,4 +66,25 @@ internal fun RecipeTranslationEntity.toDomain(json: Json): RecipeTranslationVari
         )
     }.getOrNull()
 
+internal fun RecipeTranslationVariant.toEntity(
+    json: Json,
+    updatedAt: Long,
+): RecipeTranslationEntity {
+    val payload = RecipeTranslationPayloadDto(
+        sourceLanguage = sourceLanguage,
+        sourceFingerprint = sourceFingerprint,
+        title = title,
+        ingredientSections = ingredientSections.map { CachedFieldDto(it.id, it.text) },
+        ingredients = ingredients.map { CachedFieldDto(it.id, it.text) },
+        instructionSections = instructionSections.map { CachedFieldDto(it.id, it.text) },
+        steps = steps.map { CachedFieldDto(it.id, it.text) },
+    )
+    return RecipeTranslationEntity(
+        recipeId = recipeId,
+        language = language,
+        payloadJson = json.encodeToString(payload),
+        updatedAt = updatedAt,
+    )
+}
+
 private fun CachedFieldDto.toDomain(): CachedTranslationField = CachedTranslationField(id, text)

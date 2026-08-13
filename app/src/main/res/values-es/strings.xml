@@ -15,6 +15,14 @@
     <string name="library_no_results_body">Prueba con otras palabras o quita los filtros.</string>
     <string name="library_sort">Ordenar por</string>
     <string name="library_filters_clear">Quitar los filtros</string>
+    <string name="library_send_recipes">Enviar recetas</string>
+    <string name="library_select_all_visible">Seleccionar todas las recetas visibles</string>
+    <string name="library_send_selected">Enviar las recetas seleccionadas</string>
+    <string name="library_selection_help">Toca las recetas que quieras enviar. Puedes seleccionar todas las que se muestran con el icono de la barra superior.</string>
+    <plurals name="library_selected_count">
+        <item quantity="one">%1$d receta seleccionada</item>
+        <item quantity="other">%1$d recetas seleccionadas</item>
+    </plurals>
     <plurals name="library_recipe_count">
         <item quantity="one">%1$d receta</item>
         <item quantity="many">%1$d recetas</item>
@@ -216,6 +224,8 @@
     <string name="import_from_website">Desde un sitio web</string>
     <string name="import_from_image">Desde una imagen</string>
     <string name="import_from_text">Desde texto</string>
+    <string name="import_from_shared_copy">Desde una copia compartida</string>
+    <string name="import_from_shared_copy_explanation">Elige el archivo .receptari-share que has recibido. Todas las recetas y traducciones válidas se añadirán automáticamente.</string>
     <string name="import_manual">Crearla manualmente</string>
     <string name="import_text_title">Pegar el texto</string>
     <string name="import_text_label">Texto de la receta</string>
@@ -223,7 +233,7 @@
     <string name="import_action_extract">Extraer la receta</string>
     <string name="import_extracting">Extrayendo…</string>
     <string name="import_nothing_found">No se ha encontrado ninguna receta.</string>
-    <string name="import_review_notice">Revísalo siempre antes de guardar.</string>
+    <string name="import_review_notice">Las importaciones desde web, imagen y texto se revisan antes de guardar. Las copias validadas de Receptari se importan automáticamente.</string>
     <string name="import_website_title">Desde un sitio web</string>
     <string name="import_website_label">Dirección de la página</string>
     <string name="import_website_explanation">Pega la dirección de la receta. Si la página ya publica la receta en un formato estructurado, se leerá directamente; si no, la extraerá Claude.</string>
@@ -305,4 +315,66 @@
         <item quantity="other">%1$d raciones</item>
     </plurals>
 
+    <string name="common_close">Cerrar</string>
+    <string name="transfer_method_title">¿Cómo quieres enviarlas?</string>
+    <string name="transfer_method_explanation">Envíalas directamente a un Receptari cercano, o crea una copia para compartirla con otra aplicación.</string>
+    <string name="transfer_send_nearby">A un Receptari cercano</string>
+    <string name="transfer_other_apps">Con otra aplicación</string>
+    <string name="import_receive_nearby">Recibir de un Receptari cercano</string>
+    <string name="import_receive_nearby_explanation">Mantén esta pantalla abierta mientras la otra persona busca tu dispositivo.</string>
+    <string name="nearby_send_title">Enviar cerca</string>
+    <string name="nearby_receive_title">Recibir cerca</string>
+    <string name="nearby_permission_title">Permiso necesario</string>
+    <string name="nearby_permission_body">Receptari necesita permiso para encontrar dispositivos cercanos. No comparte tu ubicación.</string>
+    <string name="nearby_error_title">La transferencia no se ha completado</string>
+    <string name="nearby_error_start">No se ha podido iniciar la conexión con dispositivos cercanos.</string>
+    <string name="nearby_error_connection">Los dispositivos no han podido conectarse. Acércalos y vuelve a intentarlo.</string>
+    <string name="nearby_error_transfer">La copia no se ha podido enviar por completo.</string>
+    <string name="nearby_error_import">La copia ha llegado, pero no se ha podido importar.</string>
+    <string name="nearby_error_disconnected">El otro dispositivo se ha desconectado antes de terminar.</string>
+    <string name="nearby_sent_title">Copia enviada</string>
+    <string name="nearby_received_title">Recetas recibidas</string>
+    <string name="nearby_choose_device">Elige el otro dispositivo</string>
+    <string name="nearby_sender_help">En el otro teléfono, abre Receptari y ve a Añadir una receta → Recibir de un Receptari cercano.</string>
+    <string name="nearby_searching">Buscando Receptaris cercanos…</string>
+    <string name="nearby_confirm_title">¿Conectar con %1$s?</string>
+    <string name="nearby_confirm_body">Comprueba que este código aparece igual en los dos teléfonos.</string>
+    <string name="nearby_code_matches">Los códigos coinciden</string>
+    <string name="nearby_starting">Preparando la conexión…</string>
+    <string name="nearby_receiver_waiting">Esperando al otro Receptari…</string>
+    <string name="nearby_connecting">Conectando los dispositivos…</string>
+    <string name="nearby_waiting_for_import">Esperando a que el otro teléfono termine de importar…</string>
+    <string name="nearby_waiting_for_recipes">Esperando las recetas…</string>
+    <string name="nearby_transferring">Enviando la copia…</string>
+    <string name="nearby_importing">Guardando las recetas y las traducciones…</string>
+    <string name="detail_share">Enviar una copia</string>
+    <string name="detail_send_this_recipe">Enviar esta receta</string>
+    <string name="transfer_share_chooser">Enviar con…</string>
+    <string name="transfer_receive_title">Recibir recetas de Receptari</string>
+    <string name="transfer_importing">Importando las recetas…</string>
+    <string name="transfer_import_complete">Recetas importadas</string>
+    <string name="transfer_open_library">Abrir la biblioteca</string>
+    <string name="transfer_import_failed_title">No se han podido importar</string>
+    <string name="transfer_empty">No hay ninguna receta que enviar.</string>
+    <string name="transfer_invalid">El archivo no es un paquete de Receptari válido.</string>
+    <string name="transfer_newer_version">Este paquete se creó con una versión más reciente de Receptari.</string>
+    <string name="transfer_storage_error">No se ha podido leer o guardar el paquete de recetas.</string>
+    <string name="transfer_preparing">Preparando las recetas…</string>
+    <string name="transfer_share_failed">No se ha podido preparar el paquete de recetas.</string>
+    <string name="settings_sharing_title">Compartir recetas</string>
+    <string name="settings_sharing_explanation">Envía toda la biblioteca a otra persona que use Receptari. Se incluyen las recetas, imágenes y traducciones; las notas, favoritos, valoraciones, carpetas y el historial de cocina siguen siendo privados.</string>
+    <string name="settings_sharing_flow">Para enviar algunas, toca el icono de enviar en la biblioteca y selecciónalas. Para recibir directamente: ve a Añadir una receta → Recibir de un Receptari cercano. También puedes abrir una copia compartida con Receptari. Después de validarla, se importan automáticamente.</string>
+    <string name="settings_share_library">Enviar toda la biblioteca</string>
+    <plurals name="transfer_recipes_imported">
+        <item quantity="one">Se ha importado %1$d receta.</item>
+        <item quantity="other">Se han importado %1$d recetas.</item>
+    </plurals>
+    <plurals name="transfer_translations_imported">
+        <item quantity="one">Se ha conservado %1$d traducción.</item>
+        <item quantity="other">Se han conservado %1$d traducciones.</item>
+    </plurals>
+    <plurals name="transfer_duplicates_skipped">
+        <item quantity="one">Se ha omitido %1$d duplicado.</item>
+        <item quantity="other">Se han omitido %1$d duplicados.</item>
+    </plurals>
 </resources>

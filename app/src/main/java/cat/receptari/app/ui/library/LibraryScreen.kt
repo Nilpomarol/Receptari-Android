@@ -35,6 +35,9 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Group
@@ -42,6 +45,8 @@ import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,10 +55,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +74,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -97,7 +107,13 @@ import cat.receptari.app.domain.model.Tag
 import cat.receptari.app.ui.folders.FolderEditorSheet
 import cat.receptari.app.ui.folders.toColor
 import cat.receptari.app.ui.folders.toImageVector
+import cat.receptari.app.domain.transfer.RecipeTransferArchive
+import cat.receptari.app.ui.transfer.TransferMethodSheet
+import cat.receptari.app.ui.transfer.sendRecipeTransferNearby
+import cat.receptari.app.ui.transfer.shareRecipeTransfer
 import coil3.compose.AsyncImage
+import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun LibraryRoute(
@@ -109,6 +125,25 @@ fun LibraryRoute(
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val shareFailedMessage = stringResource(R.string.transfer_share_failed)
+    var transferArchive by remember { mutableStateOf<RecipeTransferArchive?>(null) }
+
+    BackHandler(enabled = state.isSelectionMode) {
+        viewModel.onEvent(LibraryEvent.ClearSelection)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.effects.collectLatest { effect ->
+            when (effect) {
+                is LibraryEffect.ShareReady -> {
+                    transferArchive = effect.archive
+                }
+                LibraryEffect.ShareFailed -> snackbarHostState.showSnackbar(shareFailedMessage)
+            }
+        }
+    }
 
     LibraryScreen(
         state = state,
@@ -117,8 +152,25 @@ fun LibraryRoute(
         onAddRecipe = onAddRecipe,
         onOpenSettings = onOpenSettings,
         onOpenFolder = onOpenFolder,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
+
+    transferArchive?.let { archive ->
+        TransferMethodSheet(
+            onSendNearby = {
+                transferArchive = null
+                context.sendRecipeTransferNearby(archive)
+                viewModel.onEvent(LibraryEvent.ClearSelection)
+            },
+            onShareWithOtherApps = {
+                transferArchive = null
+                context.shareRecipeTransfer(archive)
+                viewModel.onEvent(LibraryEvent.ClearSelection)
+            },
+            onDismiss = { transferArchive = null },
+        )
+    }
 }
 
 @Composable
@@ -130,22 +182,32 @@ fun LibraryScreen(
     onOpenSettings: () -> Unit,
     onOpenFolder: (String) -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     var foldersOpen by remember { mutableStateOf(false) }
     var creatingFolder by remember { mutableStateOf(false) }
 
     PaperScaffold(
         modifier = modifier,
-        topBar = { Masthead(onOpenSettings = onOpenSettings) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            if (state.isSelectionMode) {
+                SelectionTopBar(state = state, onEvent = onEvent)
+            } else {
+                Masthead(onOpenSettings = onOpenSettings)
+            }
+        },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddRecipe,
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.library_add_recipe)) },
-            )
+            if (!state.isSelectionMode) {
+                ExtendedFloatingActionButton(
+                    onClick = onAddRecipe,
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.library_add_recipe)) },
+                )
+            }
         },
     ) { innerPadding ->
         Column(
@@ -153,25 +215,48 @@ fun LibraryScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            SearchField(
-                query = state.searchQuery,
-                onQueryChange = { onEvent(LibraryEvent.SearchQueryChanged(it)) },
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
+            if (state.isSelectionMode) {
+                Aside(
+                    text = stringResource(R.string.library_selection_help),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                )
+            } else {
+                SearchField(
+                    query = state.searchQuery,
+                    onQueryChange = { onEvent(LibraryEvent.SearchQueryChanged(it)) },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
 
-            FilterPills(
-                state = state,
-                onEvent = onEvent,
-                modifier = Modifier.padding(top = 12.dp),
-            )
+                FilterPills(
+                    state = state,
+                    onEvent = onEvent,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
 
-            SortRow(
-                sort = state.sort,
-                onSelect = { onEvent(LibraryEvent.SortChanged(it)) },
-                folderCount = state.availableFolders.size,
-                onOpenFolders = { foldersOpen = true },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-            )
+                SortRow(
+                    sort = state.sort,
+                    onSelect = { onEvent(LibraryEvent.SortChanged(it)) },
+                    folderCount = state.availableFolders.size,
+                    onOpenFolders = { foldersOpen = true },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+                )
+
+                OutlinedButton(
+                    onClick = { onEvent(LibraryEvent.StartSelection) },
+                    enabled = state.recipes.isNotEmpty(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Text(
+                        text = stringResource(R.string.library_send_recipes),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
 
             when {
                 state.isLoading -> Box(Modifier.fillMaxSize())
@@ -198,7 +283,15 @@ fun LibraryScreen(
                     items(state.recipes, key = { it.id }) { recipe ->
                         RecipeCard(
                             recipe = recipe,
-                            onClick = { onOpenRecipe(recipe.id) },
+                            selectionMode = state.isSelectionMode,
+                            selected = recipe.id in state.selectedRecipeIds,
+                            onClick = {
+                                if (state.isSelectionMode) {
+                                    onEvent(LibraryEvent.ToggleSelection(recipe.id))
+                                } else {
+                                    onOpenRecipe(recipe.id)
+                                }
+                            },
                             onToggleFavorite = {
                                 onEvent(LibraryEvent.ToggleFavorite(recipe.id, recipe.isFavorite))
                             },
@@ -258,7 +351,10 @@ fun LibraryScreen(
  * it gets the room a title page would give it.
  */
 @Composable
-private fun Masthead(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
+private fun Masthead(
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -296,6 +392,55 @@ private fun Masthead(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) 
             )
         }
     }
+}
+
+@Composable
+private fun SelectionTopBar(
+    state: LibraryUiState,
+    onEvent: (LibraryEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    cat.receptari.app.core.designsystem.PaperTopBar(
+        modifier = modifier,
+        title = {
+            Text(
+                pluralStringResource(
+                    R.plurals.library_selected_count,
+                    state.selectedRecipeIds.size,
+                    state.selectedRecipeIds.size,
+                ),
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = { onEvent(LibraryEvent.ClearSelection) }) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.common_cancel),
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = { onEvent(LibraryEvent.SelectAllVisible) }) {
+                Icon(
+                    imageVector = Icons.Default.SelectAll,
+                    contentDescription = stringResource(R.string.library_select_all_visible),
+                )
+            }
+            IconButton(
+                onClick = { onEvent(LibraryEvent.ShareSelection) },
+                enabled = state.selectedRecipeIds.isNotEmpty() && !state.isSharingSelection,
+            ) {
+                if (state.isSharingSelection) {
+                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = stringResource(R.string.library_send_selected),
+                    )
+                }
+            }
+        },
+    )
 }
 
 /**
@@ -611,6 +756,8 @@ internal fun RecipeCard(
     recipe: RecipeSummary,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     PaperCard(
@@ -695,26 +842,33 @@ internal fun RecipeCard(
                 }
             }
 
-            IconButton(onClick = onToggleFavorite) {
-                Icon(
-                    imageVector = if (recipe.isFavorite) {
-                        Icons.Default.Favorite
-                    } else {
-                        Icons.Default.FavoriteBorder
-                    },
-                    contentDescription = stringResource(
-                        if (recipe.isFavorite) {
-                            R.string.detail_favorite_remove
-                        } else {
-                            R.string.detail_favorite_add
-                        },
-                    ),
-                    tint = if (recipe.isFavorite) {
-                        ReceptariTheme.palette.heart
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+            if (selectionMode) {
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = { onClick() },
                 )
+            } else {
+                IconButton(onClick = onToggleFavorite) {
+                    Icon(
+                        imageVector = if (recipe.isFavorite) {
+                            Icons.Default.Favorite
+                        } else {
+                            Icons.Default.FavoriteBorder
+                        },
+                        contentDescription = stringResource(
+                            if (recipe.isFavorite) {
+                                R.string.detail_favorite_remove
+                            } else {
+                                R.string.detail_favorite_add
+                            },
+                        ),
+                        tint = if (recipe.isFavorite) {
+                            ReceptariTheme.palette.heart
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
             }
         }
     }

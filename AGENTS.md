@@ -65,9 +65,11 @@ Break any of these and the feature is wrong, regardless of how clean the code is
 3. **Ingredients that cannot be structured must still be storable.** `"Salt to taste"`,
    `"a handful of parsley"`, `"1–2 onions"` are all valid ingredients. Parsing produces
    nullable fields, never an error and never a dropped row.
-4. **No automatic import saves without user review.** Every import path is
-   `Source → Extract → Structure → Preview/Edit → Save`. The preview is editable
-   (PRD §7).
+4. **Extracted imports never save without user review.** Website, image, and pasted-text
+   imports are `Source → Extract → Structure → Preview/Edit → Save`. A versioned transfer
+   package produced by another Receptari installation is the deliberate exception: it
+   contains already-approved structured recipes, so one recipient acceptance imports the
+   valid batch automatically (PRD §7.1). It must never be routed through AI extraction.
 5. **Imported recipes are ordinary recipes after saving.** No second-class "imported"
    mode, no read-only fields (PRD §13).
 6. **Cooked history is an event log, not a counter.** `times cooked` and `last cooked` are

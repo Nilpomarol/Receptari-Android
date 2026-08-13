@@ -33,6 +33,10 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id = :id")
     suspend fun getAggregate(id: String): RecipeAggregate?
 
+    @Transaction
+    @Query("SELECT * FROM recipes ORDER BY createdAt ASC")
+    suspend fun getAllAggregates(): List<RecipeAggregate>
+
     @Query(
         "SELECT * FROM recipe_translations " +
             "WHERE recipeId = :recipeId AND language = :language",

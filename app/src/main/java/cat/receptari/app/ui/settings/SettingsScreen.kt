@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -73,6 +74,10 @@ import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.domain.backup.BackupArchive
+import cat.receptari.app.domain.transfer.RecipeTransferArchive
+import cat.receptari.app.ui.transfer.TransferMethodSheet
+import cat.receptari.app.ui.transfer.sendRecipeTransferNearby
+import cat.receptari.app.ui.transfer.shareRecipeTransfer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -93,6 +98,7 @@ fun SettingsRoute(
     val scope = rememberCoroutineScope()
     var selected by remember { mutableStateOf(context.currentAppLanguage()) }
     var pendingArchive by remember { mutableStateOf<BackupArchive?>(null) }
+    var transferArchive by remember { mutableStateOf<RecipeTransferArchive?>(null) }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -152,6 +158,7 @@ fun SettingsRoute(
                     arrayOf("application/vnd.receptari.backup", "application/zip", "application/octet-stream"),
                 )
                 SettingsEffect.RestartAfterRestore -> context.restartForRestore()
+                is SettingsEffect.ShareRecipes -> transferArchive = effect.archive
             }
         }
     }
@@ -169,6 +176,20 @@ fun SettingsRoute(
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
+
+    transferArchive?.let { archive ->
+        TransferMethodSheet(
+            onSendNearby = {
+                transferArchive = null
+                context.sendRecipeTransferNearby(archive)
+            },
+            onShareWithOtherApps = {
+                transferArchive = null
+                context.shareRecipeTransfer(archive)
+            },
+            onDismiss = { transferArchive = null },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -224,6 +245,10 @@ fun SettingsScreen(
             OrnamentalDivider(Modifier.padding(vertical = 12.dp))
 
             ApiKeySection(state = uiState, onEvent = onEvent)
+
+            OrnamentalDivider(Modifier.padding(vertical = 12.dp))
+
+            SharingSection(state = uiState, onEvent = onEvent)
 
             OrnamentalDivider(Modifier.padding(vertical = 12.dp))
 
@@ -288,6 +313,54 @@ fun SettingsScreen(
                 ) { Text(stringResource(R.string.common_cancel)) }
             },
         )
+    }
+}
+
+@Composable
+private fun SharingSection(
+    state: SettingsUiState,
+    onEvent: (SettingsEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.padding(horizontal = 16.dp)) {
+        OrnamentHeading(
+            title = stringResource(R.string.settings_sharing_title),
+            modifier = Modifier.padding(bottom = 14.dp),
+        )
+        Text(
+            text = stringResource(R.string.settings_sharing_explanation),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Aside(
+            text = stringResource(R.string.settings_sharing_flow),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+        )
+        OutlinedButton(
+            onClick = { onEvent(SettingsEvent.ShareLibrary) },
+            enabled = !state.isTransferBusy,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp),
+        ) {
+            if (state.isTransferBusy) {
+                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(Icons.Default.Share, contentDescription = null)
+            }
+            Text(
+                text = stringResource(
+                    if (state.isTransferBusy) {
+                        R.string.transfer_preparing
+                    } else {
+                        R.string.settings_share_library
+                    },
+                ),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
     }
 }
 

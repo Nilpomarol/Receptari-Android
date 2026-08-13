@@ -189,6 +189,8 @@ class RecipeEditImageLifecycleTest {
 
         override suspend fun getRecipe(id: String): Recipe? = recipe
 
+        override suspend fun getAllRecipes(): List<Recipe> = listOfNotNull(recipe)
+
         override suspend fun save(recipe: Recipe) {
             saved += recipe
             this.recipe = recipe

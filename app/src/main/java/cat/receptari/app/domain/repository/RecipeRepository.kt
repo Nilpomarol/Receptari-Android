@@ -14,6 +14,9 @@ interface RecipeRepository {
 
     suspend fun getRecipe(id: String): Recipe?
 
+    /** Full aggregates used by explicit library transfer, never by the list screen. */
+    suspend fun getAllRecipes(): List<Recipe>
+
     /**
      * Writes the recipe and its whole object graph atomically, stamping `updatedAt`.
      * Tag identity is resolved here, so callers may pass freshly built [Recipe.tags]

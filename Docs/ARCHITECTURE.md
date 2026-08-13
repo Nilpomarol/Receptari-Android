@@ -136,7 +136,7 @@ deadline.
 
 ## 4. The import pipeline
 
-All four import sources share one pipeline, differing only in the extraction step:
+All extraction sources share one pipeline, differing only in the extraction step:
 
 ```
 Source ──► Extract ──► Structure ──► Preview / Edit ──► Save
@@ -173,6 +173,30 @@ The repository transaction that saves a translated display also upserts a compac
 overlay before calling the model; a fingerprint of canonical source text and stable field ids
 prevents stale translations from being applied. The active display remains denormalized in
 the normal recipe aggregate, keeping every existing read path language-agnostic.
+
+### 4.1 Structured transfer exception
+
+Receptari-to-Receptari transfer does not enter the extraction pipeline. Code under
+`data/transfer` writes and validates a versioned `.receptari-share` ZIP containing structured
+recipes, referenced images, and every valid cached translation overlay. Code under
+`ui/transfer` connects it to direct nearby transfer, Android's Sharesheet, and incoming packages.
+`data/nearby` owns the Google Nearby Connections session and passes the received package to the
+same validated importer; it does not parse or persist recipes itself.
+
+```
+Select one / subset / whole library → Encode package → Choose transport
+    ├─ Nearby: discover → both confirm code → send → import acknowledgement
+    └─ Other apps: Android Sharesheet → recipient opens package
+        → Validate → Remap UUIDs → Save batch → Summary
+```
+
+Opening the package is the recipient's single acceptance, after which every valid,
+non-duplicate recipe saves automatically. The importer recalculates translation source
+fingerprints after remapping field ids. Personal state (favorite, rating, notes, folder,
+cook events), API keys, and timers never enter the package. No transfer id or sync state is
+persisted; duplicate fingerprints are calculated transiently. Nearby uses
+`Strategy.P2P_POINT_TO_POINT`; the sender does not show completion until the recipient returns a
+small post-import acknowledgement.
 
 ---
 

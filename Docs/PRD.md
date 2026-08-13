@@ -13,6 +13,7 @@ Recipes can be:
 - Imported from an image, screenshot, scanned book page, or similar source.
 - Imported from unstructured text.
 - Translated into the preferred application language.
+- Received as a private structured copy from another Receptari installation.
 
 The application is not intended to be a public recipe platform, social network, or recipe discovery service.
 
@@ -296,13 +297,42 @@ Available options:
 3. From text.
 4. Create manually.
 
-All automatic imports must generate an editable preview before the recipe is saved.
+All extraction-based imports must generate an editable preview before the recipe is saved.
 
 Flow:
 
 `Source → Extract → Structure → Preview/Edit → Save`
 
 Automatic imports must never silently overwrite or save incorrect information without giving the user an opportunity to review it.
+
+## 7.1 Receptari-to-Receptari Transfer
+
+The user can send one recipe, any selected subset, or the whole library as a private,
+versioned Receptari package. The library supports selection mode and selecting every recipe
+currently visible after search or filtering.
+The package contains already-approved structured data rather than extraction output, so it
+is the deliberate exception to the per-recipe preview requirement:
+
+`Select recipes → Send nearby → Both confirm code → Validate package → Save valid recipes`
+
+The sender chooses between a direct nearby Receptari connection and Android's normal sharing
+options. For a direct transfer, the recipient opens **Add a recipe → Receive from a nearby
+Receptari** first. Both devices must show and confirm the same authentication code before any
+recipe data moves. A `.receptari-share` file remains available as a fallback.
+
+- One acceptance imports the complete valid batch automatically; receiving 50 recipes must
+  not require 50 review screens.
+- The package includes recipe content, source attribution, images, tags, every still-valid
+  cached translation overlay, and the active display language.
+- It excludes favorites, ratings, personal notes, folder membership, cooked history, API
+  keys, and active timers.
+- Imported recipes receive fresh UUIDs. Translation field references are remapped to the
+  new ids and their source fingerprints are recalculated.
+- Likely duplicates are skipped rather than overwriting an existing recipe.
+- The entire package is structurally and size validated before any recipe is saved.
+- A transfer is a copy, not synchronization. Later edits on either device are independent.
+- The sending device reports success only after the receiving device has validated and imported
+  the package.
 
 ---
 
@@ -496,7 +526,8 @@ The system must:
 - Preserve original text where useful.
 - Avoid deleting information it cannot understand.
 - Allow manual correction.
-- Show imported content before saving.
+- Show extracted content before saving. A validated structured package from another
+  Receptari installation follows §7.1 instead.
 - Avoid changing the original base quantities when scaling servings.
 
 ---
@@ -516,6 +547,9 @@ There is no requirement for:
 - Social feeds.
 
 If multiple family members use the application, access should remain restricted to explicitly authorized users.
+
+Private copy transfer does not create accounts, public links, or a shared cloud library.
+The recipient explicitly accepts each incoming package.
 
 ---
 
@@ -598,6 +632,7 @@ The minimum useful version should include:
 - Text import.
 - Import preview and correction.
 - Translation.
+- Private Receptari-to-Receptari recipe transfer.
 
 The MVP should prioritize reliability and simplicity over the number of supported import sources.
 
@@ -614,6 +649,10 @@ The primary application experience should be:
 ### Import
 
 `Add Recipe → Website / Image / Text / Manual → Preview → Edit if required → Save`
+
+### Send
+
+`Recipe / Settings → Send a copy → Recipient accepts → Validate → Save batch`
 
 ### Cook
 

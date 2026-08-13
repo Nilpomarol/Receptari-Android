@@ -241,6 +241,19 @@ class TranslateRecipeTest {
         override suspend fun get(recipeId: String, language: String): RecipeTranslationVariant? =
             variant?.takeIf { it.recipeId == recipeId && it.language == language }
 
+        override suspend fun getAll(
+            recipeId: String,
+            sourceFingerprint: String,
+        ): List<RecipeTranslationVariant> = listOfNotNull(
+            variant?.takeIf {
+                it.recipeId == recipeId && it.sourceFingerprint == sourceFingerprint
+            },
+        )
+
+        override suspend fun save(variant: RecipeTranslationVariant) {
+            this.variant = variant
+        }
+
         override suspend fun getAvailableLanguages(
             recipeId: String,
             sourceFingerprint: String,

@@ -11,11 +11,21 @@ import cat.receptari.app.domain.model.CookingTimer
 import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.RecipeQuery
 import cat.receptari.app.domain.model.RecipeSummary
+import cat.receptari.app.domain.model.Folder
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
+import cat.receptari.app.domain.model.FolderSummary
+import cat.receptari.app.domain.model.Tag
 import cat.receptari.app.domain.repository.CookHistoryRepository
 import cat.receptari.app.domain.repository.CookingTimerRepository
+import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.domain.repository.RecipeTranslationRepository
+import cat.receptari.app.domain.repository.RecipeTransferRepository
+import cat.receptari.app.domain.repository.TagRepository
+import cat.receptari.app.domain.transfer.RecipeTransferArchive
+import cat.receptari.app.domain.transfer.RecipeTransferResult
 import cat.receptari.app.domain.translation.RecipeTranslationVariant
 import cat.receptari.app.domain.translation.TranslateRecipe
 import java.time.Clock
@@ -102,11 +112,29 @@ class RecipeDetailTranslationTest {
             recipeRepository = recipeRepository,
             cookHistoryRepository = FakeCookHistoryRepository(),
             cookingTimerRepository = FakeCookingTimerRepository(),
+            folderRepository = FakeFolderRepository(),
+            tagRepository = FakeTagRepository(),
             imageStore = FakeImageStore(),
             translateRecipe = TranslateRecipe(ai, translations, clock),
             translationRepository = translations,
+            transferRepository = FakeTransferRepository(),
             clock = clock,
         )
+    }
+
+    private class FakeFolderRepository : FolderRepository {
+        override fun observeAll(): Flow<List<Folder>> = kotlinx.coroutines.flow.flowOf(emptyList())
+        override fun observeAllWithCounts(): Flow<List<FolderSummary>> = kotlinx.coroutines.flow.flowOf(emptyList())
+        override suspend fun create(name: String, color: FolderColor, icon: FolderIcon): Folder =
+            Folder(id = "f1", name = name, color = color, icon = icon)
+        override suspend fun update(id: String, name: String, color: FolderColor, icon: FolderIcon) = Unit
+        override suspend fun delete(id: String) = Unit
+    }
+
+    private class FakeTagRepository : TagRepository {
+        override fun observeAll(): Flow<List<Tag>> = kotlinx.coroutines.flow.flowOf(emptyList())
+        override suspend fun findOrCreate(names: List<String>): List<Tag> =
+            names.map { Tag(it.lowercase(), it) }
     }
 
     private fun sourceRecipe(): Recipe = Recipe(
@@ -124,6 +152,13 @@ class RecipeDetailTranslationTest {
             recipeId: String,
             language: String,
         ): RecipeTranslationVariant? = null
+
+        override suspend fun getAll(
+            recipeId: String,
+            sourceFingerprint: String,
+        ): List<RecipeTranslationVariant> = emptyList()
+
+        override suspend fun save(variant: RecipeTranslationVariant) = Unit
 
         override suspend fun getAvailableLanguages(
             recipeId: String,
@@ -162,6 +197,7 @@ class RecipeDetailTranslationTest {
 
         override fun observeRecipe(id: String): Flow<Recipe?> = recipe
         override suspend fun getRecipe(id: String): Recipe? = recipe.value
+        override suspend fun getAllRecipes(): List<Recipe> = listOfNotNull(recipe.value)
         override suspend fun save(recipe: Recipe) {
             saved = recipe
             this.recipe.value = recipe
@@ -169,6 +205,15 @@ class RecipeDetailTranslationTest {
         override fun observeSummaries(query: RecipeQuery): Flow<List<RecipeSummary>> = flowOf(emptyList())
         override suspend fun delete(id: String) = Unit
         override suspend fun setFavorite(id: String, isFavorite: Boolean) = Unit
+    }
+
+    private class FakeTransferRepository : RecipeTransferRepository {
+        override suspend fun createTransfer(recipeIds: Set<String>?): Result<RecipeTransferArchive> =
+            Result.failure(UnsupportedOperationException())
+
+        override suspend fun importTransfer(
+            packageFile: java.io.File,
+        ): Result<RecipeTransferResult> = Result.failure(UnsupportedOperationException())
     }
 
     private class FakeCookHistoryRepository : CookHistoryRepository {

@@ -11,11 +11,13 @@ import cat.receptari.app.domain.repository.CookingTimerRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.domain.repository.RecipeTranslationRepository
+import cat.receptari.app.domain.repository.RecipeTransferRepository
 import cat.receptari.app.domain.scaling.ScaledIngredientSection
 import cat.receptari.app.domain.scaling.ServingScaler
 import cat.receptari.app.domain.timer.TimerMath
 import cat.receptari.app.domain.translation.TranslateRecipe
 import cat.receptari.app.domain.translation.translationSourceFingerprint
+import cat.receptari.app.domain.transfer.RecipeTransferArchive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +33,13 @@ import kotlinx.coroutines.delay
 import java.time.Clock
 import javax.inject.Inject
 
+import cat.receptari.app.domain.model.Folder
+import cat.receptari.app.domain.model.FolderColor
+import cat.receptari.app.domain.model.FolderIcon
+import cat.receptari.app.domain.model.Tag
+import cat.receptari.app.domain.repository.FolderRepository
+import cat.receptari.app.domain.repository.TagRepository
+
 data class RecipeDetailUiState(
     val recipe: Recipe? = null,
     val imagePath: String? = null,
@@ -39,8 +48,11 @@ data class RecipeDetailUiState(
     val isScaled: Boolean = false,
     val timers: List<CookingTimer> = emptyList(),
     val timerRemainingSeconds: Map<String, Long> = emptyMap(),
+    val availableFolders: List<Folder> = emptyList(),
+    val availableTags: List<Tag> = emptyList(),
     val isLoading: Boolean = true,
     val isTranslating: Boolean = false,
+    val isSharing: Boolean = false,
     val translatedLanguages: Set<RecipeLanguage> = emptySet(),
 ) {
     val isMissing: Boolean
@@ -54,6 +66,11 @@ sealed interface RecipeDetailEvent {
     data object ToggleFavorite : RecipeDetailEvent
     data object MarkCooked : RecipeDetailEvent
     data object Delete : RecipeDetailEvent
+    data class SetRating(val rating: Int?) : RecipeDetailEvent
+    data class SetFolder(val folder: Folder?) : RecipeDetailEvent
+    data class AddTag(val tagName: String) : RecipeDetailEvent
+    data class RemoveTag(val tagName: String) : RecipeDetailEvent
+    data class FolderCreateRequested(val name: String) : RecipeDetailEvent
     data class StartTimer(
         val stepId: String?,
         val label: String,
@@ -67,6 +84,7 @@ sealed interface RecipeDetailEvent {
     data object CancelPendingTimerAction : RecipeDetailEvent
     data object RefreshTimerNotifications : RecipeDetailEvent
     data class Translate(val target: RecipeLanguage) : RecipeDetailEvent
+    data object Share : RecipeDetailEvent
 }
 
 sealed interface RecipeDetailEffect {
@@ -77,6 +95,8 @@ sealed interface RecipeDetailEffect {
     data object ExactAlarmPermissionDenied : RecipeDetailEffect
     data object TranslationApplied : RecipeDetailEffect
     data class TranslationFailed(val error: Throwable) : RecipeDetailEffect
+    data class ShareReady(val archive: RecipeTransferArchive) : RecipeDetailEffect
+    data object ShareFailed : RecipeDetailEffect
 }
 
 @HiltViewModel
@@ -85,9 +105,12 @@ class RecipeDetailViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val cookHistoryRepository: CookHistoryRepository,
     private val cookingTimerRepository: CookingTimerRepository,
+    private val folderRepository: FolderRepository,
+    private val tagRepository: TagRepository,
     imageStore: ImageStore,
     private val translateRecipe: TranslateRecipe,
     private val translationRepository: RecipeTranslationRepository,
+    private val transferRepository: RecipeTransferRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -99,6 +122,7 @@ class RecipeDetailViewModel @Inject constructor(
      */
     private val targetServings = MutableStateFlow<Int?>(null)
     private val isTranslating = MutableStateFlow(false)
+    private val isSharing = MutableStateFlow(false)
     private val translatedLanguages = MutableStateFlow<Set<RecipeLanguage>>(emptySet())
     private var pendingTimerAction: PendingTimerAction? = null
 
@@ -112,18 +136,23 @@ class RecipeDetailViewModel @Inject constructor(
         }
     }
 
-    private val translationState = combine(
+    private val metadataState = combine(
+        folderRepository.observeAll(),
+        tagRepository.observeAll(),
         isTranslating,
         translatedLanguages,
-    ) { translating, languages -> translating to languages }
+        isSharing,
+    ) { folders, tags, translating, languages, sharing ->
+        MetaDataGroup(folders, tags, translating, languages, sharing)
+    }
 
     val uiState: StateFlow<RecipeDetailUiState> = combine(
         recipeRepository.observeRecipe(recipeId),
         targetServings,
         cookingTimerRepository.observeTimers(),
         clockTicks,
-        translationState,
-    ) { recipe, target, timers, now, translation ->
+        metadataState,
+    ) { recipe, target, timers, now, meta ->
         if (recipe == null) return@combine RecipeDetailUiState(isLoading = false)
 
         val servings = target ?: recipe.baseServings
@@ -139,9 +168,12 @@ class RecipeDetailViewModel @Inject constructor(
             timerRemainingSeconds = timers.associate { timer ->
                 timer.id to TimerMath.remainingSeconds(timer, now)
             },
+            availableFolders = meta.folders,
+            availableTags = meta.tags,
             isLoading = false,
-            isTranslating = translation.first,
-            translatedLanguages = translation.second,
+            isTranslating = meta.isTranslating,
+            translatedLanguages = meta.translatedLanguages,
+            isSharing = meta.isSharing,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -172,6 +204,40 @@ class RecipeDetailViewModel @Inject constructor(
             RecipeDetailEvent.ToggleFavorite -> viewModelScope.launch {
                 val recipe = uiState.value.recipe ?: return@launch
                 recipeRepository.setFavorite(recipe.id, !recipe.isFavorite)
+            }
+
+            is RecipeDetailEvent.SetRating -> viewModelScope.launch {
+                val recipe = uiState.value.recipe ?: return@launch
+                recipeRepository.save(recipe.copy(rating = event.rating))
+            }
+
+            is RecipeDetailEvent.SetFolder -> viewModelScope.launch {
+                val recipe = uiState.value.recipe ?: return@launch
+                recipeRepository.save(recipe.copy(folder = event.folder))
+            }
+
+            is RecipeDetailEvent.FolderCreateRequested -> viewModelScope.launch {
+                val name = event.name.trim()
+                if (name.isEmpty()) return@launch
+                val recipe = uiState.value.recipe ?: return@launch
+                val folder = folderRepository.create(name, FolderColor.OLIVE, FolderIcon.FOLDER)
+                recipeRepository.save(recipe.copy(folder = folder))
+            }
+
+            is RecipeDetailEvent.AddTag -> viewModelScope.launch {
+                val recipe = uiState.value.recipe ?: return@launch
+                val cleanName = event.tagName.trim()
+                if (cleanName.isEmpty()) return@launch
+                if (recipe.tags.any { it.name.equals(cleanName, ignoreCase = true) }) return@launch
+                val existingNames = recipe.tags.map { it.name }
+                val newTags = tagRepository.findOrCreate(existingNames + cleanName)
+                recipeRepository.save(recipe.copy(tags = newTags))
+            }
+
+            is RecipeDetailEvent.RemoveTag -> viewModelScope.launch {
+                val recipe = uiState.value.recipe ?: return@launch
+                val updatedTags = recipe.tags.filterNot { it.name.equals(event.tagName, ignoreCase = true) }
+                recipeRepository.save(recipe.copy(tags = updatedTags))
             }
 
             RecipeDetailEvent.MarkCooked -> viewModelScope.launch {
@@ -215,6 +281,19 @@ class RecipeDetailViewModel @Inject constructor(
                 cookingTimerRepository.refreshNotifications()
             }
             is RecipeDetailEvent.Translate -> translate(event.target)
+            RecipeDetailEvent.Share -> share()
+        }
+    }
+
+    private fun share() {
+        if (isSharing.value) return
+        isSharing.value = true
+        viewModelScope.launch {
+            transferRepository.createTransfer(setOf(recipeId)).fold(
+                onSuccess = { archive -> effectChannel.send(RecipeDetailEffect.ShareReady(archive)) },
+                onFailure = { effectChannel.send(RecipeDetailEffect.ShareFailed) },
+            )
+            isSharing.value = false
         }
     }
 
@@ -316,3 +395,12 @@ private sealed interface PendingTimerAction {
 
 private fun String.matches(language: RecipeLanguage): Boolean =
     startsWith(language.languageTag, ignoreCase = true)
+
+private data class MetaDataGroup(
+    val folders: List<Folder>,
+    val tags: List<Tag>,
+    val isTranslating: Boolean,
+    val translatedLanguages: Set<RecipeLanguage>,
+    val isSharing: Boolean,
+)
+

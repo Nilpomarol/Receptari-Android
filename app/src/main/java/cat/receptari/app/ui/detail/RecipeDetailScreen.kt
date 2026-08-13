@@ -30,11 +30,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Timer
@@ -43,10 +47,14 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -91,7 +99,10 @@ import cat.receptari.app.core.designsystem.SectionLabel
 import cat.receptari.app.core.designsystem.StarRating
 import cat.receptari.app.core.designsystem.ingredientLine
 import cat.receptari.app.core.designsystem.pageFrame
+import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
+import cat.receptari.app.domain.model.Folder
+import cat.receptari.app.domain.model.Tag
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.ai.RecipeLanguage
 import cat.receptari.app.domain.ai.AiError
@@ -104,6 +115,10 @@ import cat.receptari.app.domain.timer.InstructionDurationParser
 import cat.receptari.app.ui.timer.ActiveTimerDock
 import cat.receptari.app.ui.timer.TimerSetupSheet
 import cat.receptari.app.ui.common.aiMessageRes
+import cat.receptari.app.domain.transfer.RecipeTransferArchive
+import cat.receptari.app.ui.transfer.TransferMethodSheet
+import cat.receptari.app.ui.transfer.sendRecipeTransferNearby
+import cat.receptari.app.ui.transfer.shareRecipeTransfer
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -128,6 +143,7 @@ fun RecipeDetailRoute(
     val exactAlarmDeniedMessage = stringResource(R.string.timer_exact_alarm_denied)
     val notificationDeniedMessage = stringResource(R.string.timer_notification_permission_denied)
     val translationAppliedMessage = stringResource(R.string.translation_applied)
+    val shareFailedMessage = stringResource(R.string.transfer_share_failed)
     val settingsActionLabel = stringResource(R.string.settings_title)
     val aiErrorMessages = mapOf(
         R.string.ai_error_no_key to stringResource(R.string.ai_error_no_key),
@@ -141,6 +157,7 @@ fun RecipeDetailRoute(
     )
     var showExactAlarmPermissionDialog by remember { mutableStateOf(false) }
     var pendingNotificationEvent by remember { mutableStateOf<RecipeDetailEvent?>(null) }
+    var transferArchive by remember { mutableStateOf<RecipeTransferArchive?>(null) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -222,6 +239,8 @@ fun RecipeDetailRoute(
                     )
                     if (missingKey && result == SnackbarResult.ActionPerformed) onOpenSettings()
                 }
+                is RecipeDetailEffect.ShareReady -> transferArchive = effect.archive
+                RecipeDetailEffect.ShareFailed -> snackbarHostState.showSnackbar(shareFailedMessage)
             }
         }
     }
@@ -235,6 +254,20 @@ fun RecipeDetailRoute(
         onStartCooking = { state.recipe?.id?.let(onStartCooking) },
         modifier = modifier,
     )
+
+    transferArchive?.let { archive ->
+        TransferMethodSheet(
+            onSendNearby = {
+                transferArchive = null
+                context.sendRecipeTransferNearby(archive)
+            },
+            onShareWithOtherApps = {
+                transferArchive = null
+                context.shareRecipeTransfer(archive)
+            },
+            onDismiss = { transferArchive = null },
+        )
+    }
 
     if (showExactAlarmPermissionDialog) {
         AlertDialog(
@@ -345,6 +378,22 @@ fun RecipeDetailScreen(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = stringResource(R.string.detail_edit),
                             )
+                        }
+                        IconButton(
+                            onClick = { onEvent(RecipeDetailEvent.Share) },
+                            enabled = !state.isSharing,
+                        ) {
+                            if (state.isSharing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(22.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = stringResource(R.string.detail_share),
+                                )
+                            }
                         }
                         IconButton(
                             onClick = { showTranslationPicker = true },
@@ -566,30 +615,90 @@ private fun RecipeContent(
             }
         }
 
-        item(key = "title") { RecipeHeader(recipe = recipe) }
+        item(key = "title") { RecipeHeader(recipe = recipe, onEvent = onEvent) }
 
-        if (recipe.tags.isNotEmpty() || recipe.folder != null) {
-            item(key = "tags") {
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = PagePadding, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+        item(key = "share-recipe") {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PagePadding, vertical = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                OutlinedButton(
+                    onClick = { onEvent(RecipeDetailEvent.Share) },
+                    enabled = !state.isSharing,
                 ) {
-                    // Read-only here: both are edited in the editor, and a tappable chip that
-                    // does nothing is worse than a label.
-                    recipe.folder?.let { folder ->
-                        FilterPill(
-                            label = folder.name,
-                            selected = false,
-                            icon = Icons.Outlined.Folder,
-                        )
+                    if (state.isSharing) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.Share, contentDescription = null)
                     }
-                    recipe.tags.forEach { tag ->
-                        FilterPill(label = tag.name, selected = false)
-                    }
+                    Text(
+                        text = stringResource(R.string.detail_send_this_recipe),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
+            }
+        }
+
+        item(key = "tags-and-folder") {
+            var showFolderSheet by remember { mutableStateOf(false) }
+            var showTagSheet by remember { mutableStateOf(false) }
+
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PagePadding, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                FilterPill(
+                    label = recipe.folder?.name ?: stringResource(R.string.detail_add_folder),
+                    selected = recipe.folder != null,
+                    onClick = { showFolderSheet = true },
+                    icon = Icons.Outlined.Folder,
+                )
+
+                recipe.tags.forEach { tag ->
+                    FilterPill(
+                        label = tag.name,
+                        selected = false,
+                        onClick = { showTagSheet = true },
+                    )
+                }
+
+                FilterPill(
+                    label = stringResource(R.string.detail_add_tag),
+                    selected = false,
+                    onClick = { showTagSheet = true },
+                    icon = Icons.Default.Add,
+                )
+            }
+
+            if (showFolderSheet) {
+                QuickFolderSheet(
+                    currentFolder = recipe.folder,
+                    availableFolders = state.availableFolders,
+                    onDismiss = { showFolderSheet = false },
+                    onSelectFolder = { folder ->
+                        onEvent(RecipeDetailEvent.SetFolder(folder))
+                        showFolderSheet = false
+                    },
+                    onCreateFolder = { name ->
+                        onEvent(RecipeDetailEvent.FolderCreateRequested(name))
+                        showFolderSheet = false
+                    },
+                )
+            }
+
+            if (showTagSheet) {
+                QuickTagSheet(
+                    currentTags = recipe.tags.map { it.name },
+                    availableTags = state.availableTags.map { it.name },
+                    onDismiss = { showTagSheet = false },
+                    onAddTag = { tag -> onEvent(RecipeDetailEvent.AddTag(tag)) },
+                    onRemoveTag = { tag -> onEvent(RecipeDetailEvent.RemoveTag(tag)) },
+                )
             }
         }
 
@@ -765,7 +874,11 @@ private fun RecipeContent(
 
 /** Title, times, rating and history — the recipe's own title page. */
 @Composable
-private fun RecipeHeader(recipe: Recipe, modifier: Modifier = Modifier) {
+private fun RecipeHeader(
+    recipe: Recipe,
+    onEvent: (RecipeDetailEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -785,9 +898,6 @@ private fun RecipeHeader(recipe: Recipe, modifier: Modifier = Modifier) {
             recipe.cookTimeMinutes?.let {
                 add(labelledTime(R.string.detail_cook_time, it))
             }
-            // Falls back to the total the parts imply, so a recipe that recorded prep and
-            // cook separately still shows what it actually costs without the reader adding
-            // up. Null when it would only repeat a figure already on this line.
             (recipe.totalTimeMinutes ?: recipe.derivedTotalMinutes)?.let {
                 add(labelledTime(R.string.detail_total_time, it))
             }
@@ -802,13 +912,28 @@ private fun RecipeHeader(recipe: Recipe, modifier: Modifier = Modifier) {
             )
         }
 
-        recipe.rating?.let { rating ->
-            StarRating(
-                rating = rating,
-                contentDescription = stringResource(R.string.common_rating_value, rating),
-                starSize = 18.dp,
-                modifier = Modifier.padding(top = 10.dp),
-            )
+        // Interactive rating stars
+        Row(
+            modifier = Modifier.padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            (1..5).forEach { star ->
+                val isSelected = recipe.rating != null && star <= recipe.rating
+                IconButton(
+                    onClick = {
+                        onEvent(RecipeDetailEvent.SetRating(if (recipe.rating == star) null else star))
+                    },
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        imageVector = if (isSelected) Icons.Default.Star else Icons.Default.StarBorder,
+                        contentDescription = stringResource(R.string.common_rating_value, star),
+                        tint = ReceptariTheme.palette.gold,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            }
         }
 
         Aside(
@@ -817,7 +942,7 @@ private fun RecipeHeader(recipe: Recipe, modifier: Modifier = Modifier) {
             } else {
                 pluralStringResource(R.plurals.detail_cook_count, recipe.cookCount, recipe.cookCount)
             },
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 6.dp),
         )
 
         OrnamentalDivider(modifier = Modifier.padding(top = 12.dp))
@@ -1037,3 +1162,211 @@ private fun RecipeDetailScreenPreview() {
         )
     }
 }
+
+@Composable
+private fun QuickFolderSheet(
+    currentFolder: Folder?,
+    availableFolders: List<Folder>,
+    onDismiss: () -> Unit,
+    onSelectFolder: (Folder?) -> Unit,
+    onCreateFolder: (String) -> Unit,
+) {
+    var creating by remember { mutableStateOf(false) }
+    var draft by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        title = { OrnamentHeading(title = stringResource(R.string.detail_quick_folder_title)) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TextButton(
+                    onClick = { onSelectFolder(null) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = stringResource(R.string.edit_folder_none),
+                        color = if (currentFolder == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+
+                availableFolders.forEach { folder ->
+                    val isCurrent = folder.id == currentFolder?.id
+                    TextButton(
+                        onClick = { onSelectFolder(folder) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Folder,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                text = folder.name,
+                                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                }
+
+                if (creating) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedTextField(
+                            colors = paperFieldColors(),
+                            value = draft,
+                            onValueChange = { draft = it },
+                            placeholder = { Text(stringResource(R.string.edit_folder_add_hint)) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(
+                            onClick = {
+                                if (draft.isNotBlank()) onCreateFolder(draft)
+                            },
+                        ) {
+                            Text(stringResource(R.string.folders_add))
+                        }
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { creating = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Text(
+                            text = stringResource(R.string.edit_folder_add),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.common_close))
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun QuickTagSheet(
+    currentTags: List<String>,
+    availableTags: List<String>,
+    onDismiss: () -> Unit,
+    onAddTag: (String) -> Unit,
+    onRemoveTag: (String) -> Unit,
+) {
+    var draft by remember { mutableStateOf("") }
+    val candidateTags = remember(availableTags, currentTags) {
+        (availableTags - currentTags.toSet()).distinct()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        title = { OrnamentHeading(title = stringResource(R.string.detail_quick_tags_title)) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        colors = paperFieldColors(),
+                        value = draft,
+                        onValueChange = { draft = it },
+                        placeholder = { Text(stringResource(R.string.edit_tag_add_hint)) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = {
+                            if (draft.isNotBlank()) {
+                                onAddTag(draft)
+                                draft = ""
+                            }
+                        },
+                    ) {
+                        Text(stringResource(R.string.edit_tag_add))
+                    }
+                }
+
+                if (currentTags.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.edit_field_tags),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        currentTags.forEach { tag ->
+                            FilterChip(
+                                selected = true,
+                                onClick = { onRemoveTag(tag) },
+                                label = { Text(tag) },
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.edit_tag_remove, tag),
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+
+                if (candidateTags.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.filter_tags),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        candidateTags.forEach { tag ->
+                            FilterChip(
+                                selected = false,
+                                onClick = { onAddTag(tag) },
+                                label = { Text(tag) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.common_close))
+            }
+        },
+    )
+}
+
