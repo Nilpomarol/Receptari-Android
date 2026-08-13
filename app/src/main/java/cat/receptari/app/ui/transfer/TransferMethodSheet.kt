@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.OrnamentHeading
+import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import cat.receptari.app.domain.transfer.RecipeTransferArchive
 
 fun Context.sendRecipeTransferNearby(archive: RecipeTransferArchive) {
@@ -38,14 +39,13 @@ fun TransferMethodSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ModalBottomSheet(
+    PaperModalBottomSheet(
         modifier = modifier,
         onDismissRequest = onDismiss,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             OrnamentHeading(title = stringResource(R.string.transfer_method_title))

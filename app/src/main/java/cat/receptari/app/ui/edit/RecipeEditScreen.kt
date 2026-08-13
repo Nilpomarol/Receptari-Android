@@ -40,9 +40,9 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -90,6 +90,7 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeEditRoute(
     onNavigateBack: () -> Unit,
@@ -173,10 +174,10 @@ fun RecipeEditRoute(
     )
 
     if (showDiscardDialog) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.edit_discard_title),
+            subtitle = stringResource(R.string.edit_discard_body),
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text(stringResource(R.string.edit_discard_title)) },
-            text = { Text(stringResource(R.string.edit_discard_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -197,10 +198,10 @@ fun RecipeEditRoute(
     }
 
     if (showCameraUnavailableDialog) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.edit_camera_unavailable_title),
+            subtitle = stringResource(R.string.edit_camera_unavailable_body),
             onDismissRequest = { showCameraUnavailableDialog = false },
-            title = { Text(stringResource(R.string.edit_camera_unavailable_title)) },
-            text = { Text(stringResource(R.string.edit_camera_unavailable_body)) },
             confirmButton = {
                 TextButton(onClick = { showCameraUnavailableDialog = false }) {
                     Text(stringResource(R.string.common_done))

@@ -32,15 +32,16 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
+import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -78,6 +79,7 @@ import cat.receptari.app.ui.timer.TimerSetupSheet
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CookModeRoute(
     onNavigateBack: () -> Unit,
@@ -166,14 +168,13 @@ fun CookModeRoute(
     )
 
     if (showExactAlarmPermissionDialog) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.timer_exact_alarm_title),
+            subtitle = stringResource(R.string.timer_exact_alarm_body),
             onDismissRequest = {
                 showExactAlarmPermissionDialog = false
                 viewModel.cancelPendingTimerAction()
             },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            title = { Text(stringResource(R.string.timer_exact_alarm_title)) },
-            text = { Text(stringResource(R.string.timer_exact_alarm_body)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -190,7 +191,7 @@ fun CookModeRoute(
                 }
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(
+                TextButton(
                     onClick = {
                         showExactAlarmPermissionDialog = false
                         viewModel.cancelPendingTimerAction()
@@ -461,16 +462,11 @@ private fun CookNavigation(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IngredientsSheet(recipe: Recipe, onDismiss: () -> Unit) {
-    ModalBottomSheet(
+    PaperModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .paperGrain()
-                .navigationBarsPadding(),
+            modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {

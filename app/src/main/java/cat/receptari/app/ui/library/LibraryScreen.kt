@@ -54,7 +54,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -579,29 +579,13 @@ private fun FolderLibrarySheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ModalBottomSheet(
+    PaperModalBottomSheet(
         modifier = modifier,
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .paperGrain()
-                    .padding(top = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Hairline(modifier = Modifier.width(54.dp))
-            }
-        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .paperGrain()
-                .navigationBarsPadding()
                 .padding(horizontal = 16.dp),
         ) {
             OrnamentHeading(title = stringResource(R.string.folders_title))

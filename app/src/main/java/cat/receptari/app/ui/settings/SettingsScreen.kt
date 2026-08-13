@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
+import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -264,10 +264,10 @@ fun SettingsScreen(
     }
 
     if (uiState.showRemoveDialog) {
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.settings_api_key_remove_title),
+            subtitle = stringResource(R.string.settings_api_key_remove_body),
             onDismissRequest = { onEvent(SettingsEvent.DismissRemoveDialog) },
-            title = { Text(stringResource(R.string.settings_api_key_remove_title)) },
-            text = { Text(stringResource(R.string.settings_api_key_remove_body)) },
             confirmButton = {
                 TextButton(onClick = { onEvent(SettingsEvent.ConfirmRemoveKey) }) {
                     Text(stringResource(R.string.common_delete))
@@ -286,10 +286,10 @@ fun SettingsScreen(
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
                 .format(Date.from(preview.createdAt))
         }
-        AlertDialog(
+        PaperConfirmBottomSheet(
+            title = stringResource(R.string.settings_restore_confirm_title),
             onDismissRequest = { if (!uiState.isBackupBusy) onEvent(SettingsEvent.DismissRestore) },
-            title = { Text(stringResource(R.string.settings_restore_confirm_title)) },
-            text = {
+            body = {
                 Column {
                     Text(stringResource(R.string.settings_restore_confirm_body))
                     Text(
