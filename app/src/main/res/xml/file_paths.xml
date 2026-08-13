@@ -8,4 +8,7 @@
     <cache-path
         name="camera"
         path="camera/" />
+    <cache-path
+        name="recipe_transfers"
+        path="recipe-transfers/" />
 </paths>

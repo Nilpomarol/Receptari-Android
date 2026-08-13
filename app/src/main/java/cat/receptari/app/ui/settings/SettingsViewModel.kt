@@ -11,6 +11,8 @@ import cat.receptari.app.domain.backup.RestorePreview
 import cat.receptari.app.domain.repository.ApiKeyRepository
 import cat.receptari.app.domain.repository.BackupRepository
 import cat.receptari.app.domain.repository.CookingTimerRepository
+import cat.receptari.app.domain.repository.RecipeTransferRepository
+import cat.receptari.app.domain.transfer.RecipeTransferArchive
 import cat.receptari.app.ui.common.aiMessageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -38,6 +40,7 @@ data class SettingsUiState(
     val isTesting: Boolean = false,
     val showRemoveDialog: Boolean = false,
     val isBackupBusy: Boolean = false,
+    val isTransferBusy: Boolean = false,
     val restorePreview: RestorePreview? = null,
 ) {
     val canSave: Boolean get() = keyInput.isNotBlank() && !isTesting
@@ -57,6 +60,7 @@ sealed interface SettingsEvent {
     data object ChooseRestore : SettingsEvent
     data object ConfirmRestore : SettingsEvent
     data object DismissRestore : SettingsEvent
+    data object ShareLibrary : SettingsEvent
 }
 
 /** One-shot feedback. Everything the user needs to hear about here fits in a snackbar. */
@@ -66,6 +70,7 @@ sealed interface SettingsEffect {
     data class SaveBackup(val archive: BackupArchive) : SettingsEffect
     data object OpenBackup : SettingsEffect
     data object RestartAfterRestore : SettingsEffect
+    data class ShareRecipes(val archive: RecipeTransferArchive) : SettingsEffect
 }
 
 @HiltViewModel
@@ -74,6 +79,7 @@ class SettingsViewModel @Inject constructor(
     private val aiClient: AiClient,
     private val backupRepository: BackupRepository,
     private val cookingTimerRepository: CookingTimerRepository,
+    private val transferRepository: RecipeTransferRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -125,6 +131,19 @@ class SettingsViewModel @Inject constructor(
                 backupRepository.discardStagedRestore()
                 _uiState.update { it.copy(restorePreview = null) }
             }
+            SettingsEvent.ShareLibrary -> shareLibrary()
+        }
+    }
+
+    private fun shareLibrary() {
+        if (_uiState.value.isTransferBusy) return
+        _uiState.update { it.copy(isTransferBusy = true) }
+        viewModelScope.launch {
+            transferRepository.createTransfer().fold(
+                onSuccess = { archive -> _effects.send(SettingsEffect.ShareRecipes(archive)) },
+                onFailure = { _messages.send(SettingsMessage(R.string.transfer_share_failed)) },
+            )
+            _uiState.update { it.copy(isTransferBusy = false) }
         }
     }
 

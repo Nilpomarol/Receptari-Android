@@ -373,3 +373,53 @@ lower reintroduces exactly the compat branches listed above.
 - Lowering the floor later is a real cost once code assumes these APIs. If a family member
   turns up on Android 12, the realistic drop is to `minSdk 31`, which costs the
   `LocaleManager` and media-permission simplifications above.
+
+---
+
+## ADR-010 — Private copy transfer through versioned packages
+
+**Date:** 2026-08-13 · **Status:** Accepted
+
+### Context
+Family members need to move anything from one recipe to a large collection between
+Receptari installations. Requiring the extraction preview for every item in a batch would
+turn already-approved structured data back into uncertain input and make a 50-recipe
+transfer unusable. Full family synchronization still requires accounts, network storage,
+conflict resolution, and deletion semantics.
+
+### Decision
+Receptari can send one recipe, a selected subset, or the whole library as a versioned
+`.receptari-share` package. The primary in-person transport is Google Nearby Connections with
+`P2P_POINT_TO_POINT`: the recipient explicitly starts receiving and both people confirm matching
+authentication digits before accepting the connection. Android's Sharesheet remains the
+file-based fallback. Receiving either way is one explicit acceptance; the app validates the
+complete package and then automatically saves all non-duplicate recipes. Direct transfer reports
+success to the sender only after the recipient has finished importing.
+
+The package contains canonical recipe content, source attribution, tags, images, every
+still-valid translation overlay, and the active display language. It excludes favorites,
+ratings, notes, folders, cook events, API keys, and timers. Imported aggregates get fresh
+UUIDs, translation field ids are remapped, and source fingerprints are recalculated. No
+transfer or sync metadata is stored.
+
+This supersedes ADR-002's consequence that there is "no sharing in v1". It does not
+supersede ADR-003: storage remains local-only, with no accounts, backend, network storage,
+or synchronization.
+
+### Rationale
+Nearby Connections removes the file-handling friction for two people in the same place, while
+matching authentication digits make the intended peer visible to both. The Android Sharesheet
+still supplies a familiar asynchronous fallback. Neither requires Receptari to operate a server
+or know who the recipient is. A structured internal package preserves information and
+translations exactly, while a package-level validation boundary makes one-click batch import
+safe enough to bypass per-recipe extraction review.
+
+### Consequences
+- Transfers are copies. Later edits on the two devices diverge normally.
+- Reopening the same package skips likely duplicates instead of overwriting local data.
+- The custom archive codec must cap entry counts and sizes, reject undeclared entries and
+  path traversal, and reject newer unsupported format versions.
+- Direct transfer requires Google Play services and Android's nearby-device permissions. It does
+  not require an account, internet service, cloud storage, or location data.
+- The nearby session carries the same package bytes as file sharing, so transport and import
+  validation remain separate.

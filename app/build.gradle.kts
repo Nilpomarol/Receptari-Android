@@ -86,6 +86,13 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+// AGP 9.2 currently drops the separate hiltJavaCompile output from the debug DEX archive.
+// Keep Hilt generation in the normal KSP/compile pipeline so generated Android base classes
+// such as Hilt_ReceptariApplication are packaged in the APK.
+hilt {
+    enableAggregatingTask = false
+}
+
 apply(from = rootProject.file("gradle/hardcoded-ui-text.gradle.kts"))
 
 dependencies {
@@ -116,6 +123,7 @@ dependencies {
     implementation(libs.jsoup)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.play.services.nearby)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

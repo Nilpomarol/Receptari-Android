@@ -1,5 +1,8 @@
 package cat.receptari.app.ui.importer
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +19,8 @@ import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.WifiTethering
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,6 +42,9 @@ import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
+import cat.receptari.app.ui.transfer.RECIPE_TRANSFER_MIME_TYPE
+import cat.receptari.app.ui.transfer.TransferImportActivity
+import cat.receptari.app.ui.transfer.receiveRecipeTransferNearby
 
 @Composable
 fun ImportRoute(
@@ -46,12 +55,31 @@ fun ImportRoute(
     onImportFromImage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val openSharedCopy = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        context.startActivity(
+            Intent(context, TransferImportActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                data = uri
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
+        )
+    }
     ImportScreen(
         onNavigateBack = onNavigateBack,
         onCreateManually = onCreateManually,
         onImportFromText = onImportFromText,
         onImportFromWebsite = onImportFromWebsite,
         onImportFromImage = onImportFromImage,
+        onReceiveNearby = context::receiveRecipeTransferNearby,
+        onImportSharedCopy = {
+            openSharedCopy.launch(
+                arrayOf(RECIPE_TRANSFER_MIME_TYPE, "application/zip", "application/octet-stream"),
+            )
+        },
         modifier = modifier,
     )
 }
@@ -63,6 +91,8 @@ fun ImportScreen(
     onImportFromText: () -> Unit,
     onImportFromWebsite: () -> Unit,
     onImportFromImage: () -> Unit,
+    onReceiveNearby: () -> Unit,
+    onImportSharedCopy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     PaperScaffold(
@@ -99,6 +129,21 @@ fun ImportScreen(
             OrnamentalDivider(modifier = Modifier.padding(bottom = 4.dp))
 
             ImportOption(
+                icon = Icons.Outlined.WifiTethering,
+                label = stringResource(R.string.import_receive_nearby),
+                supportingText = stringResource(R.string.import_receive_nearby_explanation),
+                onClick = onReceiveNearby,
+            )
+            ImportOption(
+                icon = Icons.Outlined.Share,
+                label = stringResource(R.string.import_from_shared_copy),
+                supportingText = stringResource(R.string.import_from_shared_copy_explanation),
+                onClick = onImportSharedCopy,
+            )
+
+            OrnamentalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+            ImportOption(
                 icon = Icons.AutoMirrored.Outlined.Notes,
                 label = stringResource(R.string.import_from_text),
                 onClick = onImportFromText,
@@ -132,11 +177,12 @@ fun ImportScreen(
     }
 }
 
-/** One way into the editor. All four end in the same place, so all four look the same. */
+/** A visually consistent entry point for each import source. */
 @Composable
 private fun ImportOption(
     icon: ImageVector,
     label: String,
+    supportingText: String? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -159,11 +205,20 @@ private fun ImportOption(
                     )
                 }
             }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 16.dp),
-            )
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                supportingText?.let { text ->
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -178,6 +233,8 @@ private fun ImportScreenPreview() {
             onImportFromText = {},
             onImportFromWebsite = {},
             onImportFromImage = {},
+            onReceiveNearby = {},
+            onImportSharedCopy = {},
         )
     }
 }

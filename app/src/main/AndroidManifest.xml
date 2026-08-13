@@ -2,13 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-        The only network the app does is calling api.anthropic.com with the user's own key,
-        and fetching pages the user asks to import. Everything else stays on the device.
+        Internet access is limited to api.anthropic.com with the user's own key and pages the
+        user asks to import. Nearby recipe copies use a direct local device-to-device connection.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Runtime permissions used only while directly sending or receiving a nearby copy. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
 
     <!--
         Package visibility for the camera app. Without this, resolving ACTION_IMAGE_CAPTURE
@@ -46,6 +55,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.transfer.TransferImportActivity"
+            android:exported="true"
+            android:label="@string/transfer_receive_title"
+            android:theme="@style/Theme.Receptari">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.cat.receptari.recipe-transfer" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="application/vnd.cat.receptari.recipe-transfer" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.transfer.NearbyTransferActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Receptari" />
 
         <receiver
             android:name=".data.timer.TimerAlarmReceiver"

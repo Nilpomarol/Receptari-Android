@@ -311,6 +311,12 @@ plumbing are missing.
   referenced recipe images through Android's document picker. Restore validates and stages the
   archive, confirms replacement totals with the user, then swaps it in before Room opens with a
   rollback copy. API keys and active timers remain device-only and are never archived.
+- ☑ Private recipe transfer: detail sends one recipe, library selection sends any subset,
+  and Settings sends the whole library either directly to a nearby Receptari or through Android's
+  Sharesheet as a validated `.receptari-share` package. Nearby peers both confirm the same code,
+  and the sender waits for an import acknowledgement. Receptari automatically imports the
+  non-duplicate batch with images, tags, and all valid translation overlays; personal state
+  remains private.
 - ☐ Accessibility pass: TalkBack, touch targets, contrast, font scaling
 - ☐ Dark theme audit
 - ☐ Empty, loading, and error states for every screen

@@ -242,3 +242,16 @@ keys or `position` columns; ordering is expressed by list order, and the mapper 
   translated display, the migration converts it into the first cached overlay and
   fingerprints its canonical source; recipes without a translation create no cache rows.
   Covered by `MigrationTest.migrate4To5CachesTheExistingTranslatedDisplay`.
+
+---
+
+## 6. Recipe transfer
+
+Structured transfer adds no Room tables or sync columns. The package serializes recipe
+aggregates and valid `recipe_translations` overlays, then assigns fresh recipe, section,
+ingredient, and step UUIDs on import. Translation field ids are remapped and source
+fingerprints recalculated before the overlay rows are inserted. Duplicate detection is a
+transient content fingerprint and is not persisted.
+
+Favorites, ratings, notes, folders, and cook events are deliberately absent from the
+transfer payload, so imported rows start with their normal personal defaults.

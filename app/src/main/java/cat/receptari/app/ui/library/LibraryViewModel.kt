@@ -13,7 +13,9 @@ import cat.receptari.app.domain.model.Tag
 import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
+import cat.receptari.app.domain.repository.RecipeTransferRepository
 import cat.receptari.app.domain.repository.TagRepository
+import cat.receptari.app.domain.transfer.RecipeTransferArchive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.Duration
@@ -37,10 +41,14 @@ data class LibraryUiState(
     val sort: RecipeSort = RecipeSort.RecentlyAdded,
     val filter: RecipeFilter = RecipeFilter(),
     val isLoading: Boolean = true,
+    val isSelectionMode: Boolean = false,
+    val selectedRecipeIds: Set<String> = emptySet(),
+    val isSharingSelection: Boolean = false,
 ) {
     /** Empty because there are no recipes at all, rather than because nothing matched. */
     val isLibraryEmpty: Boolean
         get() = recipes.isEmpty() && searchQuery.isBlank() && !filter.isActive
+
 }
 
 sealed interface LibraryEvent {
@@ -54,6 +62,16 @@ sealed interface LibraryEvent {
     data class ToggleFavorite(val id: String, val isFavorite: Boolean) : LibraryEvent
     data class FolderCreateRequested(val name: String, val color: FolderColor, val icon: FolderIcon) :
         LibraryEvent
+    data object StartSelection : LibraryEvent
+    data object ClearSelection : LibraryEvent
+    data class ToggleSelection(val recipeId: String) : LibraryEvent
+    data object SelectAllVisible : LibraryEvent
+    data object ShareSelection : LibraryEvent
+}
+
+sealed interface LibraryEffect {
+    data class ShareReady(val archive: RecipeTransferArchive) : LibraryEffect
+    data object ShareFailed : LibraryEffect
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,17 +81,30 @@ class LibraryViewModel @Inject constructor(
     tagRepository: TagRepository,
     private val folderRepository: FolderRepository,
     private val imageStore: ImageStore,
+    private val transferRepository: RecipeTransferRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
     private val query = MutableStateFlow(RecipeQuery())
+    private val isSelectionMode = MutableStateFlow(false)
+    private val selectedRecipeIds = MutableStateFlow<Set<String>>(emptySet())
+    private val isSharingSelection = MutableStateFlow(false)
+    private val effectChannel = Channel<LibraryEffect>(Channel.BUFFERED)
+    val effects = effectChannel.receiveAsFlow()
+
+    private val selectionState = combine(
+        isSelectionMode,
+        selectedRecipeIds,
+        isSharingSelection,
+    ) { selecting, selected, sharing -> Triple(selecting, selected, sharing) }
 
     val uiState: StateFlow<LibraryUiState> = combine(
         query,
         query.flatMapLatest { recipeRepository.observeSummaries(it) },
         tagRepository.observeAll(),
         folderRepository.observeAllWithCounts(),
-    ) { currentQuery, recipes, tags, folders ->
+        selectionState,
+    ) { currentQuery, recipes, tags, folders, selection ->
         LibraryUiState(
             // Stored image paths are relative so they survive a reinstall; the image
             // loader needs a real location, so they are resolved here on the way to the UI.
@@ -86,6 +117,9 @@ class LibraryViewModel @Inject constructor(
             sort = currentQuery.sort,
             filter = currentQuery.filter,
             isLoading = false,
+            isSelectionMode = selection.first,
+            selectedRecipeIds = selection.second,
+            isSharingSelection = selection.third,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -148,6 +182,37 @@ class LibraryViewModel @Inject constructor(
                 if (name.isEmpty()) return
                 viewModelScope.launch { folderRepository.create(name, event.color, event.icon) }
             }
+
+            LibraryEvent.StartSelection -> isSelectionMode.value = true
+
+            LibraryEvent.ClearSelection -> {
+                isSelectionMode.value = false
+                selectedRecipeIds.value = emptySet()
+            }
+
+            is LibraryEvent.ToggleSelection -> selectedRecipeIds.update { selected ->
+                selected.toMutableSet().apply {
+                    if (!add(event.recipeId)) remove(event.recipeId)
+                }
+            }
+
+            LibraryEvent.SelectAllVisible -> selectedRecipeIds.value =
+                uiState.value.recipes.mapTo(mutableSetOf()) { it.id }
+
+            LibraryEvent.ShareSelection -> shareSelection()
+        }
+    }
+
+    private fun shareSelection() {
+        val selected = selectedRecipeIds.value
+        if (selected.isEmpty() || isSharingSelection.value) return
+        isSharingSelection.value = true
+        viewModelScope.launch {
+            transferRepository.createTransfer(selected).fold(
+                onSuccess = { archive -> effectChannel.send(LibraryEffect.ShareReady(archive)) },
+                onFailure = { effectChannel.send(LibraryEffect.ShareFailed) },
+            )
+            isSharingSelection.value = false
         }
     }
 

@@ -46,6 +46,10 @@ class RecipeRepositoryImpl @Inject constructor(
         recipeDao.getAggregate(id)?.toDomain()
     }
 
+    override suspend fun getAllRecipes(): List<Recipe> = withContext(ioDispatcher) {
+        recipeDao.getAllAggregates().map { it.toDomain() }
+    }
+
     override suspend fun save(recipe: Recipe): Unit = withContext(ioDispatcher) {
         // Resolve tag identity first: the editor hands over tags built from text the user
         // typed, which may collide with tags that already exist under a different id.
