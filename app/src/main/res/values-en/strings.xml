@@ -274,6 +274,8 @@
     <string name="settings_backup_title">Backup</string>
     <string name="settings_backup_explanation">Export your whole library and its images as one file. Your Claude key and active timers are not included. Restoring it replaces the current library.</string>
     <string name="settings_backup_export">Export a backup</string>
+    <string name="settings_backup_last">Last backup: %1$s</string>
+    <string name="settings_backup_last_never">You haven’t made a backup yet</string>
     <string name="settings_restore_choose">Restore a backup</string>
     <string name="settings_backup_working">Preparing the library…</string>
     <string name="settings_backup_exported">Backup exported</string>

@@ -380,6 +380,22 @@ private fun BackupSection(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        val lastBackup = state.lastBackupAt
+        val lastBackupText = if (lastBackup == null) {
+            stringResource(R.string.settings_backup_last_never)
+        } else {
+            val formatted = remember(lastBackup) {
+                DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                    .format(Date.from(lastBackup))
+            }
+            stringResource(R.string.settings_backup_last, formatted)
+        }
+        Text(
+            text = lastBackupText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 10.dp),
+        )
         OutlinedButton(
             onClick = { onEvent(SettingsEvent.CreateBackup) },
             enabled = !state.isBackupBusy,

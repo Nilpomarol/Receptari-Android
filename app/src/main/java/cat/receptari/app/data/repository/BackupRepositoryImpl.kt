@@ -1,6 +1,12 @@
 package cat.receptari.app.data.repository
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import cat.receptari.app.BuildConfig
 import cat.receptari.app.core.util.IoDispatcher
 import cat.receptari.app.data.backup.BackupArchiveCodec
@@ -14,13 +20,25 @@ import cat.receptari.app.domain.backup.RestorePreview
 import cat.receptari.app.domain.repository.BackupRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.time.Clock
+import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private val Context.backupDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "backup_state",
+)
+
+private val LAST_BACKUP_AT = longPreferencesKey("last_backup_at")
 
 @Singleton
 class BackupRepositoryImpl @Inject constructor(
@@ -29,6 +47,19 @@ class BackupRepositoryImpl @Inject constructor(
     private val clock: Clock,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : BackupRepository {
+
+    override fun observeLastBackupAt(): Flow<Instant?> = context.backupDataStore.data
+        .catch { error -> if (error is IOException) emit(emptyPreferences()) else throw error }
+        .map { preferences -> preferences[LAST_BACKUP_AT]?.let(Instant::ofEpochMilli) }
+        .flowOn(ioDispatcher)
+
+    override suspend fun recordBackupCompleted() {
+        withContext(ioDispatcher) {
+            runCatching {
+                context.backupDataStore.edit { it[LAST_BACKUP_AT] = clock.instant().toEpochMilli() }
+            }
+        }
+    }
 
     override suspend fun createBackup(): Result<BackupArchive> = withContext(ioDispatcher) {
         runCatching {
