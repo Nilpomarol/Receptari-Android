@@ -1,7 +1,9 @@
 package cat.receptari.app.domain.timer
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InstructionDurationParserTest {
@@ -24,6 +26,20 @@ class InstructionDurationParserTest {
     fun `rejects ambiguous ranges and missing durations`() {
         assertNull(InstructionDurationParser.parseMinutes("Cook for 10–12 minutes."))
         assertNull(InstructionDurationParser.parseMinutes("Escalfa el forn a 180 graus."))
+    }
+
+    @Test
+    fun `detects a duration mention including ambiguous ranges`() {
+        assertTrue(InstructionDurationParser.containsDuration("Bake for 15 minutes."))
+        assertTrue(InstructionDurationParser.containsDuration("Cook for 10-12 minutes."))
+        assertTrue(InstructionDurationParser.containsDuration("Deixa-ho 1 hora i 30 minuts."))
+    }
+
+    @Test
+    fun `reports no duration when the step never mentions time`() {
+        assertFalse(InstructionDurationParser.containsDuration("Escalfa el forn a 180 graus."))
+        assertFalse(InstructionDurationParser.containsDuration("Pica la ceba ben fina."))
+        assertFalse(InstructionDurationParser.containsDuration("Wait 25 hours."))
     }
 
     @Test

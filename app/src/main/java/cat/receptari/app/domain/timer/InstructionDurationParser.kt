@@ -9,6 +9,14 @@ import kotlin.math.roundToLong
  */
 object InstructionDurationParser {
 
+    /**
+     * True when the text mentions a cooking duration at all, including the ambiguous
+     * ranges [parseMinutes] refuses to resolve. Callers use this to decide whether a
+     * timer affordance belongs on a step; [parseMinutes] then supplies the prefill.
+     */
+    fun containsDuration(text: String): Boolean =
+        RANGE.containsMatchIn(text) || parseMinutes(text) != null
+
     fun parseMinutes(text: String): Int? {
         if (RANGE.containsMatchIn(text)) return null
 

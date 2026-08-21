@@ -715,14 +715,20 @@ private fun RecipeContent(
                         connectTop = index > 0,
                         connectBottom = index < lastIndex,
                         illuminated = number == 1,
-                        onSetTimer = {
-                            onSetTimer(
-                                TimerSetupRequest(
-                                    stepId = step.id,
-                                    label = label,
-                                    initialMinutes = InstructionDurationParser.parseMinutes(step.text),
-                                ),
-                            )
+                        // The timer only belongs on steps that actually name a duration.
+                        onSetTimer = if (InstructionDurationParser.containsDuration(step.text)) {
+                            {
+                                onSetTimer(
+                                    TimerSetupRequest(
+                                        stepId = step.id,
+                                        label = label,
+                                        initialMinutes =
+                                            InstructionDurationParser.parseMinutes(step.text),
+                                    ),
+                                )
+                            }
+                        } else {
+                            null
                         },
                     )
                 }
@@ -1330,7 +1336,7 @@ private fun StepRow(
     connectTop: Boolean,
     connectBottom: Boolean,
     illuminated: Boolean,
-    onSetTimer: () -> Unit,
+    onSetTimer: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val palette = ReceptariTheme.palette
@@ -1396,15 +1402,21 @@ private fun StepRow(
                 .weight(1f)
                 .padding(start = 12.dp, top = 2.dp),
         )
-        IconButton(
-            onClick = onSetTimer,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Timer,
-                contentDescription = stringResource(R.string.timer_for_step, number),
-                tint = MaterialTheme.colorScheme.secondary,
-            )
+        if (onSetTimer != null) {
+            IconButton(
+                onClick = onSetTimer,
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Timer,
+                    contentDescription = stringResource(R.string.timer_for_step, number),
+                    tint = MaterialTheme.colorScheme.secondary,
+                )
+            }
+        } else {
+            // Keep the text column the same width on every step so the right margin
+            // does not ripple between timed and untimed steps.
+            Spacer(modifier = Modifier.size(40.dp))
         }
     }
 }

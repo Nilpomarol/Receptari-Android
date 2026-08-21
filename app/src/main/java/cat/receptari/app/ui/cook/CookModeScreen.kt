@@ -371,15 +371,18 @@ fun CookModeScreen(
                             modifier = Modifier.padding(start = 6.dp),
                         )
                     }
-                    OutlinedButton(
-                        onClick = { timerStep = current },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(Icons.Outlined.Timer, contentDescription = null)
-                        Text(
-                            text = stringResource(R.string.timer_set),
-                            modifier = Modifier.padding(start = 6.dp),
-                        )
+                    // The timer only belongs on steps that actually name a duration.
+                    if (InstructionDurationParser.containsDuration(current.text)) {
+                        OutlinedButton(
+                            onClick = { timerStep = current },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(Icons.Outlined.Timer, contentDescription = null)
+                            Text(
+                                text = stringResource(R.string.timer_set),
+                                modifier = Modifier.padding(start = 6.dp),
+                            )
+                        }
                     }
                 }
             }
