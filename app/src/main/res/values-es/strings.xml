@@ -324,7 +324,9 @@
     <string name="transfer_method_title">¿Cómo quieres enviarlas?</string>
     <string name="transfer_method_explanation">Envíalas directamente a un Receptari cercano, o crea una copia para compartirla con otra aplicación.</string>
     <string name="transfer_send_nearby">A un Receptari cercano</string>
+    <string name="transfer_send_nearby_desc">De un móvil a otro, sin internet.</string>
     <string name="transfer_other_apps">Con otra aplicación</string>
+    <string name="transfer_other_apps_desc">Correo, mensajería o archivos.</string>
     <string name="import_receive_nearby">Recibir de un Receptari cercano</string>
     <string name="import_receive_nearby_explanation">Mantén esta pantalla abierta mientras la otra persona busca tu dispositivo.</string>
     <string name="nearby_send_title">Enviar cerca</string>
