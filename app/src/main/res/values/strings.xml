@@ -21,6 +21,7 @@
     <string name="library_search_clear">Esborra la cerca</string>
     <string name="library_no_results_title">Cap resultat</string>
     <string name="library_no_results_body">Prova amb unes altres paraules o treu els filtres.</string>
+    <string name="library_clear_filters">Neteja els filtres</string>
     <string name="library_sort">Ordena per</string>
     <string name="library_filters_clear">Treu els filtres</string>
     <string name="library_send_recipes">Envia receptes</string>
@@ -50,6 +51,7 @@
     <string name="filter_never_cooked">Mai cuinades</string>
     <string name="filter_recently_cooked">Cuinades el darrer mes</string>
     <string name="filter_tags">Etiquetes</string>
+    <string name="tags_clear">Treu les etiquetes</string>
 
     <!-- Recipe detail -->
     <string name="detail_ingredients">Ingredients</string>

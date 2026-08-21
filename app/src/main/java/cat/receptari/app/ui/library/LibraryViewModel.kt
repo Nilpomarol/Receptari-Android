@@ -58,6 +58,7 @@ sealed interface LibraryEvent {
     data object ToggleNeverCookedFilter : LibraryEvent
     data object ToggleRecentlyCookedFilter : LibraryEvent
     data class ToggleTagFilter(val tagId: String) : LibraryEvent
+    data object ClearTagFilters : LibraryEvent
     data object ClearFilters : LibraryEvent
     data class ToggleFavorite(val id: String, val isFavorite: Boolean) : LibraryEvent
     data class FolderCreateRequested(val name: String, val color: FolderColor, val icon: FolderIcon) :
@@ -169,6 +170,9 @@ class LibraryViewModel @Inject constructor(
                         filter.copy(tagIds = tags)
                     }
                 }
+
+            LibraryEvent.ClearTagFilters ->
+                query.update { it.withFilter { filter -> filter.copy(tagIds = emptySet()) } }
 
             LibraryEvent.ClearFilters ->
                 query.update { it.copy(filter = RecipeFilter()) }

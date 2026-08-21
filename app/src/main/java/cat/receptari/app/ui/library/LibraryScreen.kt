@@ -3,14 +3,18 @@ package cat.receptari.app.ui.library
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -30,6 +34,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -45,7 +50,6 @@ import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -55,7 +59,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import cat.receptari.app.core.designsystem.PaperModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -81,6 +84,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -186,6 +190,7 @@ fun LibraryScreen(
 ) {
     var foldersOpen by remember { mutableStateOf(false) }
     var creatingFolder by remember { mutableStateOf(false) }
+    var tagFilterOpen by remember { mutableStateOf(false) }
 
     PaperScaffold(
         modifier = modifier,
@@ -194,7 +199,11 @@ fun LibraryScreen(
             if (state.isSelectionMode) {
                 SelectionTopBar(state = state, onEvent = onEvent)
             } else {
-                Masthead(onOpenSettings = onOpenSettings)
+                Masthead(
+                    onOpenSettings = onOpenSettings,
+                    onStartSelection = { onEvent(LibraryEvent.StartSelection) },
+                    canSelect = state.recipes.isNotEmpty(),
+                )
             }
         },
         floatingActionButton = {
@@ -232,6 +241,7 @@ fun LibraryScreen(
                 FilterPills(
                     state = state,
                     onEvent = onEvent,
+                    onOpenTagFilters = { tagFilterOpen = true },
                     modifier = Modifier.padding(top = 12.dp),
                 )
 
@@ -242,33 +252,41 @@ fun LibraryScreen(
                     onOpenFolders = { foldersOpen = true },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
                 )
-
-                OutlinedButton(
-                    onClick = { onEvent(LibraryEvent.StartSelection) },
-                    enabled = state.recipes.isNotEmpty(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = null)
-                    Text(
-                        text = stringResource(R.string.library_send_recipes),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
             }
 
             when {
-                state.isLoading -> Box(Modifier.fillMaxSize())
+                state.isLoading -> LoadingState()
 
                 state.isLibraryEmpty -> EmptyState(
                     title = stringResource(R.string.library_empty_title),
                     body = stringResource(R.string.library_empty_body),
+                    action = {
+                        Button(onClick = onAddRecipe, shape = CircleShape) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Text(
+                                text = stringResource(R.string.library_add_recipe),
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    },
                 )
 
                 state.recipes.isEmpty() -> EmptyState(
                     title = stringResource(R.string.library_no_results_title),
                     body = stringResource(R.string.library_no_results_body),
+                    action = if (state.filter.isActive) {
+                        {
+                            TextButton(onClick = { onEvent(LibraryEvent.ClearFilters) }) {
+                                Icon(Icons.Default.Clear, contentDescription = null)
+                                Text(
+                                    text = stringResource(R.string.library_clear_filters),
+                                    modifier = Modifier.padding(start = 8.dp),
+                                )
+                            }
+                        }
+                    } else {
+                        null
+                    },
                 )
 
                 else -> LazyColumn(
@@ -300,6 +318,16 @@ fun LibraryScreen(
                 }
             }
         }
+    }
+
+    if (tagFilterOpen) {
+        TagFilterSheet(
+            tags = state.availableTags,
+            selectedIds = state.filter.tagIds,
+            onToggle = { onEvent(LibraryEvent.ToggleTagFilter(it)) },
+            onClear = { onEvent(LibraryEvent.ClearTagFilters) },
+            onDismiss = { tagFilterOpen = false },
+        )
     }
 
     if (foldersOpen) {
@@ -353,6 +381,8 @@ fun LibraryScreen(
 @Composable
 private fun Masthead(
     onOpenSettings: () -> Unit,
+    onStartSelection: () -> Unit,
+    canSelect: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -362,8 +392,8 @@ private fun Masthead(
             .padding(top = 4.dp, bottom = 10.dp),
     ) {
         // Engraved sprigs flanking the title, the way a title page is decorated. They sit
-        // beside the wordmark rather than in the corners: the corners are where the settings
-        // button lives, and an icon on top of leaves is just clutter.
+        // beside the wordmark rather than in the corners: the corners are where the buttons
+        // live, and an icon on top of leaves is just clutter.
         CornerFlourish(
             modifier = Modifier
                 .align(Alignment.CenterStart)
@@ -380,6 +410,22 @@ private fun Masthead(
             text = stringResource(R.string.library_title),
             modifier = Modifier.align(Alignment.Center),
         )
+
+        // Share/select in the top-left corner mirrors settings on the right, so the two
+        // page actions balance the wordmark instead of a full-width button cutting across
+        // the index below.
+        if (canSelect) {
+            IconButton(
+                onClick = onStartSelection,
+                modifier = Modifier.align(Alignment.TopStart),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = stringResource(R.string.library_send_recipes),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
 
         IconButton(
             onClick = onOpenSettings,
@@ -516,12 +562,15 @@ private fun SearchField(
  * Filters as a scrolling row rather than a menu.
  *
  * Which filters are on is the most useful thing to know when the list comes back empty, and
- * a dropdown hides exactly that.
+ * a dropdown hides exactly that — so the state filters and any *active* tag stay on the row.
+ * The full tag list, which could be dozens long, moves behind a "Tags" opener rather than
+ * running off the end of the scroll where the reader can never see all of it at once.
  */
 @Composable
 private fun FilterPills(
     state: LibraryUiState,
     onEvent: (LibraryEvent) -> Unit,
+    onOpenTagFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -555,13 +604,94 @@ private fun FilterPills(
             onClick = { onEvent(LibraryEvent.ToggleRecentlyCookedFilter) },
             icon = Icons.Outlined.Schedule,
         )
-        state.availableTags.forEach { tag ->
+
+        // The tags currently narrowing the list stay visible and removable in place.
+        state.availableTags
+            .filter { it.id in state.filter.tagIds }
+            .forEach { tag ->
+                FilterPill(
+                    label = tag.name,
+                    selected = true,
+                    onClick = { onEvent(LibraryEvent.ToggleTagFilter(tag.id)) },
+                    icon = Icons.Outlined.LocalOffer,
+                )
+            }
+
+        // …and the opener onto the whole shelf of tags.
+        if (state.availableTags.isNotEmpty()) {
             FilterPill(
-                label = tag.name,
-                selected = tag.id in state.filter.tagIds,
-                onClick = { onEvent(LibraryEvent.ToggleTagFilter(tag.id)) },
-                icon = Icons.Outlined.LocalOffer,
+                label = stringResource(R.string.filter_tags),
+                selected = false,
+                onClick = onOpenTagFilters,
+                icon = Icons.Default.ArrowDropDown,
             )
+        }
+    }
+}
+
+/**
+ * The whole shelf of tags, laid out as wrapping toggle chips so every tag is visible at once
+ * — the thing a scrolling row cannot do once there are more than a handful.
+ */
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun TagFilterSheet(
+    tags: List<Tag>,
+    selectedIds: Set<String>,
+    onToggle: (String) -> Unit,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    PaperModalBottomSheet(
+        modifier = modifier,
+        onDismissRequest = onDismiss,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            OrnamentHeading(title = stringResource(R.string.filter_tags))
+
+            // Selected tags float to the front, so what is currently narrowing the list is
+            // the first thing read.
+            val ordered = tags.sortedWith(
+                compareBy({ it.id !in selectedIds }, { it.name.lowercase() }),
+            )
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ordered.forEach { tag ->
+                    FilterPill(
+                        label = tag.name,
+                        selected = tag.id in selectedIds,
+                        onClick = { onToggle(tag.id) },
+                        icon = if (tag.id in selectedIds) {
+                            Icons.Default.Check
+                        } else {
+                            Icons.Outlined.LocalOffer
+                        },
+                    )
+                }
+            }
+
+            if (selectedIds.isNotEmpty()) {
+                TextButton(
+                    onClick = onClear,
+                    modifier = Modifier.align(Alignment.End),
+                ) {
+                    Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        text = stringResource(R.string.tags_clear),
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -747,15 +877,31 @@ internal fun RecipeCard(
     PaperCard(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
-        contentPadding = PaddingValues(10.dp),
+        contentPadding = PaddingValues(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            RecipePlate(imagePath = recipe.imagePath)
+            // The plate carries its own corner stamp: a wax seal for a favourite, or the
+            // selection tick while picking recipes to send.
+            Box {
+                RecipePlate(imagePath = recipe.imagePath, size = 92.dp)
+                val stampModifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(5.dp)
+                if (selectionMode) {
+                    SelectionStamp(selected = selected, modifier = stampModifier)
+                } else {
+                    FavoriteSeal(
+                        isFavorite = recipe.isFavorite,
+                        onToggle = onToggleFavorite,
+                        modifier = stampModifier,
+                    )
+                }
+            }
 
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp),
+                    .padding(start = 14.dp),
             ) {
                 Text(
                     text = recipe.title,
@@ -770,7 +916,7 @@ internal fun RecipeCard(
 
                 if (minutes != null || servings != null) {
                     Row(
-                        modifier = Modifier.padding(top = 5.dp),
+                        modifier = Modifier.padding(top = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
@@ -793,7 +939,7 @@ internal fun RecipeCard(
                     StarRating(
                         rating = rating,
                         contentDescription = stringResource(R.string.common_rating_value, rating),
-                        modifier = Modifier.padding(top = 5.dp),
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
 
@@ -820,39 +966,73 @@ internal fun RecipeCard(
                 if (!hasMeta) {
                     OrnamentalDivider(
                         modifier = Modifier
-                            .padding(top = 6.dp)
+                            .padding(top = 8.dp)
                             .width(88.dp),
                     )
                 }
             }
+        }
+    }
+}
 
-            if (selectionMode) {
-                Checkbox(
-                    checked = selected,
-                    onCheckedChange = { onClick() },
+/**
+ * A favourite, stamped on the plate like sealing wax: a claret disc bearing a heart pressed
+ * into it. Unmarked, it is a faint ghost of the same seal, so it still invites a tap.
+ */
+@Composable
+private fun FavoriteSeal(
+    isFavorite: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val heart = ReceptariTheme.palette.heart
+    Surface(
+        onClick = onToggle,
+        modifier = modifier.size(30.dp),
+        shape = CircleShape,
+        color = if (isFavorite) heart else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+        border = BorderStroke(1.dp, if (isFavorite) heart else ReceptariTheme.palette.rule),
+        shadowElevation = if (isFavorite) 2.dp else 0.dp,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = stringResource(
+                    if (isFavorite) R.string.detail_favorite_remove else R.string.detail_favorite_add,
+                ),
+                tint = if (isFavorite) {
+                    MaterialTheme.colorScheme.surface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+/** The plate's corner while selecting: a filled tick when picked, an empty ring otherwise. */
+@Composable
+private fun SelectionStamp(selected: Boolean, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.size(30.dp),
+        shape = CircleShape,
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+        },
+        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else ReceptariTheme.palette.rule),
+        shadowElevation = if (selected) 2.dp else 0.dp,
+    ) {
+        if (selected) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(18.dp),
                 )
-            } else {
-                IconButton(onClick = onToggleFavorite) {
-                    Icon(
-                        imageVector = if (recipe.isFavorite) {
-                            Icons.Default.Favorite
-                        } else {
-                            Icons.Default.FavoriteBorder
-                        },
-                        contentDescription = stringResource(
-                            if (recipe.isFavorite) {
-                                R.string.detail_favorite_remove
-                            } else {
-                                R.string.detail_favorite_add
-                            },
-                        ),
-                        tint = if (recipe.isFavorite) {
-                            ReceptariTheme.palette.heart
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
             }
         }
     }
@@ -882,12 +1062,12 @@ private fun MetaItem(icon: ImageVector, label: String, modifier: Modifier = Modi
 
 /** The photograph, framed like one pasted into the book — or its empty mount. */
 @Composable
-private fun RecipePlate(imagePath: String?, modifier: Modifier = Modifier) {
+private fun RecipePlate(imagePath: String?, modifier: Modifier = Modifier, size: Dp = 76.dp) {
     val shape = RoundedCornerShape(4.dp)
     // pageFrame sits outside the clip: inside it, the outer half of the stroke would be
     // clipped away and the frame would render at half its width.
     val frame = modifier
-        .size(76.dp)
+        .size(size)
         .pageFrame(shape, ReceptariTheme.palette.rule, inset = 0.dp)
         .clip(shape)
 
@@ -900,7 +1080,7 @@ private fun RecipePlate(imagePath: String?, modifier: Modifier = Modifier) {
                 imageVector = Icons.Outlined.Restaurant,
                 contentDescription = null,
                 tint = ReceptariTheme.palette.rule,
-                modifier = Modifier.size(26.dp),
+                modifier = Modifier.size(size * 0.34f),
             )
         }
     } else {
@@ -913,8 +1093,69 @@ private fun RecipePlate(imagePath: String?, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * The library while it is still being fetched: a few empty mounts with ruled lines where the
+ * recipes will land, rather than a blank page or a spinner that belongs to a different app.
+ */
 @Composable
-private fun EmptyState(title: String, body: String, modifier: Modifier = Modifier) {
+private fun LoadingState(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        repeat(SkeletonCardCount) { SkeletonCard() }
+    }
+}
+
+@Composable
+private fun SkeletonCard(modifier: Modifier = Modifier) {
+    PaperCard(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(92.dp)
+                    .pageFrame(RoundedCornerShape(4.dp), ReceptariTheme.palette.rule, inset = 0.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                SkeletonBar(widthFraction = 0.72f, height = 16.dp)
+                SkeletonBar(widthFraction = 0.44f, height = 12.dp)
+                SkeletonBar(widthFraction = 0.56f, height = 12.dp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkeletonBar(widthFraction: Float, height: Dp, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth(widthFraction)
+            .heightIn(min = height)
+            .height(height)
+            .clip(RoundedCornerShape(3.dp))
+            .background(ReceptariTheme.palette.rule.copy(alpha = 0.28f)),
+    )
+}
+
+@Composable
+private fun EmptyState(
+    title: String,
+    body: String,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -922,7 +1163,12 @@ private fun EmptyState(title: String, body: String, modifier: Modifier = Modifie
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        OrnamentalDivider(modifier = Modifier.padding(bottom = 20.dp))
+        // A pair of engraved sprigs meeting over the notice, the way a chapter opener is set.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CornerFlourish()
+            CornerFlourish(mirrored = true)
+        }
+        OrnamentalDivider(modifier = Modifier.padding(top = 4.dp, bottom = 20.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
@@ -932,9 +1178,16 @@ private fun EmptyState(title: String, body: String, modifier: Modifier = Modifie
             text = body,
             modifier = Modifier.padding(top = 10.dp),
         )
+        action?.let {
+            Spacer(modifier = Modifier.height(20.dp))
+            it()
+        }
         OrnamentalDivider(modifier = Modifier.padding(top = 20.dp))
     }
 }
+
+/** How many placeholder cards the loading page shows before the real list arrives. */
+private const val SkeletonCardCount = 4
 
 @Composable
 private fun RecipeSort.label(): String = stringResource(

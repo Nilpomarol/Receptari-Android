@@ -1822,14 +1822,22 @@ private fun QuickTagSheet(
     onRemoveTag: (String) -> Unit,
 ) {
     var draft by remember { mutableStateOf("") }
-    val candidateTags = remember(availableTags, currentTags, draft) {
-        val unassigned = (availableTags - currentTags.toSet()).distinct()
-        if (draft.isBlank()) {
-            unassigned
-        } else {
-            unassigned.filter { it.contains(draft.trim(), ignoreCase = true) }
-        }
+    val currentLower = remember(currentTags) {
+        currentTags.mapTo(mutableSetOf()) { it.lowercase() }
     }
+    // One grid of every tag rather than a "your tags" list beside a "other tags" list: a
+    // chip is on when the recipe carries it and off when it does not, and tapping flips it.
+    // Assigned tags sort to the front so the recipe's own tags read first.
+    val allTags = remember(availableTags, currentTags, draft) {
+        val union = (currentTags + availableTags).distinctBy { it.lowercase() }
+        val filtered = if (draft.isBlank()) {
+            union
+        } else {
+            union.filter { it.contains(draft.trim(), ignoreCase = true) }
+        }
+        filtered.sortedWith(compareBy({ it.lowercase() !in currentLower }, { it.lowercase() }))
+    }
+    val canCreate = draft.isNotBlank() && draft.trim().lowercase() !in currentLower
 
     PaperModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1876,7 +1884,7 @@ private fun QuickTagSheet(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            if (draft.isNotBlank()) {
+                            if (canCreate) {
                                 onAddTag(draft.trim())
                                 draft = ""
                             }
@@ -1886,9 +1894,9 @@ private fun QuickTagSheet(
                 )
 
                 Button(
-                    enabled = draft.isNotBlank(),
+                    enabled = canCreate,
                     onClick = {
-                        if (draft.isNotBlank()) {
+                        if (canCreate) {
                             onAddTag(draft.trim())
                             draft = ""
                         }
@@ -1908,114 +1916,27 @@ private fun QuickTagSheet(
                 }
             }
 
-            if (currentTags.isNotEmpty()) {
-                Column(
+            if (allTags.isNotEmpty()) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = stringResource(R.string.edit_field_tags),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        currentTags.forEach { tag ->
-                            ActiveTagPill(
-                                tag = tag,
-                                onRemove = { onRemoveTag(tag) },
-                            )
-                        }
+                    allTags.forEach { tag ->
+                        val assigned = tag.lowercase() in currentLower
+                        FilterPill(
+                            label = tag,
+                            selected = assigned,
+                            onClick = { if (assigned) onRemoveTag(tag) else onAddTag(tag) },
+                            icon = if (assigned) {
+                                Icons.Default.Check
+                            } else {
+                                Icons.AutoMirrored.Outlined.Label
+                            },
+                        )
                     }
                 }
             }
-
-            if (candidateTags.isNotEmpty()) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.filter_tags),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        candidateTags.forEach { tag ->
-                            CandidateTagPill(
-                                tag = tag,
-                                onSelect = { onAddTag(tag) },
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActiveTagPill(
-    tag: String,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.clickable(onClick = onRemove),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = tag,
-                style = MaterialTheme.typography.labelMedium,
-            )
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = stringResource(R.string.edit_tag_remove, tag),
-                modifier = Modifier.size(14.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun CandidateTagPill(
-    tag: String,
-    onSelect: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = ReceptariTheme.palette
-    Surface(
-        modifier = modifier.clickable(onClick = onSelect),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, palette.rule),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = tag,
-                style = MaterialTheme.typography.labelMedium,
-            )
         }
     }
 }
