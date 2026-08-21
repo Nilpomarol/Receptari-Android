@@ -70,6 +70,9 @@
     <string name="detail_prep_time">Preparación</string>
     <string name="detail_cook_time">Cocción</string>
     <string name="detail_total_time">Total</string>
+    <string name="detail_duration_minutes">%1$d min</string>
+    <string name="detail_duration_hours">%1$d h</string>
+    <string name="detail_duration_hours_minutes">%1$d h %2$d min</string>
     <string name="detail_never_cooked">Todavía no la has cocinado</string>
     <string name="detail_rating">Valoración</string>
     <plurals name="detail_cook_count">
