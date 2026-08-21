@@ -13,6 +13,7 @@
         <string name="library_search_clear">Clear search</string>
     <string name="library_no_results_title">No results</string>
     <string name="library_no_results_body">Try different words, or clear the filters.</string>
+    <string name="library_clear_filters">Clear filters</string>
     <string name="library_sort">Sort by</string>
     <string name="library_filters_clear">Clear filters</string>
     <string name="library_send_recipes">Send recipes</string>
@@ -40,6 +41,7 @@
     <string name="filter_never_cooked">Never cooked</string>
     <string name="filter_recently_cooked">Cooked in the last month</string>
     <string name="filter_tags">Tags</string>
+    <string name="tags_clear">Clear tags</string>
 
     <string name="detail_ingredients">Ingredients</string>
     <string name="detail_instructions">Instructions</string>
