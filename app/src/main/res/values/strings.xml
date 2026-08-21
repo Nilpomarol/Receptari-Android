@@ -302,6 +302,8 @@
     <string name="settings_backup_title">Còpia de seguretat</string>
     <string name="settings_backup_explanation">Exporta tota la biblioteca i les imatges en un sol fitxer. La clau de Claude i els temporitzadors actius no s\'hi inclouen. En restaurar-lo, la biblioteca actual se substituirà.</string>
     <string name="settings_backup_export">Exporta una còpia</string>
+    <string name="settings_backup_last">Última còpia: %1$s</string>
+    <string name="settings_backup_last_never">Encara no has fet cap còpia de seguretat</string>
     <string name="settings_restore_choose">Restaura una còpia</string>
     <string name="settings_backup_working">Preparant la biblioteca…</string>
     <string name="settings_backup_exported">Còpia de seguretat exportada</string>

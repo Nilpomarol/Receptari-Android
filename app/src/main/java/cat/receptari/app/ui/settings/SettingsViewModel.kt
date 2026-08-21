@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+import java.time.Instant
 import javax.inject.Inject
 
 data class SettingsUiState(
@@ -42,6 +43,7 @@ data class SettingsUiState(
     val isBackupBusy: Boolean = false,
     val isTransferBusy: Boolean = false,
     val restorePreview: RestorePreview? = null,
+    val lastBackupAt: Instant? = null,
 ) {
     val canSave: Boolean get() = keyInput.isNotBlank() && !isTesting
 }
@@ -94,6 +96,10 @@ class SettingsViewModel @Inject constructor(
     init {
         apiKeyRepository.observeHasKey()
             .onEach { hasKey -> _uiState.update { it.copy(hasKey = hasKey) } }
+            .launchIn(viewModelScope)
+
+        backupRepository.observeLastBackupAt()
+            .onEach { at -> _uiState.update { it.copy(lastBackupAt = at) } }
             .launchIn(viewModelScope)
     }
 
@@ -171,6 +177,7 @@ class SettingsViewModel @Inject constructor(
     fun onBackupSaved(archive: BackupArchive, succeeded: Boolean) {
         viewModelScope.launch {
             backupRepository.discardExport(archive.file)
+            if (succeeded) backupRepository.recordBackupCompleted()
             _messages.send(
                 SettingsMessage(
                     if (succeeded) R.string.settings_backup_exported

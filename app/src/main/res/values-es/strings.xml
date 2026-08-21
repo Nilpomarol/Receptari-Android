@@ -278,6 +278,8 @@
     <string name="settings_backup_title">Copia de seguridad</string>
     <string name="settings_backup_explanation">Exporta toda la biblioteca y sus imágenes en un único archivo. La clave de Claude y los temporizadores activos no se incluyen. Al restaurarlo se sustituye la biblioteca actual.</string>
     <string name="settings_backup_export">Exportar una copia</string>
+    <string name="settings_backup_last">Última copia: %1$s</string>
+    <string name="settings_backup_last_never">Todavía no has hecho ninguna copia de seguridad</string>
     <string name="settings_restore_choose">Restaurar una copia</string>
     <string name="settings_backup_working">Preparando la biblioteca…</string>
     <string name="settings_backup_exported">Copia de seguridad exportada</string>
