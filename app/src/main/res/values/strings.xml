@@ -350,7 +350,9 @@
     <string name="transfer_method_title">Com les vols enviar?</string>
     <string name="transfer_method_explanation">Envia-les directament a un Receptari proper, o crea una còpia per compartir amb una altra aplicació.</string>
     <string name="transfer_send_nearby">A un Receptari proper</string>
+    <string name="transfer_send_nearby_desc">D\'un mòbil a l\'altre, sense internet.</string>
     <string name="transfer_other_apps">Amb una altra aplicació</string>
+    <string name="transfer_other_apps_desc">Correu, missatgeria o fitxers.</string>
     <string name="import_receive_nearby">Rep d’un Receptari proper</string>
     <string name="import_receive_nearby_explanation">Mantén aquesta pantalla oberta mentre l’altra persona cerca el teu dispositiu.</string>
     <string name="nearby_send_title">Envia a prop</string>
