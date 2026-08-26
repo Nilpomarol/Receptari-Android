@@ -168,9 +168,16 @@
     <string name="edit_remove_step">Eliminar el paso</string>
     <string name="edit_move_up">Mover arriba</string>
     <string name="edit_move_down">Mover abajo</string>
+    <string name="edit_line_options">Más opciones</string>
+    <string name="edit_reorder_handle">Arrastra para reordenar</string>
     <string name="edit_image_remove">Quitar la imagen</string>
     <string name="edit_image_from_gallery">Elegir de la galería</string>
     <string name="edit_image_from_camera">Hacer una foto</string>
+    <string name="edit_cover_hint">Añade una foto de portada</string>
+    <string name="edit_cover_change">Cambiar la foto</string>
+    <string name="edit_minutes_unit">min</string>
+    <string name="edit_section_ingredients_hint">Nombre del grupo, p. ej. Para la salsa</string>
+    <string name="edit_section_instructions_hint">Nombre de la etapa, p. ej. Montaje</string>
     <string name="edit_camera_unavailable_title">No se ha encontrado ninguna cámara</string>
     <string name="edit_camera_unavailable_body">No hay ninguna aplicación de cámara disponible para hacer la foto.</string>
     <string name="edit_discard_title">¿Descartar los cambios?</string>

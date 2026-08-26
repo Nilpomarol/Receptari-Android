@@ -102,7 +102,19 @@ sealed interface RecipeEditEvent {
     data class SectionRemoved(val kind: SectionKind, val sectionId: String) : RecipeEditEvent
 
     data class LineChanged(val kind: SectionKind, val sectionId: String, val lineId: String, val value: String) : RecipeEditEvent
-    data class LineAdded(val kind: SectionKind, val sectionId: String) : RecipeEditEvent
+
+    /**
+     * Adds an empty line. With [afterLineId] null it appends; otherwise it inserts directly
+     * below that line — the shape keyboard-driven entry needs, where pressing "next" on a
+     * line grows a fresh one right under it. [newLineId] is supplied by the caller so the UI
+     * can move focus onto the line it just created.
+     */
+    data class LineAdded(
+        val kind: SectionKind,
+        val sectionId: String,
+        val afterLineId: String? = null,
+        val newLineId: String = UUID.randomUUID().toString(),
+    ) : RecipeEditEvent
     data class LineRemoved(val kind: SectionKind, val sectionId: String, val lineId: String) : RecipeEditEvent
     data class LineMoved(val kind: SectionKind, val sectionId: String, val lineId: String, val delta: Int) : RecipeEditEvent
 
@@ -352,7 +364,15 @@ class RecipeEditViewModel @Inject constructor(
                 lines.map { if (it.id == event.lineId) it.copy(text = event.value) else it }
             }
 
-            is RecipeEditEvent.LineAdded -> updateLines(event.kind, event.sectionId) { it + FormLine() }
+            is RecipeEditEvent.LineAdded -> updateLines(event.kind, event.sectionId) { lines ->
+                val newLine = FormLine(id = event.newLineId)
+                val index = lines.indexOfFirst { it.id == event.afterLineId }
+                if (index < 0) {
+                    lines + newLine
+                } else {
+                    lines.toMutableList().apply { add(index + 1, newLine) }
+                }
+            }
 
             is RecipeEditEvent.LineRemoved -> updateLines(event.kind, event.sectionId) { lines ->
                 if (lines.size <= 1) listOf(FormLine()) else lines.filterNot { it.id == event.lineId }
