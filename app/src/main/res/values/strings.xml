@@ -189,9 +189,16 @@
     <string name="edit_remove_step">Elimina el pas</string>
     <string name="edit_move_up">Mou amunt</string>
     <string name="edit_move_down">Mou avall</string>
+    <string name="edit_line_options">Més opcions</string>
+    <string name="edit_reorder_handle">Arrossega per reordenar</string>
     <string name="edit_image_remove">Treu la imatge</string>
     <string name="edit_image_from_gallery">Tria de la galeria</string>
     <string name="edit_image_from_camera">Fes una foto</string>
+    <string name="edit_cover_hint">Afegeix una foto de portada</string>
+    <string name="edit_cover_change">Canvia la foto</string>
+    <string name="edit_minutes_unit">min</string>
+    <string name="edit_section_ingredients_hint">Nom del grup, p. ex. Per a la salsa</string>
+    <string name="edit_section_instructions_hint">Nom de l\'etapa, p. ex. Muntatge</string>
     <string name="edit_camera_unavailable_title">No s’ha trobat cap càmera</string>
     <string name="edit_camera_unavailable_body">No hi ha cap aplicació de càmera disponible per fer la foto.</string>
     <string name="edit_discard_title">Vols descartar els canvis?</string>

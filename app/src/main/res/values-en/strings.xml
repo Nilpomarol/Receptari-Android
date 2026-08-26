@@ -166,9 +166,16 @@
     <string name="edit_remove_step">Remove step</string>
     <string name="edit_move_up">Move up</string>
     <string name="edit_move_down">Move down</string>
+    <string name="edit_line_options">More options</string>
+    <string name="edit_reorder_handle">Drag to reorder</string>
     <string name="edit_image_remove">Remove image</string>
     <string name="edit_image_from_gallery">Choose from gallery</string>
     <string name="edit_image_from_camera">Take a photo</string>
+    <string name="edit_cover_hint">Add a cover photo</string>
+    <string name="edit_cover_change">Change the photo</string>
+    <string name="edit_minutes_unit">min</string>
+    <string name="edit_section_ingredients_hint">Group name, e.g. For the sauce</string>
+    <string name="edit_section_instructions_hint">Stage name, e.g. Assembly</string>
     <string name="edit_camera_unavailable_title">No camera found</string>
     <string name="edit_camera_unavailable_body">No camera app is available to take the photo.</string>
     <string name="edit_discard_title">Discard changes?</string>
