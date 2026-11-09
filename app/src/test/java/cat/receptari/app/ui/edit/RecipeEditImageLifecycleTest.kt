@@ -142,9 +142,29 @@ class RecipeEditImageLifecycleTest {
         assertTrue(imageStore.deleted.isEmpty())
     }
 
+    @Test
+    fun `an edit survives process death, including images it wrote`() = runTest {
+        val handle = SavedStateHandle(mapOf("recipeId" to RECIPE_ID))
+        val before = editorFor(existingImage = originalImage, handle = handle)
+        before.onEvent(RecipeEditEvent.TitleChanged("Arròs caldós"))
+        before.onEvent(RecipeEditEvent.ImagePicked(ByteArray(0)))
+        val picked = imageStore.saved.single()
+
+        // A new ViewModel over the same saved state is what Android does after process death.
+        val after = editorFor(existingImage = originalImage, handle = handle)
+
+        assertEquals("Arròs caldós", after.uiState.value.title)
+        assertEquals(picked, after.uiState.value.imagePath)
+        after.discardChanges()
+        assertEquals(listOf(picked), imageStore.deleted)
+    }
+
     // --- helpers ------------------------------------------------------------------
 
-    private fun editorFor(existingImage: String?): RecipeEditViewModel {
+    private fun editorFor(
+        existingImage: String?,
+        handle: SavedStateHandle = SavedStateHandle(mapOf("recipeId" to RECIPE_ID)),
+    ): RecipeEditViewModel {
         repository.recipe = Recipe(
             id = RECIPE_ID,
             title = "Arròs negre",
@@ -154,7 +174,7 @@ class RecipeEditImageLifecycleTest {
         )
 
         return RecipeEditViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("recipeId" to RECIPE_ID)),
+            savedStateHandle = handle,
             recipeRepository = repository,
             folderRepository = FakeFolderRepository(),
             imageStore = imageStore,

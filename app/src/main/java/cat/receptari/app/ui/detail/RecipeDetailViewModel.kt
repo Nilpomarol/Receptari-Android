@@ -65,6 +65,7 @@ sealed interface RecipeDetailEvent {
     data object ResetServings : RecipeDetailEvent
     data object ToggleFavorite : RecipeDetailEvent
     data object MarkCooked : RecipeDetailEvent
+    data class UndoMarkCooked(val eventId: String) : RecipeDetailEvent
     data object Delete : RecipeDetailEvent
     data class SetRating(val rating: Int?) : RecipeDetailEvent
     data class SetFolder(val folder: Folder?) : RecipeDetailEvent
@@ -92,7 +93,7 @@ sealed interface RecipeDetailEvent {
 }
 
 sealed interface RecipeDetailEffect {
-    data object MarkedCooked : RecipeDetailEffect
+    data class MarkedCooked(val eventId: String) : RecipeDetailEffect
     data object Deleted : RecipeDetailEffect
     data object RequestExactAlarmPermission : RecipeDetailEffect
     data object TimerStarted : RecipeDetailEffect
@@ -244,9 +245,15 @@ class RecipeDetailViewModel @Inject constructor(
                 recipeRepository.save(recipe.copy(tags = updatedTags))
             }
 
+            // An accidental double tap would inflate the log, so every mark offers an undo
+            // that deletes exactly the event it created.
             RecipeDetailEvent.MarkCooked -> viewModelScope.launch {
-                cookHistoryRepository.markCooked(recipeId)
-                effectChannel.send(RecipeDetailEffect.MarkedCooked)
+                val eventId = cookHistoryRepository.markCooked(recipeId)
+                effectChannel.send(RecipeDetailEffect.MarkedCooked(eventId))
+            }
+
+            is RecipeDetailEvent.UndoMarkCooked -> viewModelScope.launch {
+                cookHistoryRepository.deleteEvent(event.eventId)
             }
 
             RecipeDetailEvent.Delete -> viewModelScope.launch {

@@ -10,9 +10,10 @@ interface CookHistoryRepository {
 
     /**
      * Records one occasion of cooking the recipe. Called repeatedly over a recipe's life —
-     * this is an append, never a status flag (PRD §4).
+     * this is an append, never a status flag (PRD §4). Returns the new event's id so the
+     * caller can offer an undo.
      */
-    suspend fun markCooked(recipeId: String, cookedAt: Instant? = null, note: String? = null)
+    suspend fun markCooked(recipeId: String, cookedAt: Instant? = null, note: String? = null): String
 
     suspend fun deleteEvent(id: String)
 }

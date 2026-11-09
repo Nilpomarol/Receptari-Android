@@ -330,6 +330,13 @@ class NearbyRecipeTransferManager @Inject constructor(
         client.stopAllEndpoints()
         pendingEndpointId = null
         connectedEndpointId = null
+        // Nearby writes incoming files to shared storage. A cancelled, failed or extra
+        // payload would otherwise stay in the user's Downloads forever.
+        receivedFiles.values.forEach { payload ->
+            payload.asFile()?.asUri()?.let { uri ->
+                runCatching { context.contentResolver.delete(uri, null, null) }
+            }
+        }
         receivedFiles.clear()
         completedIncomingPayloadId = null
         outgoingFilePayloadId = null

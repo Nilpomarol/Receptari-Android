@@ -194,6 +194,26 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun migrate5To6RebuildsSearchIndexIgnoringAccents() {
+        helper.createDatabase(TEST_DB, 5).use { db ->
+            db.execSQL(
+                "INSERT INTO recipe_fts (recipeId, title, notes, ingredientNames, tagNames) " +
+                    "VALUES ('r1', 'Pa amb tomàquet', '', 'ARRÒS', '')",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 6, true, ReceptariDatabase.MIGRATION_5_6)
+
+        listOf("tomaquet*", "arros*").forEach { query ->
+            db.query("SELECT recipeId FROM recipe_fts WHERE recipe_fts MATCH ?", arrayOf(query))
+                .use { cursor ->
+                    assertTrue("no match for $query", cursor.moveToFirst())
+                    assertEquals("r1", cursor.getString(0))
+                }
+        }
+    }
+
     private fun assertColumnExists(
         db: androidx.sqlite.db.SupportSQLiteDatabase,
         table: String,

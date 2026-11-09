@@ -61,9 +61,14 @@ class TransferImportViewModel @Inject constructor(
         }
     }
 
-    private fun copyIncoming(uri: Uri): File? = runCatching {
+    private fun copyIncoming(uri: Uri): File? {
         val directory = File(context.cacheDir, "recipe-transfers/received").apply { mkdirs() }
         val target = File(directory, "${UUID.randomUUID()}.receptari-share")
+        // An oversized or broken stream must not leave a partial copy (up to 2 GB) behind.
+        return runCatching { copyInto(uri, target) }.onFailure { target.delete() }.getOrNull()
+    }
+
+    private fun copyInto(uri: Uri, target: File): File {
         context.contentResolver.openInputStream(uri)?.use { input ->
             target.outputStream().use { output ->
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
@@ -77,8 +82,8 @@ class TransferImportViewModel @Inject constructor(
                 }
             }
         } ?: error("No input stream")
-        target
-    }.getOrNull()
+        return target
+    }
 
     private companion object {
         const val MAX_PACKAGE_BYTES = 2L * 1024 * 1024 * 1024

@@ -43,8 +43,9 @@ class OkHttpWebPageSource @Inject constructor(
                 if (!response.isSuccessful) {
                     return@withContext Result.failure(ImportError.PageUnreachable)
                 }
-                val html = response.body?.string()
-                    ?: return@withContext Result.failure(ImportError.PageUnreachable)
+                // peekBody reads at most MAX_HTML_BYTES, so a huge or endless response cannot
+                // exhaust memory before the text cap below ever applies.
+                val html = response.peekBody(MAX_HTML_BYTES).string()
 
                 val document = Jsoup.parse(html, normalized)
                 // Scripts and styles are text too, and would otherwise dominate the payload
@@ -94,5 +95,8 @@ class OkHttpWebPageSource @Inject constructor(
 
         /** Enough for any recipe page; caps what a hostile or enormous page can cost. */
         const val MAX_TEXT_CHARS = 60_000
+
+        /** Real recipe pages are well under this, inline JSON-LD included. */
+        const val MAX_HTML_BYTES = 5L * 1024 * 1024
     }
 }

@@ -23,10 +23,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
 
-private const val DATABASE_SCHEMA_VERSION = 5
+private const val DATABASE_SCHEMA_VERSION = 6
 
 /**
- * Schema version 5.
+ * Schema version 6.
  *
  * `exportSchema = true` and the generated JSON under `app/schemas/` are committed, because
  * every future change ships an explicit migration plus a migration test — there is no
@@ -216,6 +216,27 @@ abstract class ReceptariDatabase : RoomDatabase() {
                         )
                     }
                 }
+            }
+        }
+
+        /**
+         * Rebuilds the search index with the `unicode61` tokenizer so search ignores accents.
+         * The index is denormalized, so its rows are copied across as they are.
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `recipe_fts` RENAME TO `recipe_fts_old`")
+                db.execSQL(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS `recipe_fts` USING FTS4(" +
+                        "`recipeId` TEXT NOT NULL, `title` TEXT NOT NULL, `notes` TEXT NOT NULL, " +
+                        "`ingredientNames` TEXT NOT NULL, `tagNames` TEXT NOT NULL, " +
+                        "tokenize=unicode61)",
+                )
+                db.execSQL(
+                    "INSERT INTO `recipe_fts` (recipeId, title, notes, ingredientNames, tagNames) " +
+                        "SELECT recipeId, title, notes, ingredientNames, tagNames FROM `recipe_fts_old`",
+                )
+                db.execSQL("DROP TABLE `recipe_fts_old`")
             }
         }
 

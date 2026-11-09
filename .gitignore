@@ -17,6 +17,8 @@ local.properties
 *.jks
 *.keystore
 /keystore.properties
+*keystore.properties
+!keystore.properties.example
 
 # Room schemas ARE committed on purpose (see Docs/DATA_MODEL.md §5) — do not ignore
 # app/schemas/

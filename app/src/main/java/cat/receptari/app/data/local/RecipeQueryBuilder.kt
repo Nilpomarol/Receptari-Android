@@ -102,13 +102,15 @@ object RecipeQueryBuilder {
         return terms.joinToString(" ") { "$it*" }
     }
 
+    // UNICODE is Android's ICU root collation: "Àpat" sorts with the A's, not after Z as it
+    // does under NOCASE, which only folds ASCII.
     private fun orderBy(sort: RecipeSort): String = when (sort) {
-        RecipeSort.Alphabetical -> "r.title COLLATE NOCASE ASC"
+        RecipeSort.Alphabetical -> "r.title COLLATE UNICODE ASC"
         RecipeSort.RecentlyAdded -> "r.createdAt DESC"
         // SQLite sorts NULL first on DESC, so push never-cooked recipes to the bottom.
         RecipeSort.RecentlyCooked -> "lastCookedAt IS NULL, lastCookedAt DESC"
-        RecipeSort.MostCooked -> "cookCount DESC, r.title COLLATE NOCASE ASC"
-        RecipeSort.HighestRated -> "r.rating IS NULL, r.rating DESC, r.title COLLATE NOCASE ASC"
+        RecipeSort.MostCooked -> "cookCount DESC, r.title COLLATE UNICODE ASC"
+        RecipeSort.HighestRated -> "r.rating IS NULL, r.rating DESC, r.title COLLATE UNICODE ASC"
         // Must match CookingTime.effective, or the list sorts by one number and prints
         // another. SQL does the work for free: `prep + cook` is NULL unless both exist,
         // which is exactly the fallback order the domain rule uses.

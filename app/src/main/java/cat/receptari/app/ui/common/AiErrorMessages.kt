@@ -18,6 +18,7 @@ fun AiError.messageRes(): Int = when (this) {
     AiError.NoApiKey -> R.string.ai_error_no_key
     AiError.InvalidApiKey -> R.string.ai_error_invalid_key
     AiError.RateLimited -> R.string.ai_error_rate_limited
+    AiError.ServiceUnavailable -> R.string.ai_error_unavailable
     AiError.QuotaExceeded -> R.string.ai_error_quota
     AiError.Offline -> R.string.ai_error_offline
     AiError.Refused -> R.string.ai_error_refused

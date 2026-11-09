@@ -180,6 +180,7 @@ fun RecipeDetailRoute(
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
     val cookedMessage = stringResource(R.string.detail_marked_cooked)
+    val undoLabel = stringResource(R.string.common_undo)
     val timerStartedMessage = stringResource(R.string.timer_started)
     val exactAlarmDeniedMessage = stringResource(R.string.timer_exact_alarm_denied)
     val notificationDeniedMessage = stringResource(R.string.timer_notification_permission_denied)
@@ -254,7 +255,12 @@ fun RecipeDetailRoute(
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
-                RecipeDetailEffect.MarkedCooked -> snackbarHostState.showSnackbar(cookedMessage)
+                is RecipeDetailEffect.MarkedCooked -> {
+                    val result = snackbarHostState.showSnackbar(cookedMessage, actionLabel = undoLabel)
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onEvent(RecipeDetailEvent.UndoMarkCooked(effect.eventId))
+                    }
+                }
                 RecipeDetailEffect.Deleted -> onNavigateBack()
                 RecipeDetailEffect.RequestExactAlarmPermission -> {
                     showExactAlarmPermissionDialog = true

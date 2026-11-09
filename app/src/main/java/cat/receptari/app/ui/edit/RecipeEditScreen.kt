@@ -136,11 +136,14 @@ fun RecipeEditRoute(
 
     var showDiscardDialog by remember { mutableStateOf(false) }
     var showCameraUnavailableDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is RecipeEditEffect.Saved -> onSaved(effect.recipeId)
+                RecipeEditEffect.SaveFailed -> errorMessage = R.string.edit_save_failed
+                RecipeEditEffect.ImageFailed -> errorMessage = R.string.edit_image_failed
             }
         }
     }
@@ -221,6 +224,18 @@ fun RecipeEditRoute(
             dismissButton = {
                 TextButton(onClick = { showDiscardDialog = false }) {
                     Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+
+    errorMessage?.let { message ->
+        PaperConfirmBottomSheet(
+            title = stringResource(message),
+            onDismissRequest = { errorMessage = null },
+            confirmButton = {
+                TextButton(onClick = { errorMessage = null }) {
+                    Text(stringResource(R.string.common_done))
                 }
             },
         )

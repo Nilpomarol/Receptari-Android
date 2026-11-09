@@ -9,11 +9,13 @@ import cat.receptari.app.domain.ai.TranslationRequest
 import cat.receptari.app.domain.ai.TranslationResult
 import cat.receptari.app.domain.repository.ApiKeyRepository
 import com.anthropic.client.AnthropicClient
+import com.anthropic.client.AnthropicClientAsync
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
 import com.anthropic.core.JsonValue
 import com.anthropic.errors.AnthropicIoException
 import com.anthropic.errors.AnthropicServiceException
 import com.anthropic.errors.BadRequestException
+import com.anthropic.errors.InternalServerException
 import com.anthropic.errors.PermissionDeniedException
 import com.anthropic.errors.RateLimitException
 import com.anthropic.errors.UnauthorizedException
@@ -28,6 +30,7 @@ import com.anthropic.models.messages.StopReason
 import com.anthropic.models.messages.TextBlockParam
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
@@ -66,21 +69,15 @@ class ClaudeAiClient @Inject constructor(
     }
 
     override suspend fun testKey(): Result<Unit> = call { client ->
-        // Deliberately not a structured-output request: this only needs to prove the key is
-        // accepted, and one token is the cheapest way to ask.
-        client.messages().create(
-            MessageCreateParams.builder()
-                .model(MODEL)
-                .maxTokens(1)
-                .addUserMessage("Hi") // i18n-exempt — model prompt, never shown to the user
-                .build(),
-        )
+        // Listing models is authenticated but generates no tokens, so testing a key is free.
+        client.models().list().await()
         Unit
     }
 
     override suspend fun extractFromText(text: String): Result<DraftRecipe> = call { client ->
         client.messages()
             .create(extractionParams().addUserMessage(text).build())
+            .await()
             .toDraft()
     }
 
@@ -88,6 +85,7 @@ class ClaudeAiClient @Inject constructor(
         call { client ->
             client.messages()
                 .create(extractionParams().addUserMessage("$url\n\n$content").build())
+                .await()
                 .toDraft(sourceUrl = url)
         }
 
@@ -121,6 +119,7 @@ class ClaudeAiClient @Inject constructor(
 
             client.messages()
                 .create(extractionParams().addUserMessageOfBlockParams(blocks).build())
+                .await()
                 .toDraft()
         }
 
@@ -139,7 +138,7 @@ class ClaudeAiClient @Inject constructor(
             }
         }
 
-    private fun AnthropicClient.translate(
+    private suspend fun AnthropicClientAsync.translate(
         request: TranslationRequest,
         model: String,
     ): TranslationResult {
@@ -167,7 +166,7 @@ class ClaudeAiClient @Inject constructor(
                 )
                 .addUserMessage(json.encodeToString(request.toDto()))
                 .build(),
-        )
+        ).await()
         return message.toTranslationResult(request)
     }
 
@@ -237,13 +236,16 @@ class ClaudeAiClient @Inject constructor(
     /**
      * Resolves the key, runs [block] off the main thread, and turns every failure into a
      * typed [AiError].
+     *
+     * Requests go through the async client and are awaited, so leaving an import screen
+     * cancels the coroutine instead of pinning an IO thread until the response arrives.
      */
-    private suspend fun <T> call(block: (AnthropicClient) -> T): Result<T> =
+    private suspend fun <T> call(block: suspend (AnthropicClientAsync) -> T): Result<T> =
         withContext(ioDispatcher) {
             val apiKey = apiKeyRepository.getKey()
                 ?: return@withContext Result.failure(AiError.NoApiKey)
             try {
-                Result.success(block(clientFor(apiKey)))
+                Result.success(block(clientFor(apiKey).async()))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
@@ -255,6 +257,9 @@ class ClaudeAiClient @Inject constructor(
         is AiError -> this
         is UnauthorizedException, is PermissionDeniedException -> AiError.InvalidApiKey
         is RateLimitException -> AiError.RateLimited
+        // 5xx, including 529 "overloaded": the SDK has already retried, so this is a
+        // "try again in a while", not a mystery error.
+        is InternalServerException -> AiError.ServiceUnavailable
         // Credit exhaustion arrives as a 400, not a 402 or 429, and is only distinguishable
         // by the message. A user paying for their own key needs to be told to top it up, not
         // to "try again later".

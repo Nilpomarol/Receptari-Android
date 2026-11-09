@@ -50,7 +50,7 @@ Non-negotiable rules:
   `x-api-key` header must be redacted), not in crash traces, not in error messages shown to
   the user.
 - Sent to `api.anthropic.com` and nowhere else.
-- Settings offers "test key" (a minimal request) and "remove key".
+- Settings offers "test key" (lists models: authenticated but generates no tokens, so free) and "remove key".
 - With no key configured, the manual-creation and website-JSON-LD paths still work fully.
   The UI must degrade, not break.
 

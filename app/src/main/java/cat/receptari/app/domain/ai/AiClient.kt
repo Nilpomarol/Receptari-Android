@@ -38,6 +38,7 @@ sealed class AiError(message: String) : Exception(message) {
     data object NoApiKey : AiError("No API key configured")
     data object InvalidApiKey : AiError("The API key was rejected")
     data object RateLimited : AiError("Rate limited")
+    data object ServiceUnavailable : AiError("The service is overloaded or unavailable")
     data object QuotaExceeded : AiError("Credit or quota exhausted")
     data object Offline : AiError("No network connection")
     data object Refused : AiError("The model declined to answer")

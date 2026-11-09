@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Fts4
+import androidx.room.FtsOptions
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -54,8 +55,12 @@ data class RecipeEntity(
 /**
  * Denormalized search index (PRD §6). Not a source of truth — it is rewritten whenever a
  * recipe is saved and can be dropped and rebuilt at any time.
+ *
+ * `unicode61` folds case and strips diacritics on both the index and the query, so
+ * "tomaquet" finds "tomàquet" and "ARRÒS" finds "arròs". The default `simple` tokenizer
+ * only folds ASCII case, which is wrong for a Catalan-first app.
  */
-@Fts4
+@Fts4(tokenizer = FtsOptions.TOKENIZER_UNICODE61)
 @Entity(tableName = "recipe_fts")
 data class RecipeFtsEntity(
     @PrimaryKey

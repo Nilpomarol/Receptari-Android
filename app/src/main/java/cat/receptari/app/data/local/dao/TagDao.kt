@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TagDao {
 
-    @Query("SELECT * FROM tags ORDER BY name COLLATE NOCASE ASC")
+    @Query("SELECT * FROM tags ORDER BY name COLLATE UNICODE ASC")
     fun observeAll(): Flow<List<TagEntity>>
 
     @Query("SELECT * FROM tags WHERE normalizedName IN (:normalizedNames)")

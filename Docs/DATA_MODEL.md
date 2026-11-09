@@ -165,7 +165,9 @@ SELECT COUNT(*), MAX(cookedAt) FROM cook_events WHERE recipeId = :id
 
 ### `recipe_fts`
 
-FTS4 virtual table: `recipeId`, `title`, `notes`, `ingredientNames`, `tagNames`.
+FTS4 virtual table: `recipeId`, `title`, `notes`, `ingredientNames`, `tagNames`, using the
+`unicode61` tokenizer so "tomaquet" matches "tomàquet" (since schema v6). Name ordering
+elsewhere uses `COLLATE UNICODE` for the same reason: `NOCASE` only folds ASCII.
 Written by `RecipeDao.saveAggregate` in the same transaction as any recipe write. Not a
 source of truth — droppable and rebuildable.
 
@@ -242,6 +244,9 @@ keys or `position` columns; ordering is expressed by list order, and the mapper 
   translated display, the migration converts it into the first cached overlay and
   fingerprints its canonical source; recipes without a translation create no cache rows.
   Covered by `MigrationTest.migrate4To5CachesTheExistingTranslatedDisplay`.
+- `Migration(5, 6)` rebuilds `recipe_fts` with `tokenize=unicode61` (rename, create, copy
+  rows, drop) so search folds accents and non-ASCII case. Covered by
+  `MigrationTest.migrate5To6RebuildsSearchIndexIgnoringAccents`.
 
 ---
 

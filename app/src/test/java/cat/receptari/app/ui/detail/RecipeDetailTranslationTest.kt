@@ -218,7 +218,7 @@ class RecipeDetailTranslationTest {
 
     private class FakeCookHistoryRepository : CookHistoryRepository {
         override fun observeEvents(recipeId: String): Flow<List<CookEvent>> = flowOf(emptyList())
-        override suspend fun markCooked(recipeId: String, cookedAt: Instant?, note: String?) = Unit
+        override suspend fun markCooked(recipeId: String, cookedAt: Instant?, note: String?) = "event"
         override suspend fun deleteEvent(id: String) = Unit
     }
 

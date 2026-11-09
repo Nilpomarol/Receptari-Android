@@ -312,9 +312,13 @@
     <string name="ai_error_refused">Claude could not process this content.</string>
     <string name="ai_error_unreadable">The response could not be read. Try again.</string>
     <string name="ai_error_unexpected">Something went wrong.</string>
+    <string name="ai_error_unavailable">Claude is busy right now. Try again in a little while.</string>
 
     <string name="common_coming_soon">Not available yet</string>
     <string name="common_cancel">Cancel</string>
+    <string name="common_undo">Undo</string>
+    <string name="edit_save_failed">The recipe could not be saved. Try again.</string>
+    <string name="edit_image_failed">The image could not be read.</string>
     <string name="common_delete">Delete</string>
     <string name="common_done">Done</string>
     <string name="common_recipe_image">Recipe image</string>

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FolderDao {
 
-    @Query("SELECT * FROM folders ORDER BY name COLLATE NOCASE ASC")
+    @Query("SELECT * FROM folders ORDER BY name COLLATE UNICODE ASC")
     fun observeAll(): Flow<List<FolderEntity>>
 
     @Query(
@@ -19,7 +19,7 @@ interface FolderDao {
         FROM folders f
         LEFT JOIN recipes r ON r.folderId = f.id
         GROUP BY f.id
-        ORDER BY f.name COLLATE NOCASE ASC
+        ORDER BY f.name COLLATE UNICODE ASC
         """,
     )
     fun observeAllWithCounts(): Flow<List<FolderWithCount>>

@@ -40,15 +40,20 @@ class RecipeTransferRepositoryImpl @Inject constructor(
     override suspend fun createTransfer(recipeIds: Set<String>?): Result<RecipeTransferArchive> =
         withContext(ioDispatcher) {
             runCatching {
-                val allRecipes = recipeRepository.getAllRecipes()
                 val recipes = if (recipeIds == null) {
-                    allRecipes
+                    recipeRepository.getAllRecipes()
                 } else {
-                    allRecipes.filter { it.id in recipeIds }
+                    // Sharing one recipe should not load the whole library.
+                    recipeIds.mapNotNull { recipeRepository.getRecipe(it) }.sortedBy { it.createdAt }
                 }
                 if (recipes.isEmpty()) throw RecipeTransferError.EmptySelection()
 
                 val root = File(context.cacheDir, "recipe-transfers/outgoing").apply { mkdirs() }
+                // Packages handed to the Sharesheet cannot be deleted when sent, because the
+                // target may still be reading them. Sweep yesterday's instead of keeping
+                // every export (images included) until the system clears the cache.
+                val staleBefore = clock.millis() - STALE_ARCHIVE_MILLIS
+                root.listFiles()?.filter { it.lastModified() < staleBefore }?.forEach(File::delete)
                 // A target selected in the Sharesheet may read the URI asynchronously. A
                 // new share must not delete a package that is still in flight.
                 val archive = File(root, "${UUID.randomUUID()}.receptari-share")
@@ -137,4 +142,8 @@ class RecipeTransferRepositoryImpl @Inject constructor(
                 staging.deleteRecursively()
             }
         }
+
+    private companion object {
+        const val STALE_ARCHIVE_MILLIS = 24L * 60 * 60 * 1000
+    }
 }

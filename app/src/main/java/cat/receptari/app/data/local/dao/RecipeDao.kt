@@ -69,6 +69,9 @@ interface RecipeDao {
     @Query("SELECT recipeId FROM recipe_fts WHERE recipe_fts MATCH :query")
     suspend fun searchIds(query: String): List<String>
 
+    @Query("SELECT imagePath FROM recipes WHERE id = :id")
+    suspend fun getImagePath(id: String): String?
+
     @Query("DELETE FROM recipes WHERE id = :id")
     suspend fun deleteRecipeRow(id: String)
 

@@ -19,6 +19,12 @@ import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.ui.importer.ImportDraftHandoff
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,12 +42,14 @@ import java.util.UUID
 import javax.inject.Inject
 
 /** One editable line — an ingredient or a step. Identity is stable so text fields keep focus. */
+@Serializable
 data class FormLine(
     val id: String = UUID.randomUUID().toString(),
     val text: String = "",
     val originalText: String? = null,
 )
 
+@Serializable
 data class FormSection(
     val id: String = UUID.randomUUID().toString(),
     val name: String = "",
@@ -49,6 +57,11 @@ data class FormSection(
     val originalName: String? = null,
 )
 
+/**
+ * Serializable so the form survives process death (see [RecipeEditViewModel] init). Folders
+ * are domain objects owned by the repository, so they are re-resolved by id on restore.
+ */
+@Serializable
 data class RecipeEditUiState(
     val id: String = UUID.randomUUID().toString(),
     val isNew: Boolean = true,
@@ -65,8 +78,8 @@ data class RecipeEditUiState(
     val sourceName: String = "",
     val sourceUrl: String = "",
     val tags: List<String> = emptyList(),
-    val folder: Folder? = null,
-    val availableFolders: List<Folder> = emptyList(),
+    @Transient val folder: Folder? = null,
+    @Transient val availableFolders: List<Folder> = emptyList(),
     val ingredientSections: List<FormSection> = listOf(FormSection()),
     val instructionSections: List<FormSection> = listOf(FormSection()),
     val showTitleError: Boolean = false,
@@ -125,11 +138,22 @@ enum class SectionKind { Ingredients, Instructions }
 
 sealed interface RecipeEditEffect {
     data class Saved(val recipeId: String) : RecipeEditEffect
+    data object SaveFailed : RecipeEditEffect
+    data object ImageFailed : RecipeEditEffect
 }
+
+/** What the editor needs to rebuild itself after process death, beyond the visible form. */
+@Serializable
+private data class EditSession(
+    val form: RecipeEditUiState,
+    val folderId: String?,
+    val originalLanguage: String?,
+    val imagesWritten: List<String>,
+)
 
 @HiltViewModel
 class RecipeEditViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val recipeRepository: RecipeRepository,
     private val folderRepository: FolderRepository,
     private val imageStore: ImageStore,
@@ -169,14 +193,37 @@ class RecipeEditViewModel @Inject constructor(
     private var originalLanguage: String? = null
     private var displayLanguage: String? = null
 
+    /** Folder to re-select once folders load, after a restore from process death. */
+    private var restoredFolderId: String? = null
+    private var isSaving = false
+
     init {
+        // The camera app, a long import read, or simply a backgrounded app can get the
+        // process killed mid-edit. Restore what the user typed instead of an empty form.
+        val restored = savedStateHandle.get<String>(SESSION_KEY)?.let { stored ->
+            runCatching { sessionJson.decodeFromString<EditSession>(stored) }.getOrNull()
+        }
+
         viewModelScope.launch {
             folderRepository.observeAll().collect { folders ->
-                _uiState.update { it.copy(availableFolders = folders) }
+                val pending = restoredFolderId?.let { id -> folders.firstOrNull { it.id == id } }
+                if (pending != null) restoredFolderId = null
+                _uiState.update { it.copy(availableFolders = folders, folder = pending ?: it.folder) }
             }
         }
 
-        if (editingRecipeId != null) {
+        if (restored != null) {
+            restoredFolderId = restored.folderId
+            originalLanguage = restored.originalLanguage
+            imagesWrittenThisSession += restored.imagesWritten
+            _uiState.value = restored.form.copy(isLoading = false)
+            if (editingRecipeId != null) {
+                load(editingRecipeId, restoredForm = _uiState.value)
+            } else {
+                // The pre-restore baseline is gone; a blank form keeps the leave-warning on.
+                savedSnapshot = RecipeEditUiState(id = restored.form.id)
+            }
+        } else if (editingRecipeId != null) {
             load(editingRecipeId)
         } else {
             // An import lands here as an ordinary new recipe: same form, same validation,
@@ -191,26 +238,41 @@ class RecipeEditViewModel @Inject constructor(
                 originalLanguage = draft.originalLanguage
             }
         }
+
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                // Nothing worth restoring until an existing recipe has loaded.
+                if (state.isLoading) return@collect
+                savedStateHandle[SESSION_KEY] = sessionJson.encodeToString(
+                    EditSession(
+                        form = state,
+                        folderId = state.folder?.id ?: restoredFolderId,
+                        originalLanguage = originalLanguage,
+                        imagesWritten = imagesWrittenThisSession.toList(),
+                    ),
+                )
+            }
+        }
     }
 
-    private fun load(id: String) = viewModelScope.launch {
+    /**
+     * Loads an existing recipe. With [restoredForm] the recipe only supplies the baseline and
+     * the metadata the form does not carry; what the user typed before process death wins.
+     */
+    private fun load(id: String, restoredForm: RecipeEditUiState? = null) = viewModelScope.launch {
         val recipe = recipeRepository.getRecipe(id) ?: run {
             _uiState.update { it.copy(isLoading = false) }
             return@launch
         }
 
-        loadRecipe(recipe)
-    }
-
-    private fun loadRecipe(recipe: Recipe, updateSavedSnapshot: Boolean = true) {
         createdAt = recipe.createdAt
         originalTitle = recipe.originalTitle
         originalLanguage = recipe.originalLanguage
         displayLanguage = recipe.displayLanguage
         existingTagIds = recipe.tags.associate { it.name to it.id }
 
-        _uiState.value = recipe.toEditState(_uiState.value.availableFolders)
-        if (updateSavedSnapshot) savedSnapshot = _uiState.value
+        savedSnapshot = recipe.toEditState(_uiState.value.availableFolders)
+        if (restoredForm == null) _uiState.value = savedSnapshot
     }
 
     private fun Recipe.toEditState(availableFolders: List<Folder>): RecipeEditUiState {
@@ -335,7 +397,15 @@ class RecipeEditViewModel @Inject constructor(
             }
 
             is RecipeEditEvent.ImagePicked -> viewModelScope.launch {
-                val path = imageStore.save(_uiState.value.id, event.bytes)
+                // A corrupt or undecodable file must not take the whole editor down.
+                val path = try {
+                    imageStore.save(_uiState.value.id, event.bytes)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    effectChannel.send(RecipeEditEffect.ImageFailed)
+                    return@launch
+                }
                 imagesWrittenThisSession += path
                 _uiState.update {
                     it.copy(imagePath = path, imageDisplayPath = imageStore.absolutePathOf(path))
@@ -398,58 +468,73 @@ class RecipeEditViewModel @Inject constructor(
             _uiState.update { it.copy(showTitleError = true) }
             return
         }
+        // A double tap would otherwise save twice and navigate twice.
+        if (isSaving) return
+        isSaving = true
 
         viewModelScope.launch {
-            val now = Instant.now(clock)
-
-            val recipe = Recipe(
-                id = state.id,
-                title = state.title.trim(),
-                originalTitle = originalTitle,
-                imagePath = state.imagePath,
-                prepTimeMinutes = state.prepTime.toIntOrNull(),
-                cookTimeMinutes = state.cookTime.toIntOrNull(),
-                totalTimeMinutes = state.totalTime.toIntOrNull(),
-                baseServings = state.servings.toIntOrNull(),
-                isFavorite = false,
-                rating = state.rating,
-                notes = state.notes.trim().takeIf { it.isNotEmpty() },
-                sourceName = state.sourceName.trim().takeIf { it.isNotEmpty() },
-                sourceUrl = state.sourceUrl.trim().takeIf { it.isNotEmpty() },
-                originalLanguage = originalLanguage,
-                displayLanguage = displayLanguage,
-                createdAt = createdAt,
-                updatedAt = now,
-                ingredientSections = state.ingredientSections.toIngredientSections(),
-                instructionSections = state.instructionSections.toInstructionSections(),
-                tags = state.tags.map { name ->
-                    Tag(id = existingTagIds[name] ?: UUID.randomUUID().toString(), name = name)
-                },
-                folder = state.folder,
-            )
-
-            val merged = if (state.isNew) {
-                recipe
-            } else {
-                // Favourite state and cooked history are owned elsewhere; the editor must
-                // not clobber them by writing its own defaults back.
-                recipe.copy(isFavorite = recipeRepository.getRecipe(state.id)?.isFavorite ?: false)
+            try {
+                persist(state)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                effectChannel.send(RecipeEditEffect.SaveFailed)
+            } finally {
+                isSaving = false
             }
-
-            recipeRepository.save(merged)
-
-            // The outcome is settled: every image written during this edit, plus the one
-            // the recipe used to reference, is now dead weight unless it is the one saved.
-            val keep = merged.imagePath
-            (imagesWrittenThisSession + listOfNotNull(savedSnapshot.imagePath))
-                .distinct()
-                .filterNot { it == keep }
-                .forEach { imageStore.delete(it) }
-            imagesWrittenThisSession.clear()
-
-            savedSnapshot = _uiState.value
-            effectChannel.send(RecipeEditEffect.Saved(merged.id))
         }
+    }
+
+    private suspend fun persist(state: RecipeEditUiState) {
+        val now = Instant.now(clock)
+
+        val recipe = Recipe(
+            id = state.id,
+            title = state.title.trim(),
+            originalTitle = originalTitle,
+            imagePath = state.imagePath,
+            prepTimeMinutes = state.prepTime.toIntOrNull(),
+            cookTimeMinutes = state.cookTime.toIntOrNull(),
+            totalTimeMinutes = state.totalTime.toIntOrNull(),
+            baseServings = state.servings.toIntOrNull(),
+            isFavorite = false,
+            rating = state.rating,
+            notes = state.notes.trim().takeIf { it.isNotEmpty() },
+            sourceName = state.sourceName.trim().takeIf { it.isNotEmpty() },
+            sourceUrl = state.sourceUrl.trim().takeIf { it.isNotEmpty() },
+            originalLanguage = originalLanguage,
+            displayLanguage = displayLanguage,
+            createdAt = createdAt,
+            updatedAt = now,
+            ingredientSections = state.ingredientSections.toIngredientSections(),
+            instructionSections = state.instructionSections.toInstructionSections(),
+            tags = state.tags.map { name ->
+                Tag(id = existingTagIds[name] ?: UUID.randomUUID().toString(), name = name)
+            },
+            folder = state.folder,
+        )
+
+        val merged = if (state.isNew) {
+            recipe
+        } else {
+            // Favourite state and cooked history are owned elsewhere; the editor must
+            // not clobber them by writing its own defaults back.
+            recipe.copy(isFavorite = recipeRepository.getRecipe(state.id)?.isFavorite ?: false)
+        }
+
+        recipeRepository.save(merged)
+
+        // The outcome is settled: every image written during this edit, plus the one
+        // the recipe used to reference, is now dead weight unless it is the one saved.
+        val keep = merged.imagePath
+        (imagesWrittenThisSession + listOfNotNull(savedSnapshot.imagePath))
+            .distinct()
+            .filterNot { it == keep }
+            .forEach { imageStore.delete(it) }
+        imagesWrittenThisSession.clear()
+
+        savedSnapshot = _uiState.value
+        effectChannel.send(RecipeEditEffect.Saved(merged.id))
     }
 
     /**
@@ -491,13 +576,10 @@ class RecipeEditViewModel @Inject constructor(
 
     private fun List<FormSection>.toInstructionSections(): List<InstructionSection> =
         mapNotNull { section ->
-            val steps = section.lines
-                .map { it.id to it.text.trim() }
-                .filter { it.second.isNotEmpty() }
-                .map { (id, text) ->
-                    val original = section.lines.first { it.id == id }.originalText
-                    Step(id = id, text = text, originalText = original)
-                }
+            val steps = section.lines.mapNotNull { line ->
+                line.text.trim().takeIf { it.isNotEmpty() }
+                    ?.let { text -> Step(id = line.id, text = text, originalText = line.originalText) }
+            }
 
             if (steps.isEmpty()) {
                 null
@@ -534,5 +616,7 @@ class RecipeEditViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val SESSION_KEY = "edit_session"
+        val sessionJson = Json { ignoreUnknownKeys = true }
     }
 }

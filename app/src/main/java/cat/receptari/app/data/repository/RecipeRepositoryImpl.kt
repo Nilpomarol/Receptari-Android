@@ -74,7 +74,7 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun delete(id: String): Unit = withContext(ioDispatcher) {
         // Read the image path before the row disappears, otherwise the file is orphaned
         // in internal storage forever.
-        val imagePath = recipeDao.getAggregate(id)?.recipe?.imagePath
+        val imagePath = recipeDao.getImagePath(id)
         recipeDao.deleteRecipe(id)
         imagePath?.let { imageStore.delete(it) }
     }

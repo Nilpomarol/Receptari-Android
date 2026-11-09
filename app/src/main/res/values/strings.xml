@@ -341,10 +341,14 @@
     <string name="ai_error_refused">Claude no ha pogut processar aquest contingut.</string>
     <string name="ai_error_unreadable">No s\'ha pogut llegir la resposta. Torna-ho a provar.</string>
     <string name="ai_error_unexpected">Hi ha hagut un error inesperat.</string>
+    <string name="ai_error_unavailable">Claude està saturat ara mateix. Torna-ho a provar d\'aquí a una estona.</string>
 
     <!-- Common -->
     <string name="common_coming_soon">Encara no està disponible</string>
     <string name="common_cancel">Cancel·la</string>
+    <string name="common_undo">Desfés</string>
+    <string name="edit_save_failed">No s\'ha pogut desar la recepta. Torna-ho a provar.</string>
+    <string name="edit_image_failed">No s\'ha pogut llegir la imatge.</string>
     <string name="common_delete">Elimina</string>
     <string name="common_done">Fet</string>
     <string name="common_recipe_image">Imatge de la recepta</string>

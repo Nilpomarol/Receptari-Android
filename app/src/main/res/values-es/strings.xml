@@ -316,9 +316,13 @@
     <string name="ai_error_refused">Claude no ha podido procesar este contenido.</string>
     <string name="ai_error_unreadable">No se ha podido leer la respuesta. Inténtalo de nuevo.</string>
     <string name="ai_error_unexpected">Se ha producido un error inesperado.</string>
+    <string name="ai_error_unavailable">Claude está saturado ahora mismo. Vuelve a intentarlo dentro de un rato.</string>
 
     <string name="common_coming_soon">Todavía no disponible</string>
     <string name="common_cancel">Cancelar</string>
+    <string name="common_undo">Deshacer</string>
+    <string name="edit_save_failed">No se ha podido guardar la receta. Vuelve a intentarlo.</string>
+    <string name="edit_image_failed">No se ha podido leer la imagen.</string>
     <string name="common_delete">Eliminar</string>
     <string name="common_done">Hecho</string>
     <string name="common_recipe_image">Imagen de la receta</string>

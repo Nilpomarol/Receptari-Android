@@ -29,6 +29,7 @@ object DatabaseModule {
                 ReceptariDatabase.MIGRATION_2_3,
                 ReceptariDatabase.MIGRATION_3_4,
                 ReceptariDatabase.MIGRATION_4_5,
+                ReceptariDatabase.MIGRATION_5_6,
             )
             .build()
 

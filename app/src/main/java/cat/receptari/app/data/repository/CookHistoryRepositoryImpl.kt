@@ -31,15 +31,17 @@ class CookHistoryRepositoryImpl @Inject constructor(
         recipeId: String,
         cookedAt: Instant?,
         note: String?,
-    ): Unit = withContext(ioDispatcher) {
+    ): String = withContext(ioDispatcher) {
+        val id = UUID.randomUUID().toString()
         cookEventDao.insert(
             CookEventEntity(
-                id = UUID.randomUUID().toString(),
+                id = id,
                 recipeId = recipeId,
                 cookedAt = (cookedAt ?: Instant.now(clock)).toEpochMilli(),
                 note = note,
             ),
         )
+        id
     }
 
     override suspend fun deleteEvent(id: String): Unit = withContext(ioDispatcher) {
