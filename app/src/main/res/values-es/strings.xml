@@ -285,6 +285,7 @@
     <string name="import_error_invalid_url">La dirección no es válida.</string>
 
     <string name="settings_title">Ajustes</string>
+    <string name="settings_subtitle">Idioma, clave y copias</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_language_system">Idioma del sistema</string>
     <string name="settings_language_ca">Catalán</string>
@@ -296,6 +297,10 @@
     <string name="settings_api_key_explanation">Las importaciones automáticas necesitan tu clave de Claude. Se guarda cifrada en el dispositivo y solo se envía a api.anthropic.com.</string>
     <string name="settings_api_key_label">Clave de la API</string>
     <string name="settings_api_key_save">Guardar la clave</string>
+    <string name="settings_api_key_connect">Conecta con Claude</string>
+    <string name="settings_api_key_add">Añade la clave</string>
+    <string name="settings_api_key_stored">Guardada cifrada en este dispositivo</string>
+    <string name="settings_api_key_paste">Pegar</string>
     <string name="settings_api_key_configured">Clave configurada</string>
     <string name="settings_api_key_test">Comprobarla</string>
     <string name="settings_api_key_replace">Cambiarla</string>

@@ -296,6 +296,7 @@
 
     <!-- Settings -->
     <string name="settings_title">Configuració</string>
+    <string name="settings_subtitle">Idioma, clau i còpies</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_language_system">Idioma del sistema</string>
     <string name="settings_language_ca">Català</string>
@@ -308,6 +309,10 @@
     <string name="settings_api_key_explanation">Les importacions automàtiques necessiten la teva clau de Claude. Es desa xifrada al dispositiu i només s\'envia a api.anthropic.com.</string>
     <string name="settings_api_key_label">Clau de l\'API</string>
     <string name="settings_api_key_save">Desa la clau</string>
+    <string name="settings_api_key_connect">Connecta amb Claude</string>
+    <string name="settings_api_key_add">Afegeix la clau</string>
+    <string name="settings_api_key_stored">Desada xifrada en aquest dispositiu</string>
+    <string name="settings_api_key_paste">Enganxa</string>
     <string name="settings_api_key_configured">Clau configurada</string>
     <string name="settings_api_key_test">Comprova-la</string>
     <string name="settings_api_key_replace">Canvia-la</string>

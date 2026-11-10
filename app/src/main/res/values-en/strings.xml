@@ -280,6 +280,7 @@
     <string name="import_error_invalid_url">That address is not valid.</string>
 
     <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Language, key and backups</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system">System language</string>
     <string name="settings_language_ca">Catalan</string>
@@ -291,6 +292,10 @@
     <string name="settings_api_key_explanation">Automatic imports need your Claude API key. It is stored encrypted on this device and is only ever sent to api.anthropic.com.</string>
     <string name="settings_api_key_label">API key</string>
     <string name="settings_api_key_save">Save key</string>
+    <string name="settings_api_key_connect">Connect Claude</string>
+    <string name="settings_api_key_add">Add your key</string>
+    <string name="settings_api_key_stored">Stored encrypted on this device</string>
+    <string name="settings_api_key_paste">Paste</string>
     <string name="settings_api_key_configured">Key configured</string>
     <string name="settings_api_key_test">Test it</string>
     <string name="settings_api_key_replace">Replace it</string>
