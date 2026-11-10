@@ -45,6 +45,13 @@
         <item quantity="other">%1$d receptes</item>
     </plurals>
 
+    <plurals name="library_filter_apply">
+        <item quantity="one">Mostra %1$d recepta</item>
+        <item quantity="other">Mostra %1$d receptes</item>
+    </plurals>
+    <string name="library_filter_apply_none">Cap recepta coincideix</string>
+
+
     <!-- Sorting -->
     <string name="sort_alphabetical">Alfabètic</string>
     <string name="sort_recently_added">Afegides recentment</string>

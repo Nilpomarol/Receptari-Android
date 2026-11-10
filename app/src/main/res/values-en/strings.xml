@@ -36,6 +36,13 @@
         <item quantity="other">%1$d recipes</item>
     </plurals>
 
+    <plurals name="library_filter_apply">
+        <item quantity="one">Show %1$d recipe</item>
+        <item quantity="other">Show %1$d recipes</item>
+    </plurals>
+    <string name="library_filter_apply_none">No recipes match</string>
+
+
     <string name="sort_alphabetical">Alphabetical</string>
     <string name="sort_recently_added">Recently added</string>
     <string name="sort_recently_cooked">Recently cooked</string>

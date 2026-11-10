@@ -24,6 +24,20 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.foundation.layout.FlowRowScope
+import androidx.compose.foundation.selection.toggleable
+import cat.receptari.app.core.designsystem.Rubric
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -681,8 +695,16 @@ private fun RemovableFilter(label: String, onRemove: () -> Unit) {
     FilterPill(label = label, selected = true, onClick = onRemove, icon = Icons.Default.Close)
 }
 
-/** Sort, state filters and tags together: everything that changes the list, in one place. */
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+/**
+ * Sort, state filters and tags together: everything that changes the list, in one place.
+ *
+ * The title and the way out stay put while the choices scroll between them. Every choice
+ * applies at once, and the button at the foot says what the list now holds, so the reader
+ * sees the effect of a filter without closing the sheet to find out. Each kind of choice has
+ * its own control: sort is a menu, the state filters are switches on ruled lines, and tags
+ * are a checklist.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun FilterSheet(
     state: LibraryUiState,
@@ -691,13 +713,7 @@ private fun FilterSheet(
     modifier: Modifier = Modifier,
 ) {
     PaperModalBottomSheet(modifier = modifier, onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
             OrnamentHeading(
                 title = stringResource(R.string.library_filter_title),
                 trailing = if (state.userFilterCount > 0) {
@@ -711,67 +727,225 @@ private fun FilterSheet(
                 },
             )
 
-            SectionLabel(text = stringResource(R.string.library_sort))
-            Column {
-                RecipeSort.entries.forEach { option ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(role = Role.RadioButton) { onEvent(LibraryEvent.SortChanged(option)) }
-                            .padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = option == state.sort, onClick = null)
-                        Text(
-                            text = option.label(),
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
-                        )
-                    }
-                }
-            }
-
-            SectionLabel(text = stringResource(R.string.library_filter_show))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 8.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                if (!state.isFavoritesPage) {
-                    FilterPill(
-                        label = stringResource(R.string.filter_favorites),
-                        selected = state.filter.favoritesOnly,
-                        onClick = { onEvent(LibraryEvent.ToggleFavoritesFilter) },
+                FilterGroup(label = stringResource(R.string.library_sort)) {
+                    SortPicker(
+                        selected = state.sort,
+                        onSelect = { onEvent(LibraryEvent.SortChanged(it)) },
                     )
                 }
-                FilterPill(
-                    label = stringResource(R.string.filter_never_cooked),
-                    selected = state.filter.neverCooked,
-                    onClick = { onEvent(LibraryEvent.ToggleNeverCookedFilter) },
-                )
-                FilterPill(
-                    label = stringResource(R.string.filter_recently_cooked),
-                    selected = state.filter.cookedSinceEpochMillis != null,
-                    onClick = { onEvent(LibraryEvent.ToggleRecentlyCookedFilter) },
-                )
-            }
 
-            if (state.availableTags.isNotEmpty()) {
-                SectionLabel(text = stringResource(R.string.filter_tags))
-                FlowRow(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    state.availableTags.sortedBy { it.name.lowercase() }.forEach { tag ->
-                        FilterPill(
-                            label = tag.name,
-                            selected = tag.id in state.filter.tagIds,
-                            onClick = { onEvent(LibraryEvent.ToggleTagFilter(tag.id)) },
+                FilterGroup(label = stringResource(R.string.library_filter_show)) {
+                    if (!state.isFavoritesPage) {
+                        SwitchRow(
+                            label = stringResource(R.string.filter_favorites),
+                            icon = Icons.Default.FavoriteBorder,
+                            checked = state.filter.favoritesOnly,
+                            onToggle = { onEvent(LibraryEvent.ToggleFavoritesFilter) },
                         )
+                    }
+                    SwitchRow(
+                        label = stringResource(R.string.filter_never_cooked),
+                        icon = Icons.Outlined.Restaurant,
+                        checked = state.filter.neverCooked,
+                        onToggle = { onEvent(LibraryEvent.ToggleNeverCookedFilter) },
+                    )
+                    SwitchRow(
+                        label = stringResource(R.string.filter_recently_cooked),
+                        icon = Icons.Outlined.History,
+                        checked = state.filter.cookedSinceEpochMillis != null,
+                        onToggle = { onEvent(LibraryEvent.ToggleRecentlyCookedFilter) },
+                    )
+                }
+
+                if (state.availableTags.isNotEmpty()) {
+                    FilterGroup(label = stringResource(R.string.filter_tags)) {
+                        FlowRow(
+                            maxItemsInEachRow = 2,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            state.availableTags.sortedBy { it.name.lowercase() }.forEach { tag ->
+                                TagCheck(
+                                    label = tag.name,
+                                    checked = tag.id in state.filter.tagIds,
+                                    onToggle = { onEvent(LibraryEvent.ToggleTagFilter(tag.id)) },
+                                )
+                            }
+                        }
                     }
                 }
             }
+
+            Hairline()
+            Button(
+                onClick = onDismiss,
+                shape = CircleShape,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp)
+                    .height(52.dp),
+            ) {
+                Text(
+                    text = if (state.recipes.isEmpty()) {
+                        stringResource(R.string.library_filter_apply_none)
+                    } else {
+                        pluralStringResource(R.plurals.library_filter_apply, state.recipes.size, state.recipes.size)
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
         }
+    }
+}
+
+/** A rubric over a group of controls. */
+@Composable
+private fun FilterGroup(
+    label: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier = modifier) {
+        Rubric(text = label, modifier = Modifier.padding(bottom = 4.dp))
+        content()
+    }
+}
+
+/** The current sort, written out on a ruled line, opening a menu of the others. */
+@Composable
+private fun SortPicker(
+    selected: RecipeSort,
+    onSelect: (RecipeSort) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box(modifier = modifier) {
+        Column(modifier = Modifier.fillMaxWidth().clickable(role = Role.DropdownList) { open = true }) {
+            Row(
+                modifier = Modifier.heightIn(min = 52.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selected.label(),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Hairline()
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            RecipeSort.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label()) },
+                    onClick = {
+                        onSelect(option)
+                        open = false
+                    },
+                    trailingIcon = {
+                        if (option == selected) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** One on/off filter: an icon, its name, and a wax-red switch, on a ruled line. */
+@Composable
+private fun SwitchRow(
+    label: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val rule = ReceptariTheme.palette.rule
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(value = checked, role = Role.Switch, onValueChange = { onToggle() })
+                .heightIn(min = 52.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 14.dp),
+            )
+            Switch(
+                checked = checked,
+                onCheckedChange = null,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                    checkedBorderColor = MaterialTheme.colorScheme.primary,
+                    uncheckedThumbColor = rule,
+                    uncheckedTrackColor = Color.Transparent,
+                    uncheckedBorderColor = rule,
+                ),
+            )
+        }
+        Hairline()
+    }
+}
+
+/** One tag in the checklist; two share a line. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowRowScope.TagCheck(
+    label: String,
+    checked: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 44.dp)
+            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() }),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = null,
+            colors = CheckboxDefaults.colors(
+                checkedColor = MaterialTheme.colorScheme.primary,
+                uncheckedColor = ReceptariTheme.palette.rule,
+                checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 4.dp),
+        )
     }
 }
 

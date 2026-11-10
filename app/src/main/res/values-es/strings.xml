@@ -37,6 +37,14 @@
         <item quantity="other">%1$d recetas</item>
     </plurals>
 
+    <plurals name="library_filter_apply">
+        <item quantity="one">Mostrar %1$d receta</item>
+        <item quantity="many">Mostrar %1$d recetas</item>
+        <item quantity="other">Mostrar %1$d recetas</item>
+    </plurals>
+    <string name="library_filter_apply_none">Ninguna receta coincide</string>
+
+
     <string name="sort_alphabetical">Alfabético</string>
     <string name="sort_recently_added">Añadidas recientemente</string>
     <string name="sort_recently_cooked">Cocinadas recientemente</string>
