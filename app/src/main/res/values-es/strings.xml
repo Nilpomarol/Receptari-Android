@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Receptari</string>
 
     <string name="nav_back">Atrás</string>
     <string name="nav_settings">Ajustes</string>
@@ -17,6 +16,14 @@
     <string name="library_sort">Ordenar por</string>
     <string name="library_filters_clear">Quitar los filtros</string>
     <string name="library_send_recipes">Enviar recetas</string>
+    <string name="library_count_and_sort">%1$s · %2$s</string>
+    <string name="library_filter">Filtrar</string>
+    <string name="library_layout_grid">Ver en cuadrícula</string>
+    <string name="library_layout_index">Ver como índice</string>
+    <string name="library_filter_active">Filtrar · %1$d</string>
+    <string name="library_filter_title">Filtrar y ordenar</string>
+    <string name="library_filter_show">Mostrar solo</string>
+    <string name="settings_receive_title">Recibir recetas</string>
     <string name="library_select_all_visible">Seleccionar todas las recetas visibles</string>
     <string name="library_send_selected">Enviar las recetas seleccionadas</string>
     <string name="library_selection_help">Toca las recetas que quieras enviar. Puedes seleccionar todas las que se muestran con el icono de la barra superior.</string>
@@ -77,6 +84,10 @@
     <string name="detail_duration_hours_minutes">%1$d h %2$d min</string>
     <string name="detail_never_cooked">Todavía no la has cocinado</string>
     <string name="detail_rating">Valoración</string>
+    <string name="detail_add_tag">Añadir etiqueta</string>
+    <string name="detail_add_folder">Elegir carpeta</string>
+    <string name="detail_quick_tags_title">Gestionar etiquetas</string>
+    <string name="detail_quick_folder_title">Asignar a una carpeta</string>
     <plurals name="detail_cook_count">
         <item quantity="one">Cocinada %1$d vez</item>
         <item quantity="many">Cocinada %1$d veces</item>
@@ -137,6 +148,13 @@
     <string name="edit_title_new">Nueva receta</string>
     <string name="edit_title_existing">Editar la receta</string>
     <string name="edit_save">Guardar</string>
+    <string name="edit_save_recipe">Guardar receta</string>
+    <string name="edit_section_times">Tiempos y raciones</string>
+    <string name="edit_section_details">Detalles y clasificación</string>
+    <string name="edit_section_source_notes">Fuente y notas</string>
+    <string name="edit_prep_time_short">Prep</string>
+    <string name="edit_cook_time_short">Cocción</string>
+    <string name="edit_total_time_short">Total</string>
     <string name="edit_field_title">Título</string>
     <string name="edit_field_title_required">El título es obligatorio</string>
     <string name="edit_field_prep_time">Tiempo de preparación (min)</string>
@@ -245,7 +263,7 @@
     <string name="import_action_extract">Extraer la receta</string>
     <string name="import_extracting">Extrayendo…</string>
     <string name="import_nothing_found">No se ha encontrado ninguna receta.</string>
-    <string name="import_review_notice">Las importaciones desde web, imagen y texto se revisan antes de guardar. Las copias validadas de Receptari se importan automáticamente.</string>
+    <string name="import_review_notice">Las importaciones desde web, imagen y texto se revisan antes de guardar.</string>
     <string name="import_website_title">Desde un sitio web</string>
     <string name="import_website_label">Dirección de la página</string>
     <string name="import_website_explanation">Pega la dirección de la receta. Si la página ya publica la receta en un formato estructurado, se leerá directamente; si no, la extraerá Claude.</string>
@@ -320,6 +338,7 @@
 
     <string name="common_coming_soon">Todavía no disponible</string>
     <string name="common_cancel">Cancelar</string>
+    <string name="common_more_options">Más opciones</string>
     <string name="common_undo">Deshacer</string>
     <string name="edit_save_failed">No se ha podido guardar la receta. Vuelve a intentarlo.</string>
     <string name="edit_image_failed">No se ha podido leer la imagen.</string>
@@ -397,4 +416,9 @@
         <item quantity="one">Se ha omitido %1$d duplicado.</item>
         <item quantity="other">Se han omitido %1$d duplicados.</item>
     </plurals>
+    <string name="nav_recipes">Recetas</string>
+    <string name="library_tagline">Recetas de casa, siempre a mano</string>
+    <string name="favorites_empty_title">Aún no tienes favoritas</string>
+    <string name="favorites_empty_body">Toca el corazón de una receta para guardarla aquí.</string>
+    <string name="folders_subtitle">Tus recetas, por temas</string>
 </resources>

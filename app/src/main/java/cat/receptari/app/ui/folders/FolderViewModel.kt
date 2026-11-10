@@ -1,5 +1,7 @@
 package cat.receptari.app.ui.folders
 
+import cat.receptari.app.domain.model.RecipeListLayout
+import cat.receptari.app.domain.repository.DisplayPreferencesRepository
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,6 +30,7 @@ data class FolderContentsUiState(
     val folder: Folder? = null,
     val recipes: List<RecipeSummary> = emptyList(),
     val isLoading: Boolean = true,
+    val listLayout: RecipeListLayout = RecipeListLayout.Grid,
 )
 
 sealed interface FolderContentsEvent {
@@ -48,6 +51,7 @@ class FolderViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val folderRepository: FolderRepository,
     private val imageStore: ImageStore,
+    displayPreferences: DisplayPreferencesRepository,
 ) : ViewModel() {
 
     private val folderId: String = checkNotNull(savedStateHandle["folderId"])
@@ -58,13 +62,15 @@ class FolderViewModel @Inject constructor(
     val uiState: StateFlow<FolderContentsUiState> = combine(
         folderRepository.observeAll(),
         recipeRepository.observeSummaries(RecipeQuery(filter = RecipeFilter(folderId = folderId))),
-    ) { folders, recipes ->
+        displayPreferences.observeListLayout(),
+    ) { folders, recipes, layout ->
         FolderContentsUiState(
             folder = folders.find { it.id == folderId },
             recipes = recipes.map { summary ->
                 summary.copy(imagePath = summary.imagePath?.let(imageStore::absolutePathOf))
             },
             isLoading = false,
+            listLayout = layout,
         )
     }.stateIn(
         scope = viewModelScope,

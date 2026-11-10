@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     // AGP 9 applies Kotlin support itself; applying kotlin-android here would clash.
@@ -7,6 +8,19 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+// Signing material is local-only; builds without it still produce an unsigned release.
+val releaseKeystoreFile = rootProject.file("keystore.properties")
+val releaseKeystore = Properties().apply {
+    if (releaseKeystoreFile.isFile) {
+        releaseKeystoreFile.inputStream().use { load(it) }
+        listOf("storeFile", "storePassword", "keyAlias", "keyPassword").forEach { name ->
+            require(!getProperty(name).isNullOrBlank()) {
+                "Missing $name in local keystore.properties"
+            }
+        }
+    }
 }
 
 android {
@@ -18,7 +32,7 @@ android {
         minSdk = 33
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Development utilities such as the sample-data seeder live in androidTest but must
         // never run as part of the suite; they are invoked explicitly with
@@ -31,18 +45,40 @@ android {
         localeFilters += listOf("ca", "es", "en")
     }
 
+    signingConfigs {
+        if (releaseKeystoreFile.isFile) {
+            create("release") {
+                storeFile = rootProject.file(releaseKeystore.getProperty("storeFile"))
+                storePassword = releaseKeystore.getProperty("storePassword")
+                keyAlias = releaseKeystore.getProperty("keyAlias")
+                keyPassword = releaseKeystore.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
         getByName("release") {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+        // Release code (R8, not debuggable) under the debug id and signature, so it replaces
+        // the debug install in place and keeps its data. Use it to judge speed: a debug build
+        // runs Compose far slower than users will ever see it.
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-benchmark"
+            matchingFallbacks += "release"
         }
     }
 

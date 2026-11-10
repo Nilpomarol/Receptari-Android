@@ -6,11 +6,18 @@ package cat.receptari.app.ui.navigation
  */
 object Destination {
     const val LIBRARY = "library"
-    const val IMPORT = "import"
     const val IMPORT_TEXT = "import/text"
     const val IMPORT_WEBSITE = "import/website"
     const val IMPORT_IMAGE = "import/image"
     const val SETTINGS = "settings"
+    const val FAVORITES = "favorites"
+    const val COLLECTIONS = "collections"
+
+    /** The four pages the bottom bar switches between (ADR-012). */
+    val TopLevel = setOf(LIBRARY, FAVORITES, COLLECTIONS, SETTINGS)
+
+    /** Set on [FAVORITES] so the shared library page pins its favourites filter. */
+    const val FAVORITES_ONLY_ARG = "favoritesOnly"
 
     const val RECIPE_ID_ARG = "recipeId"
     const val FOLDER_ID_ARG = "folderId"

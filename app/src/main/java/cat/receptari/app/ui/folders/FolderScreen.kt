@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -37,7 +36,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
-import cat.receptari.app.core.designsystem.OrnamentalDivider
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
@@ -45,7 +43,7 @@ import cat.receptari.app.domain.model.Folder
 import cat.receptari.app.domain.model.FolderColor
 import cat.receptari.app.domain.model.FolderIcon
 import cat.receptari.app.domain.model.RecipeSummary
-import cat.receptari.app.ui.library.RecipeCard
+import cat.receptari.app.ui.library.recipeItems
 
 @Composable
 fun FolderRoute(
@@ -140,18 +138,16 @@ fun FolderScreen(
 
             else -> LazyColumn(
                 modifier = Modifier.padding(innerPadding),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
             ) {
-                items(state.recipes, key = { it.id }) { recipe ->
-                    RecipeCard(
-                        recipe = recipe,
-                        onClick = { onOpenRecipe(recipe.id) },
-                        onToggleFavorite = {
-                            onEvent(FolderContentsEvent.ToggleFavorite(recipe.id, recipe.isFavorite))
-                        },
-                    )
-                }
+                recipeItems(
+                    recipes = state.recipes,
+                    layout = state.listLayout,
+                    onClick = { onOpenRecipe(it.id) },
+                    onToggleFavorite = {
+                        onEvent(FolderContentsEvent.ToggleFavorite(it.id, it.isFavorite))
+                    },
+                )
             }
         }
     }
@@ -223,14 +219,12 @@ private fun EmptyState(title: String, body: String, modifier: Modifier = Modifie
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        OrnamentalDivider(modifier = Modifier.padding(bottom = 20.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
         )
         Aside(text = body, modifier = Modifier.padding(top = 10.dp))
-        OrnamentalDivider(modifier = Modifier.padding(top = 20.dp))
     }
 }
 

@@ -56,7 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.OrnamentalDivider
+import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
@@ -362,7 +362,7 @@ private fun NearbyComplete(
                 },
             ),
         )
-        OrnamentalDivider(modifier = Modifier.padding(vertical = 16.dp))
+        Hairline(modifier = Modifier.padding(vertical = 16.dp))
         state.result?.let { result ->
             Text(
                 pluralStringResource(

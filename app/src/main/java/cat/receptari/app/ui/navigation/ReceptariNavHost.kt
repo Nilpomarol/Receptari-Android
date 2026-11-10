@@ -1,19 +1,47 @@
 package cat.receptari.app.ui.navigation
 
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CollectionsBookmark
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import cat.receptari.app.core.designsystem.PaperNavigationAction
+import cat.receptari.app.core.designsystem.PaperNavigationItem
+import cat.receptari.app.ui.importer.AddRecipeSheet
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.CollectionsBookmark
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import cat.receptari.app.R
+import cat.receptari.app.core.designsystem.PaperNavigationBar
+import cat.receptari.app.ui.folders.CollectionsRoute
 import cat.receptari.app.ui.detail.RecipeDetailRoute
 import cat.receptari.app.ui.cook.CookModeRoute
 import cat.receptari.app.ui.edit.RecipeEditRoute
 import cat.receptari.app.ui.folders.FolderRoute
-import cat.receptari.app.ui.importer.ImportRoute
 import cat.receptari.app.ui.importer.image.ImageImportRoute
 import cat.receptari.app.ui.importer.text.TextImportRoute
 import cat.receptari.app.ui.importer.website.WebsiteImportRoute
@@ -36,18 +64,50 @@ fun ReceptariNavHost(
         }
     }
 
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val showBottomBar = currentRoute in Destination.TopLevel
+    var adding by rememberSaveable { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
     NavHost(
         navController = navController,
         startDestination = Destination.LIBRARY,
-        modifier = modifier,
+        modifier = Modifier
+            .weight(1f)
+            // The bar below pads itself for the gesture area; the page above must not too.
+            .then(
+                if (showBottomBar) {
+                    Modifier.consumeWindowInsets(WindowInsets.navigationBars)
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         composable(Destination.LIBRARY) {
             LibraryRoute(
                 onOpenRecipe = { navController.navigate(Destination.detail(it)) },
-                onAddRecipe = { navController.navigate(Destination.IMPORT) },
-                onOpenSettings = { navController.navigate(Destination.SETTINGS) },
-                onOpenFolder = { navController.navigate(Destination.folder(it)) },
+                onAddRecipe = { adding = true },
             )
+        }
+
+        composable(
+            route = Destination.FAVORITES,
+            arguments = listOf(
+                navArgument(Destination.FAVORITES_ONLY_ARG) {
+                    type = NavType.BoolType
+                    defaultValue = true
+                },
+            ),
+        ) {
+            LibraryRoute(
+                onOpenRecipe = { navController.navigate(Destination.detail(it)) },
+                onAddRecipe = { adding = true },
+            )
+        }
+
+        composable(Destination.COLLECTIONS) {
+            CollectionsRoute(onOpenFolder = { navController.navigate(Destination.folder(it)) })
         }
 
         composable(
@@ -58,7 +118,7 @@ fun ReceptariNavHost(
                 onNavigateBack = navController::popBackStack,
                 onEditRecipe = { navController.navigate(Destination.edit(it)) },
                 onStartCooking = { navController.navigate(Destination.cook(it)) },
-                onOpenSettings = { navController.navigate(Destination.SETTINGS) },
+                onOpenSettings = { navController.navigateToTab(Destination.SETTINGS) },
             )
         }
 
@@ -98,19 +158,6 @@ fun ReceptariNavHost(
             )
         }
 
-        composable(Destination.IMPORT) {
-            ImportRoute(
-                onNavigateBack = navController::popBackStack,
-                onCreateManually = {
-                    navController.popBackStack()
-                    navController.navigate(Destination.edit())
-                },
-                onImportFromText = { navController.navigate(Destination.IMPORT_TEXT) },
-                onImportFromWebsite = { navController.navigate(Destination.IMPORT_WEBSITE) },
-                onImportFromImage = { navController.navigate(Destination.IMPORT_IMAGE) },
-            )
-        }
-
         composable(Destination.IMPORT_WEBSITE) {
             WebsiteImportRoute(
                 onNavigateBack = navController::popBackStack,
@@ -135,7 +182,7 @@ fun ReceptariNavHost(
         }
 
         composable(Destination.SETTINGS) {
-            SettingsRoute(onNavigateBack = navController::popBackStack)
+            SettingsRoute()
         }
 
         composable(
@@ -147,6 +194,83 @@ fun ReceptariNavHost(
                 onOpenRecipe = { navController.navigate(Destination.detail(it)) },
             )
         }
+    }
+
+    if (showBottomBar) {
+        PaperNavigationBar {
+            TopLevelTabs.forEachIndexed { index, tab ->
+                // Adding a recipe sits in the middle of the bar, between the reading tabs
+                // and the organising ones.
+                if (index == TopLevelTabs.size / 2) {
+                    PaperNavigationAction(
+                        icon = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.library_add_recipe),
+                        onClick = { adding = true },
+                    )
+                }
+                PaperNavigationItem(
+                    selected = currentRoute == tab.route,
+                    onClick = { navController.navigateToTab(tab.route) },
+                    icon = tab.icon,
+                    selectedIcon = tab.selectedIcon,
+                    label = stringResource(tab.label),
+                )
+            }
+        }
+    }
+    }
+
+    if (adding) {
+        AddRecipeSheet(
+            onDismiss = { adding = false },
+            onImportFromWebsite = { navController.navigate(Destination.IMPORT_WEBSITE) },
+            onImportFromText = { navController.navigate(Destination.IMPORT_TEXT) },
+            onImportFromImage = { navController.navigate(Destination.IMPORT_IMAGE) },
+            onCreateManually = { navController.navigate(Destination.edit()) },
+        )
+    }
+}
+
+private data class TopLevelTab(
+    val route: String,
+    @StringRes val label: Int,
+    val icon: ImageVector,
+    val selectedIcon: ImageVector,
+)
+
+private val TopLevelTabs = listOf(
+    TopLevelTab(
+        Destination.LIBRARY,
+        R.string.nav_recipes,
+        Icons.AutoMirrored.Outlined.MenuBook,
+        Icons.AutoMirrored.Filled.MenuBook,
+    ),
+    TopLevelTab(
+        Destination.FAVORITES,
+        R.string.filter_favorites,
+        Icons.Outlined.FavoriteBorder,
+        Icons.Filled.Favorite,
+    ),
+    TopLevelTab(
+        Destination.COLLECTIONS,
+        R.string.folders_title,
+        Icons.Outlined.CollectionsBookmark,
+        Icons.Filled.CollectionsBookmark,
+    ),
+    TopLevelTab(
+        Destination.SETTINGS,
+        R.string.nav_settings,
+        Icons.Outlined.Settings,
+        Icons.Filled.Settings,
+    ),
+)
+
+/** Switches tabs the standard way: each tab keeps its own back stack across switches. */
+private fun NavHostController.navigateToTab(route: String) {
+    navigate(route) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }
 

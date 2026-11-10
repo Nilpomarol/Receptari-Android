@@ -316,8 +316,8 @@ is the deliberate exception to the per-recipe preview requirement:
 `Select recipes → Send nearby → Both confirm code → Validate package → Save valid recipes`
 
 The sender chooses between a direct nearby Receptari connection and Android's normal sharing
-options. For a direct transfer, the recipient opens **Add a recipe → Receive from a nearby
-Receptari** first. Both devices must show and confirm the same authentication code before any
+options. For a direct transfer, the recipient opens **Settings → Receive recipes → Receive from a
+nearby Receptari** first. Both devices must show and confirm the same authentication code before any
 recipe data moves. A `.receptari-share` file remains available as a fallback.
 
 - One acceptance imports the complete valid batch automatically; receiving 50 recipes must

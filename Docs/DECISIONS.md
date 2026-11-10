@@ -265,7 +265,7 @@ Three limits define what it may do:
 
 ## ADR-009 — A fixed printed-book design system, not Material You
 
-**Date:** 2026-08-11 · **Status:** Accepted
+**Date:** 2026-08-11 · **Status:** Accepted, amended by ADR-011 (accent colour, ornaments, layout)
 
 ### Context
 Until now the app took its colours from `dynamicLightColorScheme`, so it looked like
@@ -423,3 +423,153 @@ safe enough to bypass per-recipe extraction review.
   not require an account, internet service, cloud storage, or location data.
 - The nearby session carries the same package bytes as file sharing, so transport and import
   validation remain separate.
+
+---
+
+## ADR-011 — Typeset layout and a search-first library
+
+**Date:** 2026-11-09 · **Status:** Accepted, partly superseded by ADR-012 (cards, ornament,
+navigation)
+
+### Context
+ADR-009 set the right direction — the app should read as a printed book — but the first
+implementation applied the metaphor to everything at once. Every block sat in a framed card,
+filters, tags and secondary buttons shared one outlined pill, three accents competed (olive
+buttons, gold ornaments, terracotta labels), and sprigs and fleurons appeared on most
+screens. The library showed about nine controls before the first recipe, folders hid behind
+a small text link, and the recipe page put filing chips between the title and the
+ingredients.
+
+Three visual directions (typeset cookbook, recipe-card box, quiet Material) and three
+structures (one library, bottom-tab index, table of contents) were mocked up and compared.
+The owner chose the typeset cookbook with a single search-first library.
+
+### Decision
+**Style.** Content is set on the page, the way a printed cookbook is:
+- No cards around content. Sections are separated by space and a flush-left heading over a
+  full-width ink rule (`OrnamentHeading`, which now takes a `trailing` slot). List rows are
+  divided by hairlines.
+- One accent: sealing-wax red (`Wax`) is `primary` *and* `secondary`. Olive and terracotta
+  are gone from the scheme; gold stays for ratings only. Small-caps red labels use
+  `Rubric`.
+- Ornament is the wordmark alone, now smaller and flush left. `CornerFlourish` and
+  `OrnamentalDivider` are deleted.
+- Fonts, paper, and the always-light rule from ADR-009 are unchanged.
+
+**Structure.**
+- Library: wordmark, a ruled search line, a shelf of folders, one line stating count and
+  sort with a single *Filtra* button, then the list. Sort, state filters and tags all live
+  in one sheet; active filters stay visible above the list as removable pills.
+- Adding a recipe is a bottom sheet over the library (Web · Text · Image · Manual). The
+  `import` route is gone.
+- Receiving from another Receptari (nearby, or from a shared file) moves to Settings.
+  Opening a `.receptari-share` file from another app still goes straight to the transfer
+  import.
+- Recipe page: photo, title, rating, specs, then ingredients with the servings stepper on
+  the heading rule, then the method with numerals in the margin. Notes, source, cook history
+  and filing (folder, tags) follow the method. *Start cooking* is pinned to the foot of the
+  page. Favourite and Edit stay in the top bar; Translate, Send and Delete move to an
+  overflow menu.
+
+### Rationale
+A frame marks something as separate; when everything is framed, nothing is. Removing the
+frames gives the hierarchy back to type and space, which is how a printed book creates it,
+and makes the list roughly a third denser.
+
+A personal recipe book holds tens to a few hundred recipes. At that size one list with
+search, a folder shelf and a filter sheet is enough; a tab bar or a contents page adds a tap
+and a permanent piece of chrome for no gain.
+
+Receiving is rare and is always started on purpose from this phone, so it does not belong
+in the most-used creation flow.
+
+### Consequences
+- `primary` and `error` are now both reds (`Wax` and `ErrorInk`). Error states always carry
+  text, so they stay distinguishable; revisit if an error ever needs to be colour-only.
+- Folder pages remain their own screen (`FolderScreen`), reached from the shelf, rather
+  than becoming a filtered mode of the library. Merging them is possible later if the two
+  lists drift apart.
+- `PaperCard` survives for genuinely separate objects (timer dock, transfer sheets). Do not
+  use it to group content on a page.
+- Material buttons outside the redesigned screens are still fully rounded pills; the
+  redesigned primary actions use `MaterialTheme.shapes.small`.
+
+---
+
+## ADR-012 — Illustrated cookbook style and a bottom bar
+
+**Date:** 2026-11-10 · **Status:** Accepted
+
+### Context
+ADR-011's typeset layout fixed the clutter, but on the device it read as flat. Every row,
+heading and section had the same weight, so nothing stood out, and with the ornaments gone
+the app lost the hand-made feel the owner wanted. The owner supplied two mock-ups ("guided
+cooking" and "editorial home") as the target. They chose: the library stays the start page
+but gains a bottom bar; the script wordmark stays but must be easier to read; the recipe page
+splits ingredients and method into tabs; and folders become photo banners.
+
+### Decision
+**Style.**
+- Objects have weight again. Folders and the cook-mode timer are soft cards
+  (`PaperCard`: one faint rule, 18 dp corners, a hairline shadow). Primary actions are wax-red
+  pills (`CircleShape`). The shape scale is 4 / 8 / 12 / 18 / 24 dp.
+- Recipe lists come in two layouts, switched by a two-icon toggle at the end of the list header and kept
+  as a device preference (`DisplayPreferencesRepository`, its own Preferences DataStore):
+  a two-column grid of 4:3 photos with the time and rating on a paper label and one line of
+  title (the default), or a cookbook index of round plates, titles with dotted leaders to
+  the time, and hairlines between rows. Library, Favourites and folders all follow it.
+- Hand-drawn botanicals come back in a controlled form. `Sprig` is an engraved olive sprig
+  drawn in code in the new `palette.botanical` ink. It sits beside page titles, flanks the
+  wordmark, fills the empty photo plate and marks folder banners. It never appears between
+  lines of a recipe.
+- Headings carry a wax-red icon (`OrnamentHeading(icon = …)`) and drop the rule when they
+  have one.
+- The masthead (`CollapsingMasthead`) is the launcher emblem, the Pinyon Script wordmark between two
+  sprigs, and a spaced-caps tagline. The wordmark is now wax red and 46 sp, and is drawn a
+  second time as a thin outline to thicken Pinyon's hairlines.
+- Facts use pictograms (`IconFact`: clock, people). Two-way views use `SegmentedTabs`.
+- One accent is unchanged: wax red, with gold for ratings only. Paper, fonts and the
+  always-light rule from ADR-009 also stay.
+
+**Structure.**
+- Bottom bar with four tabs: Recipes (the library), Favourites (the same page with the
+  favourites filter pinned), Folders (photo banners, each fronted by its most recently
+  updated photo), Settings. Each tab keeps its own back stack. The bar hides on every page
+  below a tab. It is a low custom bar (`PaperNavigationBar`): the selected tab is wax ink
+  and a filled icon, with no indicator pill. The middle slot is a wax disc that opens the
+  add-recipe sheet, which replaces the library's floating button.
+- The library masthead folds as the list scrolls (`CollapsingMasthead`): the emblem and
+  wordmark glide and shrink into a compact bar while the sprigs and tagline fade. It is one
+  set of marks, placed in the layout phase, so scrolling never recomposes it. Tapping it
+  returns to the top.
+- The folder shelf leaves the library, and so does the settings icon: both have tabs now.
+- Recipe page: an inset rounded photo, the title, rating and facts, then a sticky
+  Ingredients / Method switch. Ingredients can be ticked off for the session; this is not
+  stored. Steps are numbered in wax discs. *Start cooking* is a pinned pill.
+- Cook mode: progress dots (ticks for finished steps, the number on the current one), the
+  step in large type, a timer card for any step that names a duration (one tap starts it),
+  and Previous / Next as equal pills.
+
+### Rationale
+A personal recipe book should look like someone's book, not like a typeset template. Weight
+and illustration create the hierarchy that type alone did not. Keeping the accent count, the
+paper and the fonts keeps it from sliding back into the clutter ADR-011 removed.
+
+A bottom bar costs one strip of chrome. In return, favourites and folders are one tap away
+instead of behind a filter or a shelf that scrolled away.
+
+### Consequences
+- `FolderSummary` gains `coverImagePath`, filled by a subquery in `FolderDao`. It is a
+  query-only change, so no migration is needed.
+- `LibraryViewModel` reads `favoritesOnly` from its `SavedStateHandle`. The Favourites tab
+  cannot switch its pinned filter off, and the filter count ignores it.
+- Settings is a tab and has no back arrow. Opening it from a recipe switches to the tab, and
+  the recipe stays saved in the Recipes tab's back stack.
+- The editor, import and settings screens pick up the softer cards and shapes but have not
+  otherwise been redesigned.
+- `PaperScaffold` paints the paper into its own offscreen layer, so scrolling composites one
+  cached texture instead of redrawing the grain and mottling every frame. `Sprig` builds its
+  paths once per size. Judge scrolling with the `benchmark` build type (release code, debug
+  id and signature), not with debug. On a Pixel 10 Pro XL with the profile applied, library
+  scrolling showed 1.3% janky frames, against 5.6% for the debug build.
+

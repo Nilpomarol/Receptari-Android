@@ -1,5 +1,7 @@
 package cat.receptari.app.di
 
+import cat.receptari.app.data.settings.DataStoreDisplayPreferencesRepository
+import cat.receptari.app.domain.repository.DisplayPreferencesRepository
 import cat.receptari.app.data.image.FileImageStore
 import cat.receptari.app.data.remote.claude.ClaudeAiClient
 import cat.receptari.app.data.remote.web.OkHttpWebPageSource
@@ -63,6 +65,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindCookHistoryRepository(impl: CookHistoryRepositoryImpl): CookHistoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDisplayPreferencesRepository(
+        impl: DataStoreDisplayPreferencesRepository,
+    ): DisplayPreferencesRepository
 
     @Binds
     @Singleton

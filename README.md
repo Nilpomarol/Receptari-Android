@@ -78,6 +78,21 @@ Build and run the checks from a terminal:
 You can create and use manual recipes immediately. To try AI extraction or translation,
 enter your own Anthropic API key in **Settings**. The project does not ship with a key.
 
+## Signed release APK
+
+The first private release is version `0.1` (`versionCode 1`). Release builds enable R8
+and resource shrinking. To sign a release, create a release keystore using Android Studio's
+**Build > Generate Signed Bundle/APK**, then copy `keystore.properties.example` to
+`keystore.properties` and fill in the keystore path, alias, and passwords. The keystore
+path is relative to the repository root, or may be absolute (use forward slashes on Windows).
+
+Run `./gradlew build` (or `.\gradlew.bat build` on Windows). With local signing configured,
+the signed APK is `app/build/outputs/apk/release/app-release.apk`. Without
+`keystore.properties`, release builds remain unsigned so contributors and CI need no secrets.
+
+Keystores and `keystore.properties` are ignored by Git. Keep a private backup of both:
+future updates must use the same signing key and a higher `versionCode`.
+
 ## Under the hood
 
 The app is a single Android module organized into `ui`, `domain`, and `data` layers.

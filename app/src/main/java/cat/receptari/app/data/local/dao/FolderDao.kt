@@ -15,7 +15,13 @@ interface FolderDao {
 
     @Query(
         """
-        SELECT f.*, COUNT(r.id) AS recipeCount
+        SELECT f.*, COUNT(r.id) AS recipeCount,
+            (
+                SELECT c.imagePath FROM recipes c
+                WHERE c.folderId = f.id AND c.imagePath IS NOT NULL
+                ORDER BY c.updatedAt DESC
+                LIMIT 1
+            ) AS coverImagePath
         FROM folders f
         LEFT JOIN recipes r ON r.folderId = f.id
         GROUP BY f.id

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Receptari</string>
 
     <string name="nav_back">Back</string>
     <string name="nav_settings">Settings</string>
@@ -17,6 +16,14 @@
     <string name="library_sort">Sort by</string>
     <string name="library_filters_clear">Clear filters</string>
     <string name="library_send_recipes">Send recipes</string>
+    <string name="library_count_and_sort">%1$s · %2$s</string>
+    <string name="library_filter">Filter</string>
+    <string name="library_layout_grid">Show as grid</string>
+    <string name="library_layout_index">Show as index</string>
+    <string name="library_filter_active">Filter · %1$d</string>
+    <string name="library_filter_title">Filter and sort</string>
+    <string name="library_filter_show">Show only</string>
+    <string name="settings_receive_title">Receive recipes</string>
     <string name="library_select_all_visible">Select all visible recipes</string>
     <string name="library_send_selected">Send selected recipes</string>
     <string name="library_selection_help">Tap the recipes you want to send. Use the top-bar icon to select every recipe currently shown.</string>
@@ -76,6 +83,10 @@
     <string name="detail_duration_hours_minutes">%1$d h %2$d min</string>
     <string name="detail_never_cooked">You haven\'t cooked this yet</string>
     <string name="detail_rating">Rating</string>
+    <string name="detail_add_tag">Add tag</string>
+    <string name="detail_add_folder">Choose folder</string>
+    <string name="detail_quick_tags_title">Manage tags</string>
+    <string name="detail_quick_folder_title">Assign to a folder</string>
     <plurals name="detail_cook_count">
         <item quantity="one">Cooked %1$d time</item>
         <item quantity="other">Cooked %1$d times</item>
@@ -135,6 +146,13 @@
     <string name="edit_title_new">New recipe</string>
     <string name="edit_title_existing">Edit recipe</string>
     <string name="edit_save">Save</string>
+    <string name="edit_save_recipe">Save recipe</string>
+    <string name="edit_section_times">Times and servings</string>
+    <string name="edit_section_details">Details and classification</string>
+    <string name="edit_section_source_notes">Source and notes</string>
+    <string name="edit_prep_time_short">Prep</string>
+    <string name="edit_cook_time_short">Cook</string>
+    <string name="edit_total_time_short">Total</string>
     <string name="edit_field_title">Title</string>
     <string name="edit_field_title_required">A title is required</string>
     <string name="edit_field_prep_time">Prep time (min)</string>
@@ -241,7 +259,7 @@
     <string name="import_action_extract">Extract the recipe</string>
     <string name="import_extracting">Extracting…</string>
     <string name="import_nothing_found">No recipe was found in that text.</string>
-    <string name="import_review_notice">Website, image, and text imports are reviewed before saving. Validated Receptari copies import automatically.</string>
+    <string name="import_review_notice">Website, image, and text imports are reviewed before saving.</string>
     <string name="import_website_title">From a website</string>
     <string name="import_website_label">Page address</string>
     <string name="import_website_explanation">Paste the recipe\'s address. If the page already publishes the recipe in a structured format it is read directly; otherwise Claude extracts it.</string>
@@ -316,6 +334,7 @@
 
     <string name="common_coming_soon">Not available yet</string>
     <string name="common_cancel">Cancel</string>
+    <string name="common_more_options">More options</string>
     <string name="common_undo">Undo</string>
     <string name="edit_save_failed">The recipe could not be saved. Try again.</string>
     <string name="edit_image_failed">The image could not be read.</string>
@@ -393,4 +412,9 @@
         <item quantity="one">Skipped %1$d duplicate.</item>
         <item quantity="other">Skipped %1$d duplicates.</item>
     </plurals>
+    <string name="nav_recipes">Recipes</string>
+    <string name="library_tagline">Home cooking, always at hand</string>
+    <string name="favorites_empty_title">No favourites yet</string>
+    <string name="favorites_empty_body">Tap the heart on a recipe to keep it here.</string>
+    <string name="folders_subtitle">Your recipes, by theme</string>
 </resources>

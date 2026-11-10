@@ -1,5 +1,23 @@
 package cat.receptari.app.ui.detail
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.ShoppingBasket
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import cat.receptari.app.core.designsystem.IconFact
+import cat.receptari.app.core.designsystem.MetaLine
+import cat.receptari.app.core.designsystem.SegmentedTabs
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -30,6 +48,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +63,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -82,6 +102,8 @@ import cat.receptari.app.ui.folders.toImageVector
 import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -127,12 +149,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
-import cat.receptari.app.core.designsystem.CornerFlourish
 import cat.receptari.app.core.designsystem.FilterPill
 import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.OrnamentalDivider
-import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.SectionLabel
@@ -372,15 +391,20 @@ fun RecipeDetailScreen(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            if (state.timers.isNotEmpty()) {
-                ActiveTimerDock(
-                    timers = state.timers,
-                    remainingSeconds = state.timerRemainingSeconds,
-                    onPause = { onEvent(RecipeDetailEvent.PauseTimer(it)) },
-                    onResume = { onEvent(RecipeDetailEvent.ResumeTimer(it)) },
-                    onAddMinute = { onEvent(RecipeDetailEvent.AddTimerMinute(it)) },
-                    onCancel = { onEvent(RecipeDetailEvent.CancelTimer(it)) },
-                )
+            Column {
+                if (state.timers.isNotEmpty()) {
+                    ActiveTimerDock(
+                        timers = state.timers,
+                        remainingSeconds = state.timerRemainingSeconds,
+                        onPause = { onEvent(RecipeDetailEvent.PauseTimer(it)) },
+                        onResume = { onEvent(RecipeDetailEvent.ResumeTimer(it)) },
+                        onAddMinute = { onEvent(RecipeDetailEvent.AddTimerMinute(it)) },
+                        onCancel = { onEvent(RecipeDetailEvent.CancelTimer(it)) },
+                    )
+                }
+                if (state.recipe != null) {
+                    CookBar(onStartCooking = onStartCooking)
+                }
             }
         },
         topBar = {
@@ -426,48 +450,13 @@ fun RecipeDetailScreen(
                                 contentDescription = stringResource(R.string.detail_edit),
                             )
                         }
-                        IconButton(
-                            onClick = { onEvent(RecipeDetailEvent.Share) },
-                            enabled = !state.isSharing,
-                        ) {
-                            if (state.isSharing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(22.dp),
-                                    strokeWidth = 2.dp,
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = stringResource(R.string.detail_share),
-                                )
-                            }
-                        }
-                        IconButton(
-                            onClick = { showTranslationPicker = true },
-                            enabled = !state.isTranslating,
-                        ) {
-                            if (state.isTranslating) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .semantics {
-                                            contentDescription = translateDescription
-                                        },
-                                    strokeWidth = 2.dp,
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Outlined.Translate,
-                                    contentDescription = translateDescription,
-                                )
-                            }
-                        }
-                        IconButton(onClick = { confirmDelete = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.detail_delete),
-                            )
-                        }
+                        RecipeOverflowMenu(
+                            busy = state.isSharing || state.isTranslating,
+                            busyDescription = translateDescription,
+                            onTranslate = { showTranslationPicker = true },
+                            onShare = { onEvent(RecipeDetailEvent.Share) },
+                            onDelete = { confirmDelete = true },
+                        )
                     }
                 },
             )
@@ -629,7 +618,7 @@ private fun LanguageIndicator(text: String) {
 private fun RecipeLanguage.matches(languageTag: String?): Boolean =
     languageTag?.startsWith(prefix = this.languageTag, ignoreCase = true) == true
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun RecipeContent(
     state: RecipeDetailUiState,
@@ -642,6 +631,9 @@ private fun RecipeContent(
 
     var showFolderSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(IngredientsTab) }
+    // Ticking off ingredients is a scratch mark for this session at the stove, not data.
+    val checkedIngredients = remember(recipe.id) { mutableStateListOf<String>() }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -659,25 +651,39 @@ private fun RecipeContent(
             )
         }
 
-        item(key = "specs") {
-            SpecsBand(recipe = recipe)
+        item(key = "facts") {
+            RecipeFacts(recipe = recipe)
         }
 
-        item(key = "meta") {
-            RecipeMeta(
-                recipe = recipe,
-                onOpenFolderSheet = { showFolderSheet = true },
-                onOpenTagSheet = { showTagSheet = true },
+        stickyHeader(key = "tabs") {
+            SegmentedTabs(
+                options = listOf(
+                    stringResource(R.string.detail_ingredients),
+                    stringResource(R.string.detail_instructions),
+                ),
+                selectedIndex = selectedTab,
+                onSelect = { selectedTab = it },
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                    .paperGrain(intensity = 1f)
+                    .padding(horizontal = PagePadding, vertical = 10.dp),
             )
         }
 
-        item(key = "ingredients") {
-            IngredientsPanel(state = state, onEvent = onEvent)
-        }
-
+        if (selectedTab == IngredientsTab) {
+            item(key = "ingredients") {
+                IngredientsPanel(
+                    state = state,
+                    onEvent = onEvent,
+                    checked = checkedIngredients,
+                    onToggle = { id ->
+                        if (!checkedIngredients.remove(id)) checkedIngredients.add(id)
+                    },
+                )
+            }
+        } else {
         item(key = "instructions-heading") {
             InstructionsHeader(
-                onStartCooking = onStartCooking,
                 onSetTimer = {
                     onSetTimer(
                         TimerSetupRequest(
@@ -709,8 +715,7 @@ private fun RecipeContent(
                     )
                 }
             }
-            val lastIndex = section.steps.lastIndex
-            section.steps.forEachIndexed { index, step ->
+            section.steps.forEach { step ->
                 stepNumber += 1
                 val number = stepNumber
                 item(key = "step-${step.id}") {
@@ -718,9 +723,6 @@ private fun RecipeContent(
                     StepRow(
                         number = number,
                         text = step.text,
-                        connectTop = index > 0,
-                        connectBottom = index < lastIndex,
-                        illuminated = number == 1,
                         // The timer only belongs on steps that actually name a duration.
                         onSetTimer = if (InstructionDurationParser.containsDuration(step.text)) {
                             {
@@ -746,41 +748,51 @@ private fun RecipeContent(
                 Column {
                     OrnamentHeading(
                         title = stringResource(R.string.detail_notes),
-                        modifier = Modifier.padding(horizontal = PagePadding, vertical = 14.dp),
+                        icon = Icons.Outlined.EditNote,
+                        modifier = Modifier.padding(start = PagePadding, end = PagePadding, top = 28.dp, bottom = 10.dp),
                     )
                     NotesCard(notes = notes)
                 }
             }
         }
+        }
 
         (recipe.sourceName ?: recipe.sourceUrl)?.let { source ->
             item(key = "source") {
-                Column(
+                Aside(
+                    text = stringResource(R.string.detail_source_line, source),
+                    textAlign = TextAlign.Start,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PagePadding, vertical = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    OrnamentalDivider(modifier = Modifier.padding(bottom = 8.dp))
-                    Aside(text = stringResource(R.string.detail_source_line, source))
-                }
+                )
             }
         }
 
+        // Filing and history come last: they matter when putting the book in order, not
+        // while reading a recipe to cook it.
+        item(key = "meta") {
+            RecipeMeta(
+                recipe = recipe,
+                onOpenFolderSheet = { showFolderSheet = true },
+                onOpenTagSheet = { showTagSheet = true },
+            )
+        }
+
         item(key = "cooked") {
-            Button(
+            OutlinedButton(
                 onClick = { onEvent(RecipeDetailEvent.MarkCooked) },
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
                 ),
                 contentPadding = PaddingValues(vertical = 14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = PagePadding, vertical = 8.dp),
             ) {
-                Icon(Icons.Outlined.Restaurant, contentDescription = null)
+                Icon(Icons.Default.Check, contentDescription = null)
                 Text(
                     text = stringResource(R.string.detail_mark_cooked),
                     style = MaterialTheme.typography.labelLarge,
@@ -844,31 +856,19 @@ private fun RecipeHero(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (imagePath != null) {
-            val page = MaterialTheme.colorScheme.background
-            Box(modifier = Modifier.fillMaxWidth()) {
-                AsyncImage(
-                    model = imagePath,
-                    contentDescription = stringResource(R.string.common_recipe_image),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .graphicsLayer { alpha = 0.35f + 0.65f * reveal },
-                )
-                // The lower edge dissolves into the parchment so the plate has no hard seam.
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .background(
-                            Brush.verticalGradient(listOf(Color.Transparent, page)),
-                        ),
-                )
-            }
+            AsyncImage(
+                model = imagePath,
+                contentDescription = stringResource(R.string.common_recipe_image),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .fillMaxWidth()
+                    .height(230.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .graphicsLayer { alpha = 0.35f + 0.65f * reveal },
+            )
         }
 
         Column(
@@ -878,43 +878,19 @@ private fun RecipeHero(
                     alpha = reveal
                     translationY = (1f - reveal) * 18.dp.toPx()
                 }
-                // With a photo, the block rides up into the faded lower edge so the title
-                // sits close under the plate instead of leaving a band of bare paper.
-                .then(if (imagePath != null) Modifier.offset(y = (-18).dp) else Modifier)
-                .padding(
-                    start = PagePadding,
-                    end = PagePadding,
-                    top = if (imagePath != null) 0.dp else 24.dp,
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(start = PagePadding, end = PagePadding, top = 12.dp),
         ) {
-            // Two engraved sprigs pointing inward from the corners frame the title.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CornerFlourish()
-                Spacer(modifier = Modifier.weight(1f))
-                CornerFlourish(mirrored = true)
-            }
-
             Text(
                 text = title,
                 style = MaterialTheme.typography.displaySmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 8.dp),
             )
 
             RatingStars(
                 rating = rating,
                 onSetRating = onSetRating,
-                modifier = Modifier.padding(top = 10.dp),
-            )
-
-            OrnamentalDivider(
-                modifier = Modifier
-                    .padding(top = 12.dp)
-                    .widthIn(max = 200.dp),
+                // The touch targets are wider than the stars; pull the row back so the
+                // first star lines up with the title's left edge.
+                modifier = Modifier.offset(x = (-9).dp),
             )
         }
     }
@@ -936,7 +912,7 @@ private fun RatingStars(
             val isSelected = rating != null && star <= rating
             IconButton(
                 onClick = { onSetRating(if (rating == star) null else star) },
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(40.dp),
             ) {
                 Icon(
                     imageVector = if (isSelected) Icons.Default.Star else Icons.Default.StarBorder,
@@ -946,7 +922,7 @@ private fun RatingStars(
                     } else {
                         ReceptariTheme.palette.gold.copy(alpha = 0.35f)
                     },
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -954,80 +930,39 @@ private fun RatingStars(
 }
 
 /**
- * The figures a cook glances at before starting: prep, cook, total and yield, set as a
- * printed spec table between two hairlines. Cells that have no figure are simply absent, so
- * a recipe with only a total time still reads as a deliberate row rather than a gap.
+ * The figures a cook glances at before starting: total time and yield with their pictograms,
+ * then the prep / cook split in the aside voice when the recipe gives one.
  */
 @Composable
-private fun SpecsBand(recipe: Recipe, modifier: Modifier = Modifier) {
-    val cells = buildList {
+private fun RecipeFacts(recipe: Recipe, modifier: Modifier = Modifier) {
+    val total = recipe.totalTimeMinutes ?: recipe.derivedTotalMinutes
+    val servings = recipe.baseServings?.takeIf { it > 0 }
+    val split = listOfNotNull(
         recipe.prepTimeMinutes?.let {
-            add(stringResource(R.string.detail_prep_time) to formatDuration(it))
-        }
+            stringResource(R.string.detail_time_part, stringResource(R.string.detail_prep_time), formatDuration(it))
+        },
         recipe.cookTimeMinutes?.let {
-            add(stringResource(R.string.detail_cook_time) to formatDuration(it))
-        }
-        (recipe.totalTimeMinutes ?: recipe.derivedTotalMinutes)?.let {
-            add(stringResource(R.string.detail_total_time) to formatDuration(it))
-        }
-        recipe.baseServings?.takeIf { it > 0 }?.let {
-            add(stringResource(R.string.detail_servings) to it.toString())
-        }
-    }
-    if (cells.isEmpty()) return
+            stringResource(R.string.detail_time_part, stringResource(R.string.detail_cook_time), formatDuration(it))
+        },
+    )
+    if (total == null && servings == null && split.isEmpty()) return
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = PagePadding, end = PagePadding, top = 14.dp),
+            .padding(start = PagePadding, end = PagePadding, bottom = 6.dp),
     ) {
-        Hairline()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            cells.forEachIndexed { index, (label, value) ->
-                if (index > 0) SpecDivider()
-                SpecCell(label = label, value = value, modifier = Modifier.weight(1f))
+        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            total?.let { IconFact(icon = Icons.Outlined.Schedule, text = formatDuration(it)) }
+            servings?.let {
+                IconFact(
+                    icon = Icons.Outlined.People,
+                    text = pluralStringResource(R.plurals.common_servings, it, it),
+                )
             }
         }
-        Hairline()
+        MetaLine(parts = split, modifier = Modifier.padding(top = 6.dp))
     }
-}
-
-@Composable
-private fun SpecCell(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.secondary,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 3.dp),
-        )
-    }
-}
-
-@Composable
-private fun SpecDivider() {
-    Box(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(1.dp)
-            .background(ReceptariTheme.palette.rule.copy(alpha = 0.5f)),
-    )
 }
 
 @Composable
@@ -1053,10 +988,10 @@ private fun RecipeMeta(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = PagePadding, end = PagePadding, top = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(start = PagePadding, end = PagePadding, top = 4.dp, bottom = 12.dp),
     ) {
         Aside(
+            textAlign = TextAlign.Start,
             text = if (recipe.cookCount == 0) {
                 stringResource(R.string.detail_never_cooked)
             } else {
@@ -1070,7 +1005,7 @@ private fun RecipeMeta(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             // Folder chip
@@ -1125,8 +1060,6 @@ private fun RecipeMeta(
                 )
             }
         }
-
-        OrnamentalDivider(modifier = Modifier.padding(top = 14.dp))
     }
 }
 
@@ -1175,6 +1108,8 @@ private fun MetaChip(
 private fun IngredientsPanel(
     state: RecipeDetailUiState,
     onEvent: (RecipeDetailEvent) -> Unit,
+    checked: List<String>,
+    onToggle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val recipe = state.recipe ?: return
@@ -1198,13 +1133,8 @@ private fun IngredientsPanel(
             )
         }
 
-        PaperCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        ) {
-            Column {
+        Column(modifier = Modifier.padding(top = 6.dp)) {
+            run {
                 state.ingredientSections.forEachIndexed { index, section ->
                     section.name?.let { name ->
                         SectionLabel(
@@ -1217,7 +1147,11 @@ private fun IngredientsPanel(
                         )
                     }
                     section.ingredients.forEach { ingredient ->
-                        IngredientRow(text = ingredientLine(ingredient))
+                        IngredientRow(
+                            text = ingredientLine(ingredient),
+                            checked = ingredient.id in checked,
+                            onToggle = { onToggle(ingredient.id) },
+                        )
                     }
                 }
             }
@@ -1225,53 +1159,125 @@ private fun IngredientsPanel(
     }
 }
 
-/** The method heading and its two starting actions: begin cooking, or set a plain timer. */
+/** The method heading, with a plain kitchen timer beside it. */
 @Composable
 private fun InstructionsHeader(
-    onStartCooking: () -> Unit,
     onSetTimer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    OrnamentHeading(
+        title = stringResource(R.string.detail_instructions),
+        icon = Icons.AutoMirrored.Outlined.MenuBook,
+        modifier = modifier.padding(start = PagePadding, end = PagePadding, top = 8.dp, bottom = 8.dp),
+        trailing = {
+            IconButton(onClick = onSetTimer, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.Outlined.Timer,
+                    contentDescription = stringResource(R.string.timer_set),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        },
+    )
+}
+
+/**
+ * The one action a recipe page exists for, pinned to the foot of the page so it is there
+ * whether the reader is at the ingredients or halfway down the method.
+ */
+@Composable
+private fun CookBar(onStartCooking: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .paperGrain(intensity = 1f)
+            .navigationBarsPadding(),
     ) {
-        OrnamentHeading(
-            title = stringResource(R.string.detail_instructions),
-            modifier = Modifier.padding(start = PagePadding, end = PagePadding, top = 20.dp, bottom = 14.dp),
-        )
-        Row(
+        Button(
+            onClick = onStartCooking,
+            shape = CircleShape,
+            contentPadding = PaddingValues(vertical = 16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = PagePadding),
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(horizontal = PagePadding, vertical = 10.dp),
         ) {
-            Button(
-                onClick = onStartCooking,
-                shape = CircleShape,
-                contentPadding = PaddingValues(horizontal = 22.dp, vertical = 12.dp),
-            ) {
-                Icon(Icons.Outlined.Restaurant, contentDescription = null)
-                Text(
-                    text = stringResource(R.string.cook_mode_start),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(start = 8.dp),
+            Icon(Icons.Filled.PlayArrow, contentDescription = null)
+            Text(
+                text = stringResource(R.string.cook_mode_start),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(start = 10.dp),
+            )
+        }
+    }
+}
+
+/** Translate, send and delete: real actions, but not ones a cook reaches for mid-recipe. */
+@Composable
+private fun RecipeOverflowMenu(
+    busy: Boolean,
+    busyDescription: String,
+    onTranslate: () -> Unit,
+    onShare: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }, enabled = !busy) {
+            if (busy) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .semantics { contentDescription = busyDescription },
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.common_more_options),
                 )
             }
-            OutlinedButton(
-                onClick = onSetTimer,
-                shape = CircleShape,
-                border = BorderStroke(1.dp, ReceptariTheme.palette.rule),
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
-            ) {
-                Icon(Icons.Outlined.Timer, contentDescription = null)
-                Text(
-                    text = stringResource(R.string.timer_set),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.translation_action)) },
+                leadingIcon = { Icon(Icons.Outlined.Translate, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onTranslate()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.detail_share)) },
+                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onShare()
+                },
+            )
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = stringResource(R.string.detail_delete),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onDelete()
+                },
+            )
         }
     }
 }
@@ -1279,11 +1285,10 @@ private fun InstructionsHeader(
 /** Notes, opened with an illuminated initial in the manner of a printed aside. */
 @Composable
 private fun NotesCard(notes: String, modifier: Modifier = Modifier) {
-    PaperCard(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = PagePadding),
-        contentPadding = PaddingValues(16.dp),
     ) {
         val trimmed = notes.trimStart()
         if (trimmed.length > 1) {
@@ -1311,102 +1316,81 @@ private fun NotesCard(notes: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * One ingredient, marked with a printer's diamond.
+ * One ingredient with a box to tick off while gathering them.
  *
  * The text is whatever [cat.receptari.app.domain.scaling.ScaledIngredient.displayText]
  * produced — the source's own line. Nothing here re-typesets it.
  */
 @Composable
-private fun IngredientRow(text: String, modifier: Modifier = Modifier) {
+private fun IngredientRow(
+    text: String,
+    checked: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp),
+            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() })
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Diamond(modifier = Modifier.padding(top = 10.dp, end = 12.dp))
-        Text(text = text, style = MaterialTheme.typography.bodyLarge)
+        Checkbox(
+            checked = checked,
+            onCheckedChange = null,
+            colors = CheckboxDefaults.colors(
+                checkedColor = MaterialTheme.colorScheme.primary,
+                uncheckedColor = ReceptariTheme.palette.rule,
+            ),
+            modifier = Modifier.padding(end = 12.dp, top = 8.dp, bottom = 8.dp),
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (checked) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        )
     }
 }
 
 /**
- * One step, opened by its number in a ruled roundel and threaded onto a faint vertical rule
- * that joins consecutive steps into a single column — the printed method's spine.
- *
- * The very first step is *illuminated*: a larger, gold-framed roundel, the printed-book
- * answer to a manuscript's decorated initial.
+ * One step, its number set large in the margin in rubric red, the way a printed method is
+ * numbered.
  */
 @Composable
 private fun StepRow(
     number: Int,
     text: String,
-    connectTop: Boolean,
-    connectBottom: Boolean,
-    illuminated: Boolean,
     onSetTimer: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val palette = ReceptariTheme.palette
-    val page = MaterialTheme.colorScheme.background
-    val roundelSize = if (illuminated) 34.dp else 28.dp
-    val frameColor = if (illuminated) palette.gold else palette.rule
-    val numberColor = if (illuminated) palette.gold else MaterialTheme.colorScheme.primary
-
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = PagePadding, vertical = 7.dp),
+            .padding(start = PagePadding, end = 8.dp, top = 8.dp, bottom = 8.dp),
     ) {
         Box(
             modifier = Modifier
-                .width(GutterWidth)
-                .fillMaxHeight(),
+                .size(StepBadge)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary),
+            contentAlignment = Alignment.Center,
         ) {
-            // The threaded rule runs behind the roundel; the opaque disc masks it at the
-            // centre so it reads as passing through, not across.
-            Canvas(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(GutterWidth),
-            ) {
-                val centerX = size.width / 2f
-                val roundelCenterY = (StepRoundelTop + roundelSize / 2).toPx()
-                val top = if (connectTop) 0f else roundelCenterY
-                val bottom = if (connectBottom) size.height else roundelCenterY
-                if (bottom > top) {
-                    drawLine(
-                        color = palette.rule.copy(alpha = 0.5f),
-                        start = Offset(centerX, top),
-                        end = Offset(centerX, bottom),
-                        strokeWidth = StepRuleStroke,
-                    )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = StepRoundelTop)
-                    .size(roundelSize)
-                    .background(page, CircleShape)
-                    .pageFrame(CircleShape, frameColor, inset = 0.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = number.toString(), // i18n-exempt: a numeral, not a phrase
-                    style = if (illuminated) {
-                        MaterialTheme.typography.titleMedium
-                    } else {
-                        MaterialTheme.typography.titleSmall
-                    },
-                    color = numberColor,
-                )
-            }
+            Text(
+                text = number.toString(), // i18n-exempt: a numeral, not a phrase
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
         }
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp, top = 2.dp),
+                .padding(start = 14.dp, top = 2.dp),
         )
         if (onSetTimer != null) {
             IconButton(
@@ -1416,7 +1400,7 @@ private fun StepRow(
                 Icon(
                     imageVector = Icons.Outlined.Timer,
                     contentDescription = stringResource(R.string.timer_for_step, number),
-                    tint = MaterialTheme.colorScheme.secondary,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         } else {
@@ -1434,19 +1418,11 @@ private fun IngredientsHeader(
     onEvent: (RecipeDetailEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.detail_ingredients),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-
+    OrnamentHeading(
+        title = stringResource(R.string.detail_ingredients),
+        icon = Icons.Outlined.ShoppingBasket,
+        modifier = modifier.padding(top = 8.dp),
+        trailing = {
         if (isScalable) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1467,7 +1443,7 @@ private fun IngredientsHeader(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = CircleShape,
                     color = if (state.isScaled) {
                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                     } else {
@@ -1483,8 +1459,8 @@ private fun IngredientsHeader(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier
                             .paperGrain()
-                            .height(32.dp)
-                            .padding(horizontal = 2.dp),
+                            .height(36.dp)
+                            .padding(horizontal = 4.dp),
                     ) {
                         Box(
                             modifier = Modifier
@@ -1537,33 +1513,15 @@ private fun IngredientsHeader(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun Diamond(modifier: Modifier = Modifier) {
-    val color = ReceptariTheme.palette.rule
-    Canvas(modifier = modifier.size(6.dp)) {
-        val half = size.minDimension / 2f
-        drawPath(
-            path = Path().apply {
-                moveTo(half, 0f)
-                lineTo(size.width, half)
-                lineTo(half, size.height)
-                lineTo(0f, half)
-                close()
-            },
-            color = color,
-        )
-    }
+    })
 }
 
 private val PagePadding = 20.dp
 
-/** The leading column that carries a step's roundel and the rule threaded through it. */
-private val GutterWidth = 40.dp
-private val StepRoundelTop = 1.dp
-private const val StepRuleStroke = 1.5f
+/** The wax disc that carries a step's numeral. */
+private val StepBadge = 28.dp
+
+private const val IngredientsTab = 0
 
 private data class TimerSetupRequest(
     val stepId: String?,

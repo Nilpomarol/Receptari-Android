@@ -25,6 +25,14 @@
     <string name="library_sort">Ordena per</string>
     <string name="library_filters_clear">Treu els filtres</string>
     <string name="library_send_recipes">Envia receptes</string>
+    <string name="library_count_and_sort">%1$s · %2$s</string>
+    <string name="library_filter">Filtra</string>
+    <string name="library_layout_grid">Mostra en graella</string>
+    <string name="library_layout_index">Mostra com a índex</string>
+    <string name="library_filter_active">Filtra · %1$d</string>
+    <string name="library_filter_title">Filtra i ordena</string>
+    <string name="library_filter_show">Mostra només</string>
+    <string name="settings_receive_title">Rep receptes</string>
     <string name="library_select_all_visible">Selecciona totes les receptes visibles</string>
     <string name="library_send_selected">Envia les receptes seleccionades</string>
     <string name="library_selection_help">Toca les receptes que vols enviar. Pots seleccionar totes les que es mostren amb la icona de la barra superior.</string>
@@ -266,7 +274,7 @@
     <string name="import_action_extract">Extreu la recepta</string>
     <string name="import_extracting">Extraient…</string>
     <string name="import_nothing_found">No s\'hi ha trobat cap recepta.</string>
-    <string name="import_review_notice">Les importacions de web, imatge i text es revisen abans de desar. Les còpies de Receptari validades s’importen automàticament.</string>
+    <string name="import_review_notice">Les importacions de web, imatge i text es revisen abans de desar.</string>
     <string name="import_website_title">Des d\'un lloc web</string>
     <string name="import_website_label">Adreça de la pàgina</string>
     <string name="import_website_explanation">Enganxa l\'adreça de la recepta. Si la pàgina ja publica la recepta en un format estructurat, es llegirà directament; si no, l\'extraurà Claude.</string>
@@ -346,6 +354,7 @@
     <!-- Common -->
     <string name="common_coming_soon">Encara no està disponible</string>
     <string name="common_cancel">Cancel·la</string>
+    <string name="common_more_options">Més opcions</string>
     <string name="common_undo">Desfés</string>
     <string name="edit_save_failed">No s\'ha pogut desar la recepta. Torna-ho a provar.</string>
     <string name="edit_image_failed">No s\'ha pogut llegir la imatge.</string>
@@ -423,4 +432,11 @@
         <item quantity="one">S’ha omès %1$d duplicat.</item>
         <item quantity="other">S’han omès %1$d duplicats.</item>
     </plurals>
+    <string name="nav_recipes">Receptes</string>
+    <string name="library_tagline">Receptes de casa, sempre a punt</string>
+    <string name="favorites_empty_title">Encara no tens preferides</string>
+    <string name="favorites_empty_body">Toca el cor d\'una recepta per guardar-la aquí.</string>
+    <string name="folders_subtitle">Les teves receptes, per temes</string>
+    <string name="detail_time_part">%1$s: %2$s</string>
+    <string name="cook_mode_timer_clock" translatable="false">%1$d:00</string>
 </resources>

@@ -5,17 +5,14 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 /**
- * Paper is cut, not moulded. Material's default radii (up to 28 dp) read as plastic against
- * this palette, so everything here is tightened to the radius a trimmed page or a pasted-in
- * photograph actually has.
- *
- * Pills are still pills — filter chips and the add button keep their full rounding, which
- * they get from their own component defaults rather than from this scale.
+ * Soft, hand-cut corners (ADR-012): cards and plates round like a recipe card that has been
+ * handled for years, not like a moulded Material surface. Primary buttons are full pills and
+ * take [androidx.compose.foundation.shape.CircleShape] directly.
  */
 internal val ReceptariShapes = Shapes(
-    extraSmall = RoundedCornerShape(2.dp),
-    small = RoundedCornerShape(4.dp),
-    medium = RoundedCornerShape(6.dp),
-    large = RoundedCornerShape(8.dp),
-    extraLarge = RoundedCornerShape(12.dp),
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(18.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )

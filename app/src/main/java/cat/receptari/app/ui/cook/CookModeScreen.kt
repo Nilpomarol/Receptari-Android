@@ -1,5 +1,17 @@
 package cat.receptari.app.ui.cook
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.ShoppingBasket
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import cat.receptari.app.core.designsystem.PaperCard
+import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -28,7 +40,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,9 +76,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
-import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.SectionLabel
@@ -265,7 +274,7 @@ fun CookModeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
-                    .paperGrain(),
+                    .paperGrain(intensity = 1f),
             ) {
                 CookNavigation(
                     currentIndex = currentIndex,
@@ -308,7 +317,6 @@ fun CookModeScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = stringResource(
@@ -317,73 +325,59 @@ fun CookModeScreen(
                         steps.size,
                     ),
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                StepDots(
+                    total = steps.size,
+                    current = currentIndex,
+                    modifier = Modifier.padding(top = 10.dp),
                 )
                 current.sectionName?.let { sectionName ->
                     SectionLabel(
                         text = sectionName,
                         color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(top = 10.dp),
+                        modifier = Modifier.padding(top = 16.dp),
                     )
                 }
-                PaperCard(
+                // The step sits high and flush left, as large as the screen allows: the dots
+                // above already say which one it is.
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(top = 12.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 28.dp),
+                        .padding(top = 16.dp)
+                        .verticalScroll(stepScrollState),
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(
-                            modifier = Modifier.verticalScroll(stepScrollState),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                text = (currentIndex + 1).toString(), // i18n-exempt: step numeral
-                                style = MaterialTheme.typography.displayMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            Text(
-                                text = current.text,
-                                style = MaterialTheme.typography.headlineMedium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 18.dp),
-                            )
-                        }
-                    }
+                    Text(
+                        text = current.text,
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = { showIngredients = true },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
-                        Text(
-                            text = stringResource(R.string.detail_ingredients),
-                            modifier = Modifier.padding(start = 6.dp),
+                // The timer only belongs on steps that actually name a duration.
+                InstructionDurationParser.parseMinutes(current.text)
+                    ?.takeIf { InstructionDurationParser.containsDuration(current.text) }
+                    ?.let { minutes ->
+                        val label = stringResource(R.string.timer_step_label, current.number, recipe.title)
+                        StepTimerCard(
+                            minutes = minutes,
+                            onAdjust = { timerStep = current },
+                            onStart = { onStartTimer(current.id, label, minutes) },
+                            modifier = Modifier.padding(top = 14.dp),
                         )
                     }
-                    // The timer only belongs on steps that actually name a duration.
-                    if (InstructionDurationParser.containsDuration(current.text)) {
-                        OutlinedButton(
-                            onClick = { timerStep = current },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Icon(Icons.Outlined.Timer, contentDescription = null)
-                            Text(
-                                text = stringResource(R.string.timer_set),
-                                modifier = Modifier.padding(start = 6.dp),
-                            )
-                        }
-                    }
+                OutlinedButton(
+                    onClick = { showIngredients = true },
+                    shape = CircleShape,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                ) {
+                    Icon(Icons.Outlined.ShoppingBasket, contentDescription = null)
+                    Text(
+                        text = stringResource(R.string.detail_ingredients),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         }
@@ -427,14 +421,23 @@ private fun CookNavigation(
     val isLastStep = totalSteps > 0 && currentIndex == totalSteps - 1
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Hairline()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OutlinedButton(onClick = onPrevious, enabled = currentIndex > 0) {
+            OutlinedButton(
+                onClick = onPrevious,
+                enabled = currentIndex > 0,
+                shape = CircleShape,
+                border = BorderStroke(
+                    1.dp,
+                    if (currentIndex > 0) MaterialTheme.colorScheme.primary else ReceptariTheme.palette.rule,
+                ),
+                contentPadding = PaddingValues(vertical = 14.dp),
+                modifier = Modifier.weight(1f),
+            ) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 Text(
                     text = stringResource(R.string.cook_mode_previous),
@@ -444,6 +447,9 @@ private fun CookNavigation(
             Button(
                 onClick = if (isLastStep) onFinish else onNext,
                 enabled = totalSteps > 0,
+                shape = CircleShape,
+                contentPadding = PaddingValues(vertical = 14.dp),
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     stringResource(
@@ -457,6 +463,104 @@ private fun CookNavigation(
                         modifier = Modifier.padding(start = 6.dp),
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Where the cook is in the method: finished steps ticked, the current one numbered in wax,
+ * the rest as empty rings, all joined by a thread. Long methods drop the numerals so the
+ * row still fits on one line.
+ */
+@Composable
+private fun StepDots(total: Int, current: Int, modifier: Modifier = Modifier) {
+    val compact = total > MaxNumberedDots
+    val dot = if (compact) 10.dp else 24.dp
+    val wax = MaterialTheme.colorScheme.primary
+    val rule = ReceptariTheme.palette.rule
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        repeat(total) { index ->
+            if (index > 0) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(1.5.dp)
+                        .background(if (index <= current) wax else rule),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(dot)
+                    .clip(CircleShape)
+                    .background(if (index <= current) wax else Color.Transparent)
+                    .border(1.5.dp, if (index <= current) wax else rule, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!compact && index < current) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                } else if (!compact && index == current) {
+                    Text(
+                        text = (index + 1).toString(), // i18n-exempt: step numeral
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The step's own kitchen timer, ready with the duration the step names: one tap starts it,
+ * tapping the card opens the sheet to change the minutes first.
+ */
+@Composable
+private fun StepTimerCard(
+    minutes: Int,
+    onAdjust: () -> Unit,
+    onStart: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    PaperCard(onClick = onAdjust, modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(start = 18.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.Timer,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = stringResource(R.string.timer_set),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.cook_mode_timer_clock, minutes),
+                    style = MaterialTheme.typography.displaySmall,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            FilledIconButton(
+                onClick = onStart,
+                modifier = Modifier.size(60.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = stringResource(R.string.timer_start),
+                    modifier = Modifier.size(30.dp),
+                )
             }
         }
     }
@@ -500,6 +604,8 @@ private fun IngredientsSheet(recipe: Recipe, onDismiss: () -> Unit) {
         }
     }
 }
+
+private const val MaxNumberedDots = 10
 
 private data class CookStep(
     val id: String,

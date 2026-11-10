@@ -114,9 +114,14 @@ if you skip it:
   to the root layout node, unmodified.
 - **Build screens from `core/designsystem`, not from raw Material.** `PaperScaffold` rather
   than `Scaffold` (a bare `Scaffold` paints over the paper texture), `PaperTopBar`,
-  `PaperCard`, `FilterPill`, `StarRating`, `OrnamentHeading`, `paperFieldColors()`. Extra
-  tokens — page edge, rule, gold, sealing-wax red — come from `ReceptariTheme.palette`;
-  everything else is a normal `MaterialTheme.colorScheme` role. See ADR-009.
+  `PaperCard`, `FilterPill`, `StarRating`, `OrnamentHeading` (with an `icon`), `IconFact`,
+  `SegmentedTabs`, `Sprig`, `CollapsingMasthead`, `Rubric`, `MetaLine`, `paperFieldColors()`.
+  Recipe lists are a photo grid or ruled index rows (a saved toggle); folders and timers are soft `PaperCard`s, and primary actions
+  are wax-red pills. `Sprig` is decoration for edges and empty plates, never between lines
+  of a recipe (ADR-012). Sealing-wax red (`primary`) is the only accent; gold is for
+  ratings. Extra tokens — page edge, rule, gold, botanical ink, sealing-wax red — come from
+  `ReceptariTheme.palette`; everything else is a normal `MaterialTheme.colorScheme` role.
+  See ADR-009.
 - **No `CoroutineScope` stored in domain/data classes.** Suspend functions and `Flow` only;
   scope belongs to the ViewModel.
 - Kotlin official code style, 4-space indent, trailing commas on, explicit visibility for
@@ -212,6 +217,7 @@ The project scaffold does not exist yet; these become valid at the end of Roadma
 ./gradlew lintDebug                # Android lint
 ./gradlew connectedAndroidTest     # instrumented tests (needs a device/emulator)
 ./gradlew build                    # everything above except connected tests
+./gradlew assembleBenchmark        # release code under the debug id: use it to judge speed
 ```
 
 On Windows use `gradlew.bat` from PowerShell, or `./gradlew` from Git Bash.

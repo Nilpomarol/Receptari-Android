@@ -62,7 +62,7 @@ cat.receptari.app
 │   │   ├── claude/                ClaudeAiClient (implements domain AiClient), DTOs, prompts
 │   │   └── web/                   HtmlFetcher, JsonLdRecipeParser, MicrodataRecipeParser
 │   ├── image/                     ImageStore — copy/compress/delete files in app storage
-│   ├── settings/                  DataStore + Keystore-backed encrypted API key storage
+│   ├── settings/                  DataStore display preferences + Keystore-backed encrypted API key storage
 │   ├── backup/                    versioned archive validation + startup restore swap/rollback
 │   ├── timer/                     transient timer DataStore, AlarmManager, notifications
 │   └── repository/                *RepositoryImpl

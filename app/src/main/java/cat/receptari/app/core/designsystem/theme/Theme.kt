@@ -27,6 +27,8 @@ data class ReceptariPalette(
     val gold: Color,
     /** Favourites. Sealing-wax red, deliberately distinct from the error red. */
     val heart: Color,
+    /** The engraved sprigs and leaves (ADR-012). Decoration only; never text. */
+    val botanical: Color,
     /** Secondary inks used only for user-selected folder stamps. */
     val folderForest: Color,
     val folderIndigo: Color,
@@ -41,6 +43,7 @@ private val LightPalette = ReceptariPalette(
     rule = Rule,
     gold = Gold,
     heart = Claret,
+    botanical = Botanical,
     folderForest = Forest,
     folderIndigo = Indigo,
     folderCocoa = Cocoa,
@@ -53,6 +56,7 @@ private val DarkPalette = ReceptariPalette(
     rule = RuleDark,
     gold = GoldDark,
     heart = ClaretDark,
+    botanical = BotanicalDark,
     folderForest = ForestDark,
     folderIndigo = IndigoDark,
     folderCocoa = CocoaDark,
@@ -62,16 +66,18 @@ private val DarkPalette = ReceptariPalette(
 )
 
 private val LightColors = lightColorScheme(
-    primary = Olive,
-    onPrimary = OliveOn,
-    primaryContainer = OliveTint,
-    onPrimaryContainer = OliveTintOn,
-    secondary = Terracotta,
-    onSecondary = TerracottaOn,
-    secondaryContainer = TerracottaTint,
-    onSecondaryContainer = TerracottaTintOn,
+    primary = Wax,
+    onPrimary = WaxOn,
+    primaryContainer = WaxTint,
+    onPrimaryContainer = WaxTintOn,
+    // Secondary is the same rubric red: labels printed in red are the same ink as the
+    // controls, not a second accent competing with them.
+    secondary = Wax,
+    onSecondary = WaxOn,
+    secondaryContainer = WaxTint,
+    onSecondaryContainer = WaxTintOn,
     tertiary = Gold,
-    onTertiary = OliveOn,
+    onTertiary = GoldOn,
     tertiaryContainer = Gold.copy(alpha = 0.22f).compositeOver(Parchment),
     onTertiaryContainer = GoldOn,
     background = Parchment,
@@ -97,14 +103,14 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = OliveDark,
-    onPrimary = OliveDarkOn,
-    primaryContainer = OliveTintDark,
-    onPrimaryContainer = OliveTintDarkOn,
-    secondary = TerracottaDark,
-    onSecondary = TerracottaDarkOn,
-    secondaryContainer = TerracottaTintDark,
-    onSecondaryContainer = TerracottaTintDarkOn,
+    primary = WaxDark,
+    onPrimary = WaxDarkOn,
+    primaryContainer = WaxTintDark,
+    onPrimaryContainer = WaxTintDarkOn,
+    secondary = WaxDark,
+    onSecondary = WaxDarkOn,
+    secondaryContainer = WaxTintDark,
+    onSecondaryContainer = WaxTintDarkOn,
     tertiary = GoldDark,
     onTertiary = GoldDarkOn,
     tertiaryContainer = GoldDark.copy(alpha = 0.22f).compositeOver(Leather),

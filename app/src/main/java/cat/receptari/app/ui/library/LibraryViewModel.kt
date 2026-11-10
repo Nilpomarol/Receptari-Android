@@ -1,21 +1,21 @@
 package cat.receptari.app.ui.library
 
+import cat.receptari.app.domain.model.RecipeListLayout
+import cat.receptari.app.domain.repository.DisplayPreferencesRepository
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cat.receptari.app.domain.model.FolderColor
-import cat.receptari.app.domain.model.FolderIcon
-import cat.receptari.app.domain.model.FolderSummary
 import cat.receptari.app.domain.model.RecipeFilter
 import cat.receptari.app.domain.model.RecipeQuery
 import cat.receptari.app.domain.model.RecipeSort
 import cat.receptari.app.domain.model.RecipeSummary
 import cat.receptari.app.domain.model.Tag
-import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.domain.repository.RecipeTransferRepository
 import cat.receptari.app.domain.repository.TagRepository
 import cat.receptari.app.domain.transfer.RecipeTransferArchive
+import cat.receptari.app.ui.navigation.Destination
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +36,6 @@ import javax.inject.Inject
 data class LibraryUiState(
     val recipes: List<RecipeSummary> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
-    val availableFolders: List<FolderSummary> = emptyList(),
     val searchQuery: String = "",
     val sort: RecipeSort = RecipeSort.RecentlyAdded,
     val filter: RecipeFilter = RecipeFilter(),
@@ -44,11 +43,17 @@ data class LibraryUiState(
     val isSelectionMode: Boolean = false,
     val selectedRecipeIds: Set<String> = emptySet(),
     val isSharingSelection: Boolean = false,
+    /** The Favourites tab: the same page with the favourites filter fixed on. */
+    val isFavoritesPage: Boolean = false,
+    val listLayout: RecipeListLayout = RecipeListLayout.Grid,
 ) {
-    /** Empty because there are no recipes at all, rather than because nothing matched. */
-    val isLibraryEmpty: Boolean
-        get() = recipes.isEmpty() && searchQuery.isBlank() && !filter.isActive
+    /** Filters the reader chose, not counting the one the Favourites tab pins. */
+    val userFilterCount: Int
+        get() = filter.activeCount - if (isFavoritesPage) 1 else 0
 
+    /** Empty because there is nothing to show at all, rather than because nothing matched. */
+    val isLibraryEmpty: Boolean
+        get() = recipes.isEmpty() && searchQuery.isBlank() && userFilterCount == 0
 }
 
 sealed interface LibraryEvent {
@@ -61,13 +66,12 @@ sealed interface LibraryEvent {
     data object ClearTagFilters : LibraryEvent
     data object ClearFilters : LibraryEvent
     data class ToggleFavorite(val id: String, val isFavorite: Boolean) : LibraryEvent
-    data class FolderCreateRequested(val name: String, val color: FolderColor, val icon: FolderIcon) :
-        LibraryEvent
     data object StartSelection : LibraryEvent
     data object ClearSelection : LibraryEvent
     data class ToggleSelection(val recipeId: String) : LibraryEvent
     data object SelectAllVisible : LibraryEvent
     data object ShareSelection : LibraryEvent
+    data class ListLayoutSelected(val layout: RecipeListLayout) : LibraryEvent
 }
 
 sealed interface LibraryEffect {
@@ -80,13 +84,17 @@ sealed interface LibraryEffect {
 class LibraryViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     tagRepository: TagRepository,
-    private val folderRepository: FolderRepository,
     private val imageStore: ImageStore,
     private val transferRepository: RecipeTransferRepository,
     private val clock: Clock,
+    private val displayPreferences: DisplayPreferencesRepository,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val query = MutableStateFlow(RecipeQuery())
+    private val favoritesPage: Boolean =
+        savedStateHandle.get<Boolean>(Destination.FAVORITES_ONLY_ARG) ?: false
+    private val baseFilter = RecipeFilter(favoritesOnly = favoritesPage)
+    private val query = MutableStateFlow(RecipeQuery(filter = baseFilter))
     private val isSelectionMode = MutableStateFlow(false)
     private val selectedRecipeIds = MutableStateFlow<Set<String>>(emptySet())
     private val isSharingSelection = MutableStateFlow(false)
@@ -103,9 +111,9 @@ class LibraryViewModel @Inject constructor(
         query,
         query.flatMapLatest { recipeRepository.observeSummaries(it) },
         tagRepository.observeAll(),
-        folderRepository.observeAllWithCounts(),
         selectionState,
-    ) { currentQuery, recipes, tags, folders, selection ->
+        displayPreferences.observeListLayout(),
+    ) { currentQuery, recipes, tags, selection, layout ->
         LibraryUiState(
             // Stored image paths are relative so they survive a reinstall; the image
             // loader needs a real location, so they are resolved here on the way to the UI.
@@ -113,7 +121,6 @@ class LibraryViewModel @Inject constructor(
                 summary.copy(imagePath = summary.imagePath?.let(imageStore::absolutePathOf))
             },
             availableTags = tags,
-            availableFolders = folders,
             searchQuery = currentQuery.searchQuery,
             sort = currentQuery.sort,
             filter = currentQuery.filter,
@@ -121,6 +128,8 @@ class LibraryViewModel @Inject constructor(
             isSelectionMode = selection.first,
             selectedRecipeIds = selection.second,
             isSharingSelection = selection.third,
+            isFavoritesPage = favoritesPage,
+            listLayout = layout,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -130,14 +139,19 @@ class LibraryViewModel @Inject constructor(
 
     fun onEvent(event: LibraryEvent) {
         when (event) {
+            is LibraryEvent.ListLayoutSelected -> viewModelScope.launch {
+                displayPreferences.setListLayout(event.layout)
+            }
+
             is LibraryEvent.SearchQueryChanged ->
                 query.update { it.copy(searchQuery = event.query) }
 
             is LibraryEvent.SortChanged ->
                 query.update { it.copy(sort = event.sort) }
 
-            LibraryEvent.ToggleFavoritesFilter ->
+            LibraryEvent.ToggleFavoritesFilter -> if (!favoritesPage) {
                 query.update { it.withFilter { filter -> filter.copy(favoritesOnly = !filter.favoritesOnly) } }
+            }
 
             LibraryEvent.ToggleNeverCookedFilter ->
                 query.update {
@@ -175,16 +189,10 @@ class LibraryViewModel @Inject constructor(
                 query.update { it.withFilter { filter -> filter.copy(tagIds = emptySet()) } }
 
             LibraryEvent.ClearFilters ->
-                query.update { it.copy(filter = RecipeFilter()) }
+                query.update { it.copy(filter = baseFilter) }
 
             is LibraryEvent.ToggleFavorite -> viewModelScope.launch {
                 recipeRepository.setFavorite(event.id, !event.isFavorite)
-            }
-
-            is LibraryEvent.FolderCreateRequested -> {
-                val name = event.name.trim()
-                if (name.isEmpty()) return
-                viewModelScope.launch { folderRepository.create(name, event.color, event.icon) }
             }
 
             LibraryEvent.StartSelection -> isSelectionMode.value = true

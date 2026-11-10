@@ -22,7 +22,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.SaveAlt
@@ -68,7 +67,7 @@ import cat.receptari.app.MainActivity
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.OrnamentalDivider
+import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.paperFieldColors
@@ -76,6 +75,15 @@ import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.domain.backup.BackupArchive
 import cat.receptari.app.domain.transfer.RecipeTransferArchive
 import cat.receptari.app.ui.transfer.TransferMethodSheet
+import cat.receptari.app.ui.transfer.receiveRecipeTransferNearby
+import cat.receptari.app.ui.transfer.TransferImportActivity
+import cat.receptari.app.ui.transfer.RECIPE_TRANSFER_MIME_TYPE
+import androidx.compose.material.icons.outlined.FileOpen
+import androidx.compose.material.icons.outlined.WifiTethering
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.clickable
 import cat.receptari.app.ui.transfer.sendRecipeTransferNearby
 import cat.receptari.app.ui.transfer.shareRecipeTransfer
 import kotlinx.coroutines.Dispatchers
@@ -89,7 +97,6 @@ import kotlin.system.exitProcess
 
 @Composable
 fun SettingsRoute(
-    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -141,6 +148,21 @@ fun SettingsRoute(
         }
     }
 
+    // A copy someone sent as a file goes through the same import screen as opening the file
+    // from another app would.
+    val openSharedCopy = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        context.startActivity(
+            Intent(context, TransferImportActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                data = uri
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
+        )
+    }
+
     LaunchedEffect(Unit) {
         viewModel.messages.collect { message ->
             snackbarHostState.showSnackbar(resources.getString(message.messageRes))
@@ -172,7 +194,12 @@ fun SettingsRoute(
             selected = language
             context.applyAppLanguage(language)
         },
-        onNavigateBack = onNavigateBack,
+        onReceiveNearby = context::receiveRecipeTransferNearby,
+        onImportSharedCopy = {
+            openSharedCopy.launch(
+                arrayOf(RECIPE_TRANSFER_MIME_TYPE, "application/zip", "application/octet-stream"),
+            )
+        },
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
@@ -200,7 +227,8 @@ fun SettingsScreen(
     versionName: String,
     onEvent: (SettingsEvent) -> Unit,
     onLanguageSelected: (AppLanguage) -> Unit,
-    onNavigateBack: () -> Unit,
+    onReceiveNearby: () -> Unit,
+    onImportSharedCopy: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -210,14 +238,6 @@ fun SettingsScreen(
         topBar = {
             PaperTopBar(
                 title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                        )
-                    }
-                },
             )
         },
     ) { innerPadding ->
@@ -242,15 +262,22 @@ fun SettingsScreen(
                 }
             }
 
-            OrnamentalDivider(Modifier.padding(vertical = 12.dp))
+            Spacer(Modifier.height(SectionGap))
 
             ApiKeySection(state = uiState, onEvent = onEvent)
 
-            OrnamentalDivider(Modifier.padding(vertical = 12.dp))
+            Spacer(Modifier.height(SectionGap))
 
             SharingSection(state = uiState, onEvent = onEvent)
 
-            OrnamentalDivider(Modifier.padding(vertical = 12.dp))
+            Spacer(Modifier.height(SectionGap))
+
+            ReceiveSection(
+                onReceiveNearby = onReceiveNearby,
+                onImportSharedCopy = onImportSharedCopy,
+            )
+
+            Spacer(Modifier.height(SectionGap))
 
             BackupSection(state = uiState, onEvent = onEvent)
 
@@ -359,6 +386,65 @@ private fun SharingSection(
                     },
                 ),
                 modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+    }
+}
+
+/** Taking in recipes another Receptari sent: rare, and always started from this phone. */
+@Composable
+private fun ReceiveSection(
+    onReceiveNearby: () -> Unit,
+    onImportSharedCopy: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.padding(horizontal = 16.dp)) {
+        OrnamentHeading(title = stringResource(R.string.settings_receive_title))
+        ReceiveOption(
+            icon = Icons.Outlined.WifiTethering,
+            label = stringResource(R.string.import_receive_nearby),
+            supportingText = stringResource(R.string.import_receive_nearby_explanation),
+            onClick = onReceiveNearby,
+        )
+        Hairline()
+        ReceiveOption(
+            icon = Icons.Outlined.FileOpen,
+            label = stringResource(R.string.import_from_shared_copy),
+            supportingText = stringResource(R.string.import_from_shared_copy_explanation),
+            onClick = onImportSharedCopy,
+        )
+    }
+}
+
+@Composable
+private fun ReceiveOption(
+    icon: ImageVector,
+    label: String,
+    supportingText: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(22.dp),
+        )
+        Column(modifier = Modifier.padding(start = 16.dp)) {
+            Text(text = label, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = supportingText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
     }
@@ -616,7 +702,8 @@ private fun SettingsScreenPreview() {
             versionName = "0.1.0",
             onEvent = {},
             onLanguageSelected = {},
-            onNavigateBack = {},
+            onReceiveNearby = {},
+            onImportSharedCopy = {},
         )
     }
 }
@@ -631,7 +718,10 @@ private fun SettingsScreenWithKeyPreview() {
             versionName = "0.1.0",
             onEvent = {},
             onLanguageSelected = {},
-            onNavigateBack = {},
+            onReceiveNearby = {},
+            onImportSharedCopy = {},
         )
     }
 }
+
+private val SectionGap = 28.dp

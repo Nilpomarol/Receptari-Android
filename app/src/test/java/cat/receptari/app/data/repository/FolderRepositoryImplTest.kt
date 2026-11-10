@@ -80,7 +80,7 @@ class FolderRepositoryImplTest {
 
         override fun observeAllWithCounts(): Flow<List<FolderWithCount>> = flowOf(
             stored.map {
-                FolderWithCount(it.id, it.name, it.normalizedName, it.color, it.icon, recipeCount = 0)
+                FolderWithCount(it.id, it.name, it.normalizedName, it.color, it.icon, recipeCount = 0, coverImagePath = null)
             },
         )
 

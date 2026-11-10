@@ -3,8 +3,8 @@ package cat.receptari.app.core.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * The palette of an old recipe book: aged paper, brown ink, kitchen-garden olive, and a
- * little gold leaf.
+ * The palette of an old recipe book: aged paper, brown ink, one sealing-wax red for
+ * everything you can press, and a little gold leaf for ratings.
  *
  * Nothing here is a Material You token and nothing is derived at runtime — the whole point
  * of ADR-009 is that these exact values reach the screen. Light is "paper"; dark is
@@ -32,18 +32,21 @@ internal val InkSoft = Color(0xFF77603F)
 /** Hairlines: card frames, rules, dividers. */
 internal val Rule = Color(0xFFB99A66)
 
-internal val Olive = Color(0xFF55642F)
-internal val OliveOn = Color(0xFFF7F0DE)
-internal val OliveTint = Color(0xFFDCE0B8)
-internal val OliveTintOn = Color(0xFF2C3410)
-
-internal val Terracotta = Color(0xFF9B4A26)
-internal val TerracottaOn = Color(0xFFFBF3E4)
-internal val TerracottaTint = Color(0xFFF0D5C0)
-internal val TerracottaTintOn = Color(0xFF4A1B06)
+/**
+ * The one accent: sealing-wax red, the rubric colour of a printed cookbook. Buttons, links,
+ * selected states and small-caps labels all use it, so "red" always means "you can act here".
+ */
+internal val Wax = Color(0xFF9A2E22)
+internal val WaxOn = Color(0xFFFBF3E4)
+internal val WaxTint = Color(0xFFF0D4C8)
+internal val WaxTintOn = Color(0xFF3F0B06)
 
 /** Ratings. Gold leaf, not the yellow of a warning. */
 internal val Gold = Color(0xFFB98A2E)
+
+/** Engraved botanical line work: a dried-olive sepia. */
+internal val Botanical = Color(0xFF8C7A4C)
+internal val BotanicalDark = Color(0xFFA39468)
 internal val GoldOn = Color(0xFF2A1C00)
 
 /** Favourites. Deep sealing-wax red — related to error, deliberately not the same. */
@@ -74,15 +77,10 @@ internal val InkSoftDark = Color(0xFFB3A184)
 
 internal val RuleDark = Color(0xFF5C4C34)
 
-internal val OliveDark = Color(0xFFA9B878)
-internal val OliveDarkOn = Color(0xFF232C0A)
-internal val OliveTintDark = Color(0xFF3C4620)
-internal val OliveTintDarkOn = Color(0xFFDDE7B4)
-
-internal val TerracottaDark = Color(0xFFE09A6E)
-internal val TerracottaDarkOn = Color(0xFF4A1B06)
-internal val TerracottaTintDark = Color(0xFF6B2F13)
-internal val TerracottaTintDarkOn = Color(0xFFF0D5C0)
+internal val WaxDark = Color(0xFFE38D7E)
+internal val WaxDarkOn = Color(0xFF4A0F0A)
+internal val WaxTintDark = Color(0xFF6B2119)
+internal val WaxTintDarkOn = Color(0xFFF3D9CF)
 
 internal val GoldDark = Color(0xFFDDB25C)
 internal val GoldDarkOn = Color(0xFF3A2800)

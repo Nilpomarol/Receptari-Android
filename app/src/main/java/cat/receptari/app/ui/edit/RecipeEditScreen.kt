@@ -105,7 +105,6 @@ import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.PaperTopBar
@@ -323,15 +322,16 @@ fun RecipeEditScreen(
                 top = innerPadding.calculateTopPadding() + 12.dp,
                 bottom = innerPadding.calculateBottomPadding() + 16.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            // Sections are separated by space and their ruled headings, not by frames: the
+            // form reads as one sheet, the same way the recipe page does.
+            verticalArrangement = Arrangement.spacedBy(28.dp),
         ) {
             // 1. Cover photo & title — the title page of the recipe.
             item(key = "cover-card") {
-                PaperCard(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PagePadding),
-                    contentPadding = PaddingValues(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         CoverField(
@@ -366,11 +366,10 @@ fun RecipeEditScreen(
 
             // 2. Times & servings.
             item(key = "times-servings-card") {
-                PaperCard(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PagePadding),
-                    contentPadding = PaddingValues(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         OrnamentHeading(title = stringResource(R.string.edit_section_times))
@@ -411,11 +410,10 @@ fun RecipeEditScreen(
 
             // 3. Ingredients.
             item(key = "ingredients-card") {
-                PaperCard(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PagePadding),
-                    contentPadding = PaddingValues(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OrnamentHeading(title = stringResource(R.string.edit_section_ingredients))
@@ -441,11 +439,10 @@ fun RecipeEditScreen(
 
             // 4. Instructions.
             item(key = "instructions-card") {
-                PaperCard(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PagePadding),
-                    contentPadding = PaddingValues(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OrnamentHeading(title = stringResource(R.string.edit_section_instructions))
@@ -471,11 +468,10 @@ fun RecipeEditScreen(
 
             // 5. Rating, folder, tags.
             item(key = "details-card") {
-                PaperCard(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PagePadding),
-                    contentPadding = PaddingValues(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         OrnamentHeading(title = stringResource(R.string.edit_section_details))
@@ -493,11 +489,10 @@ fun RecipeEditScreen(
 
             // 6. Source & notes.
             item(key = "source-notes-card") {
-                PaperCard(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PagePadding),
-                    contentPadding = PaddingValues(16.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OrnamentHeading(title = stringResource(R.string.edit_section_source_notes))

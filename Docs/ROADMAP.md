@@ -303,6 +303,30 @@ Deferred: a theme preference in Settings (Paper / Lamplight / System). The dark 
 written and `ReceptariTheme(darkTheme = …)` already takes it; only the preference and the
 plumbing are missing.
 
+### Revision — typeset layout (ADR-011) ☑
+
+- ☑ Single accent: sealing-wax red replaces olive and terracotta; gold kept for ratings
+- ☑ Cards removed from the library, recipe page, editor, add flow and cook mode; flush-left
+  ruled section headings; sprigs and fleurons deleted
+- ☑ Library: folder shelf, one filter-and-sort sheet, visible active filters, hairline rows
+- ☑ Add recipe is a sheet (Web · Text · Image · Manual); receiving moved to Settings
+- ☑ Recipe page: ingredients first, servings on the heading rule, method numerals in the
+  margin, filing after the method, sticky *Start cooking*, overflow for translate/send/delete
+
+Seen on the emulator after a round of fixes (2026-11-09).
+
+### Revision — illustrated cookbook (ADR-012) ☑
+
+- ☑ Soft cards, wax pills, the 4–24 dp shape scale and the `botanical` ink
+- ☑ `Sprig`, `Emblem`, `CollapsingMasthead` (thickened script wordmark), iconned headings,
+  `IconFact`, `SegmentedTabs`
+- ☑ Bottom bar: Recipes · Favourites · Folders · Settings, each tab keeping its own stack
+- ☑ Folders as photo banners (cover from the folder's latest photo)
+- ☑ Recipe page: inset photo, pictogram facts, sticky Ingredients / Method tabs, checkable
+  ingredients, wax step discs
+- ☑ Cook mode: progress dots, a step timer card, equal Previous / Next pills
+- ☐ Bring the editor, import and settings screens fully into the style
+
 ---
 
 ## Phase 6 — Polish before calling it v1 ☐
@@ -322,7 +346,9 @@ plumbing are missing.
 - ☐ Empty, loading, and error states for every screen
 - ☑ Focused cook mode: one large step at a time, section context, quick ingredient access,
   persistent timer controls, safe-area-aware navigation, and keep-screen-on for the full session
-- ☐ Release build config, signing, ProGuard/R8 rules
+- ☑ Release build config, local-only signing via ignored `keystore.properties`, and
+  ProGuard/R8 plus resource shrinking. The first private release is version `0.1`
+  (`versionCode 1`); contributors and CI can still build unsigned without signing material.
 
 ---
 

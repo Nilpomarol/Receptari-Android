@@ -109,13 +109,18 @@ internal val ReceptariTypography = Typography(
 /** Styles with no Material role to sit in. */
 object ReceptariTextStyles {
 
-    /** The app's name, set in script. Reserved for the library's masthead. */
+    /**
+     * The app's name, set in script. Reserved for the library's masthead. Set large and a
+     * touch open: Pinyon's hairlines vanish at small sizes, and the masthead draws it with a
+     * thin outline on top to thicken them further.
+     */
     val Wordmark: TextStyle = TextStyle(
         fontFamily = ScriptFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 52.sp,
+        fontSize = 46.sp,
+        letterSpacing = 0.6.sp,
         // Script ascenders and descenders are long; a tight line height clips the swashes.
-        lineHeight = 66.sp,
+        lineHeight = 60.sp,
     )
 
     /** Source attributions, scaling notices, empty-state asides — anything in an aside voice. */

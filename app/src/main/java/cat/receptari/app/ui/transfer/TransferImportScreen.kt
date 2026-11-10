@@ -29,7 +29,7 @@ import cat.receptari.app.MainActivity
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.OrnamentalDivider
+import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.domain.transfer.RecipeTransferError
@@ -115,7 +115,7 @@ fun TransferImportScreen(
                 }
                 is TransferImportUiState.Imported -> {
                     OrnamentHeading(title = stringResource(R.string.transfer_import_complete))
-                    OrnamentalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    Hairline(modifier = Modifier.padding(vertical = 16.dp))
                     Text(
                         pluralStringResource(
                             R.plurals.transfer_recipes_imported,

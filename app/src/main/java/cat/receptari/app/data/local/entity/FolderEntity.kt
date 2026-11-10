@@ -26,4 +26,6 @@ data class FolderWithCount(
     val color: String,
     val icon: String,
     val recipeCount: Int,
+    /** The most recently updated photo in the folder, used as its cover. */
+    val coverImagePath: String?,
 )

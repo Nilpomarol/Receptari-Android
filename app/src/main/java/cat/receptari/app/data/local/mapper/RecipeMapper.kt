@@ -126,6 +126,7 @@ fun FolderWithCount.toDomain(): FolderSummary = FolderSummary(
         icon = icon.toFolderIcon(),
     ),
     recipeCount = recipeCount,
+    coverImagePath = coverImagePath,
 )
 
 /** Falls back to the default rather than crashing on a value an older/newer build wrote. */
