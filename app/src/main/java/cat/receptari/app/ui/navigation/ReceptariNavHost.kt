@@ -280,12 +280,11 @@ private val TopLevelTabs = listOf(
     ),
 )
 
-/** Switches tabs the standard way: each tab keeps its own back stack across switches. */
+/** Switches tabs; a tab always opens fresh at its root (scroll, filters, pushed pages are dropped). */
 private fun NavHostController.navigateToTab(route: String) {
     navigate(route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(graph.findStartDestination().id) { inclusive = true }
         launchSingleTop = true
-        restoreState = true
     }
 }
 
