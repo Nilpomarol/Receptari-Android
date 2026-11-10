@@ -259,11 +259,11 @@ fun Emblem(modifier: Modifier = Modifier) {
 }
 
 /**
- * The front page's masthead, which folds itself into a running head as the page scrolls.
+ * The front page's masthead, which settles into a slim running head as the page scrolls.
  *
  * It is one set of marks, not two headers: the emblem and the wordmark share a row, centred
- * on the page, and glide to the left of a compact bar, shrinking on the way, while the
- * tagline fades out. How far it has folded is read from [scrolledPx] — pixels the page has
+ * on the page. Folding is deliberately quiet: the row keeps its size and its place across
+ * the page and only rides up into the bar while the tagline fades out. How far it has folded is read from [scrolledPx] — pixels the page has
  * scrolled past its top, or [Int.MAX_VALUE] once it is well down — in the layout phase only,
  * so scrolling re-places the marks without recomposing anything.
  *
@@ -307,10 +307,7 @@ fun CollapsingMasthead(
         val top = statusBars.getTop(this)
         val loose = Constraints(maxWidth = width)
         val emblemSize = MastheadEmblem.roundToPx()
-        val emblemCompact = CompactEmblem.roundToPx()
         val gap = MastheadGap.roundToPx()
-        val bar = CompactBarHeight.roundToPx()
-        val inset = CompactInset.toPx()
 
         val emblem = measurables[1].measure(Constraints.fixed(emblemSize, emblemSize))
         val word = measurables[2].measure(loose)
@@ -324,6 +321,7 @@ fun CollapsingMasthead(
         val rowWidth = emblemSize + gap + word.width
         val tagTop = rowTop + rowHeight
         val expanded = tagTop + tag.height + MastheadBottom.roundToPx()
+        val bar = rowHeight + 2 * CompactPadding.roundToPx()
         val compact = top + bar
         onExpandedHeight(expanded)
 
@@ -331,17 +329,13 @@ fun CollapsingMasthead(
         val fold = (scrolledPx().toFloat() / range).coerceIn(0f, 1f)
         val height = lerp(expanded.toFloat(), compact.toFloat(), fold).roundToInt()
 
-        val emblemScale = lerp(1f, emblemCompact.toFloat() / emblemSize, fold)
-        val emblemX = lerp((width - rowWidth) / 2f, inset, fold)
-        val emblemY = lerp(rowTop + (rowHeight - emblemSize) / 2f, top + (bar - emblemCompact) / 2f, fold)
-
-        val wordScale = lerp(1f, CompactWordmarkScale, fold)
-        val wordX = lerp((width - rowWidth) / 2f + emblemSize + gap, inset + emblemCompact + gap, fold)
-        val wordY = lerp(
-            rowTop + (rowHeight - word.height) / 2f,
-            top + (bar - word.height * CompactWordmarkScale) / 2f,
-            fold,
-        )
+        // The row stays centred and full size; it only moves vertically, from under the
+        // top margin to the middle of the compact bar.
+        val rowY = lerp(rowTop.toFloat(), (top + CompactPadding.roundToPx()).toFloat(), fold)
+        val emblemX = (width - rowWidth) / 2
+        val wordX = emblemX + emblemSize + gap
+        val emblemY = rowY + (rowHeight - emblemSize) / 2f
+        val wordY = rowY + (rowHeight - word.height) / 2f
 
         // The tagline belongs to the full masthead only; it is gone by mid-fold.
         val ornamentAlpha = (1f - fold * 2f).coerceIn(0f, 1f)
@@ -355,16 +349,8 @@ fun CollapsingMasthead(
                 x = (width - tag.width) / 2,
                 y = tagTop - (expanded - height),
             ) { alpha = ornamentAlpha }
-            emblem.placeWithLayer(emblemX.roundToInt(), emblemY.roundToInt()) {
-                scaleX = emblemScale
-                scaleY = emblemScale
-                transformOrigin = TransformOrigin(0f, 0f)
-            }
-            word.placeWithLayer(wordX.roundToInt(), wordY.roundToInt()) {
-                scaleX = wordScale
-                scaleY = wordScale
-                transformOrigin = TransformOrigin(0f, 0f)
-            }
+            emblem.place(emblemX, emblemY.roundToInt())
+            word.place(wordX, wordY.roundToInt())
             actionRow.place(
                 x = width - actionRow.width - CompactActionsInset.roundToPx(),
                 y = top + (bar - actionRow.height) / 2,
@@ -374,14 +360,11 @@ fun CollapsingMasthead(
 }
 
 private val MastheadEmblem = 52.dp
-private val CompactEmblem = MastheadEmblem
 private val MastheadGap = 10.dp
 private val MastheadTop = 6.dp
 private val MastheadBottom = 10.dp
-private val CompactBarHeight = 56.dp
-private val CompactInset = 16.dp
+private val CompactPadding = 6.dp
 private val CompactActionsInset = 4.dp
-private const val CompactWordmarkScale = 30f / 46f
 private const val BackingFadeStart = 0.8f
 
 private const val RuleStroke = 1.5f

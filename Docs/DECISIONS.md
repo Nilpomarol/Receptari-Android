@@ -524,8 +524,8 @@ splits ingredients and method into tabs; and folders become photo banners.
   lines of a recipe.
 - Headings carry a wax-red icon (`OrnamentHeading(icon = …)`) and drop the rule when they
   have one.
-- The masthead (`CollapsingMasthead`) is the launcher emblem, the Pinyon Script wordmark between two
-  sprigs, and a spaced-caps tagline. The wordmark is now wax red and 46 sp, and is drawn a
+- The masthead (`CollapsingMasthead`) is the launcher's pot in wax red beside the Pinyon Script wordmark, and a
+  spaced-caps tagline under them. The wordmark is now wax red and 46 sp, and is drawn a
   second time as a thin outline to thicken Pinyon's hairlines.
 - Facts use pictograms (`IconFact`: clock, people). Two-way views use `SegmentedTabs`.
 - One accent is unchanged: wax red, with gold for ratings only. Paper, fonts and the
@@ -535,12 +535,13 @@ splits ingredients and method into tabs; and folders become photo banners.
 - Bottom bar with four tabs: Recipes (the library), Favourites (the same page with the
   favourites filter pinned), Folders (photo banners, each fronted by its most recently
   updated photo), Settings. Each tab keeps its own back stack. The bar hides on every page
-  below a tab. It is a low custom bar (`PaperNavigationBar`): the selected tab is wax ink
-  and a filled icon, with no indicator pill. The middle slot is a wax disc that opens the
-  add-recipe sheet, which replaces the library's floating button.
-- The library masthead folds as the list scrolls (`CollapsingMasthead`): the emblem and
-  wordmark glide and shrink into a compact bar while the sprigs and tagline fade. It is one
-  set of marks, placed in the layout phase, so scrolling never recomposes it. Tapping it
+  below a tab. It is a flat custom bar (`PaperNavigationBar`): small-caps names under a hairline, and a
+  wax-red ribbon bookmark that hangs from the rule over the current tab and slides between
+  tabs. Adding a recipe is a floating wax-seal button (`PaperActionButton`) over the Recipes,
+  Favourites and Folders pages.
+- The library masthead folds as the list scrolls (`CollapsingMasthead`), quietly: the pot and
+  wordmark keep their size and stay centred, and only ride up into a slim bar while the tagline
+  fades. It is one set of marks, placed in the layout phase, so scrolling never recomposes it. Tapping it
   returns to the top.
 - The folder shelf leaves the library, and so does the settings icon: both have tabs now.
 - Recipe page: an inset rounded photo, the title, rating and facts, then a sticky

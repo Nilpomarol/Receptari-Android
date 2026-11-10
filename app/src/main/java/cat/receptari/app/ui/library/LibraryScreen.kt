@@ -225,7 +225,8 @@ fun LibraryScreen(
                 contentPadding = PaddingValues(
                     // The front page's masthead overlays the list and reserves its own room.
                     top = if (showMasthead) 0.dp else innerPadding.calculateTopPadding(),
-                    bottom = innerPadding.calculateBottomPadding() + 24.dp,
+                    // Clears the floating add button, so the last row can scroll above it.
+                    bottom = innerPadding.calculateBottomPadding() + 88.dp,
                 ),
             ) {
                 if (state.isSelectionMode) {
