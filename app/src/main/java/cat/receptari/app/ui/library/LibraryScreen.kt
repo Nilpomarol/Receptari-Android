@@ -1268,8 +1268,8 @@ private fun TileFacts(recipe: RecipeSummary, onPhoto: Boolean, modifier: Modifie
 }
 
 private const val TileColumns = 2
-private val TileGap = 14.dp
-private val TileRowGap = 16.dp
+private val TileGap = 8.dp
+private val TileRowGap = 10.dp
 private const val TilePhotoRatio = 4f / 3f
 
 /** The photograph in a rounded square, like a grid tile — or, without one, an empty plate with a sprig. */
