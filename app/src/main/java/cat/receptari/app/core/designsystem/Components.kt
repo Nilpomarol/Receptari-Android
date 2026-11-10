@@ -8,6 +8,15 @@ import androidx.compose.material3.ripple
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.border
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -434,12 +443,15 @@ fun IconFact(
 }
 
 /**
- * The app's bottom navigation, printed on the same sheet as the page above it. Lower and
- * quieter than Material's bar: no pill behind the selected tab, which is marked by wax-red ink
- * and a filled icon instead.
+ * The app's bottom navigation, printed on the same sheet as the page above it: a flat bar under
+ * a hairline, small-caps tab names, and a wax-red ribbon bookmark that hangs from the rule over
+ * the current tab and slides to the next. [selectedIndex] places the ribbon over one of
+ * [itemCount] equal-width items.
  */
 @Composable
 fun PaperNavigationBar(
+    selectedIndex: Int,
+    itemCount: Int,
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
@@ -455,12 +467,45 @@ fun PaperNavigationBar(
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .height(NavigationBarHeight),
-            verticalAlignment = Alignment.CenterVertically,
-            content = content,
-        )
+        ) {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val itemWidth = maxWidth / itemCount
+                val ribbonX by animateDpAsState(
+                    targetValue = itemWidth * selectedIndex.coerceAtLeast(0) + (itemWidth - RibbonWidth) / 2,
+                    label = "navRibbon",
+                )
+                Row(modifier = Modifier.fillMaxSize(), content = content)
+                Ribbon(modifier = Modifier.offset(x = ribbonX))
+            }
+        }
     }
 }
 
+/** A bookmark ribbon: a wax-red strip with a swallow-tail cut into its lower end. */
+@Composable
+private fun Ribbon(modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = modifier
+            .size(width = RibbonWidth, height = RibbonHeight)
+            .drawBehind {
+                val tail = size.height * 0.35f
+                drawPath(
+                    path = Path().apply {
+                        moveTo(0f, 0f)
+                        lineTo(size.width, 0f)
+                        lineTo(size.width, size.height)
+                        lineTo(size.width / 2f, size.height - tail)
+                        lineTo(0f, size.height)
+                        close()
+                    },
+                    color = color,
+                )
+            },
+    )
+}
+
+/** One tab of [PaperNavigationBar]: an ink icon over a small-caps name, both wax red when current. */
 @Composable
 fun RowScope.PaperNavigationItem(
     selected: Boolean,
@@ -470,18 +515,17 @@ fun RowScope.PaperNavigationItem(
     label: String,
     modifier: Modifier = Modifier,
 ) {
-    val ink = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val ink by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        label = "navItemInk",
+    )
     Column(
         modifier = modifier
             .weight(1f)
             .fillMaxHeight()
-            .selectable(
-                selected = selected,
-                role = Role.Tab,
-                interactionSource = null,
-                indication = ripple(bounded = false, radius = 28.dp),
-                onClick = onClick,
-            ),
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            // Below the ribbon, which hangs over the top of the tab.
+            .padding(top = RibbonHeight),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -492,46 +536,47 @@ fun RowScope.PaperNavigationItem(
             modifier = Modifier.size(24.dp),
         )
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.6.sp),
             color = ink,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp),
+            modifier = Modifier.padding(top = 3.dp),
         )
     }
 }
 
-/** The one action in the bar: a wax-red disc in the middle slot. */
+/** The page's one action, floating over it: a wax seal, a red disc with a ring pressed into it. */
 @Composable
-fun RowScope.PaperNavigationAction(
+fun PaperActionButton(
     icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier.weight(1f),
+        modifier = modifier
+            .size(SealSize)
+            .shadow(2.dp, CircleShape)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(4.dp)
+            .border(1.dp, MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.35f), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
-                .clickable(role = Role.Button, onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                tint = MaterialTheme.colorScheme.onPrimary,
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onPrimary,
+        )
     }
 }
 
-private val NavigationBarHeight = 60.dp
+private val NavigationBarHeight = 68.dp
+private val RibbonWidth = 16.dp
+private val RibbonHeight = 14.dp
+private val SealSize = 56.dp
 
 private const val MaxRating = 5
 private val CardShadow: Dp = 1.dp

@@ -8,11 +8,16 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import cat.receptari.app.core.designsystem.PaperNavigationAction
+import cat.receptari.app.core.designsystem.PaperActionButton
 import cat.receptari.app.core.designsystem.PaperNavigationItem
 import cat.receptari.app.ui.importer.AddRecipeSheet
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.navigationBars
@@ -70,11 +75,12 @@ fun ReceptariNavHost(
     var adding by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = modifier) {
+    Box(modifier = Modifier.weight(1f)) {
     NavHost(
         navController = navController,
         startDestination = Destination.LIBRARY,
         modifier = Modifier
-            .weight(1f)
+            .fillMaxSize()
             // The bar below pads itself for the gesture area; the page above must not too.
             .then(
                 if (showBottomBar) {
@@ -196,18 +202,25 @@ fun ReceptariNavHost(
         }
     }
 
+    // Adding sits over the pages that hold recipes, not in the bar.
+    if (currentRoute in AddableRoutes) {
+        PaperActionButton(
+            icon = Icons.Default.Add,
+            contentDescription = stringResource(R.string.library_add_recipe),
+            onClick = { adding = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+        )
+    }
+    }
+
     if (showBottomBar) {
-        PaperNavigationBar {
-            TopLevelTabs.forEachIndexed { index, tab ->
-                // Adding a recipe sits in the middle of the bar, between the reading tabs
-                // and the organising ones.
-                if (index == TopLevelTabs.size / 2) {
-                    PaperNavigationAction(
-                        icon = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.library_add_recipe),
-                        onClick = { adding = true },
-                    )
-                }
+        PaperNavigationBar(
+            selectedIndex = TopLevelTabs.indexOfFirst { it.route == currentRoute },
+            itemCount = TopLevelTabs.size,
+        ) {
+            TopLevelTabs.forEach { tab ->
                 PaperNavigationItem(
                     selected = currentRoute == tab.route,
                     onClick = { navController.navigateToTab(tab.route) },
@@ -230,6 +243,8 @@ fun ReceptariNavHost(
         )
     }
 }
+
+private val AddableRoutes = setOf(Destination.LIBRARY, Destination.FAVORITES, Destination.COLLECTIONS)
 
 private data class TopLevelTab(
     val route: String,
