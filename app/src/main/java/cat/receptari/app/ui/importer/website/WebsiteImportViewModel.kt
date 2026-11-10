@@ -8,13 +8,16 @@ import cat.receptari.app.ui.common.aiMessageRes
 import cat.receptari.app.ui.importer.ImportDraftHandoff
 import cat.receptari.app.ui.importer.ImportEffect
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import javax.inject.Inject
 
 data class WebsiteImportUiState(
@@ -27,6 +30,9 @@ data class WebsiteImportUiState(
 sealed interface WebsiteImportEvent {
     data class UrlChanged(val value: String) : WebsiteImportEvent
     data object Extract : WebsiteImportEvent
+
+    /** The sheet was closed: drop what was typed and stop any extraction in flight. */
+    data object Reset : WebsiteImportEvent
 }
 
 @HiltViewModel
@@ -41,10 +47,16 @@ class WebsiteImportViewModel @Inject constructor(
     private val effectChannel = Channel<ImportEffect>(Channel.BUFFERED)
     val effects = effectChannel.receiveAsFlow()
 
+    private var extraction: Job? = null
+
     fun onEvent(event: WebsiteImportEvent) {
         when (event) {
             is WebsiteImportEvent.UrlChanged -> _uiState.update { it.copy(url = event.value) }
             WebsiteImportEvent.Extract -> extract()
+            WebsiteImportEvent.Reset -> {
+                extraction?.cancel()
+                _uiState.value = WebsiteImportUiState()
+            }
         }
     }
 
@@ -53,8 +65,9 @@ class WebsiteImportViewModel @Inject constructor(
         if (url.isEmpty() || _uiState.value.isExtracting) return
 
         _uiState.update { it.copy(isExtracting = true) }
-        viewModelScope.launch {
+        extraction = viewModelScope.launch {
             val result = importFromWebsite(url)
+            coroutineContext.ensureActive()
             _uiState.update { it.copy(isExtracting = false) }
 
             result.fold(

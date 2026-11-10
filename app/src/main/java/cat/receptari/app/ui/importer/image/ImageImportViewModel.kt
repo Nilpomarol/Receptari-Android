@@ -8,13 +8,16 @@ import cat.receptari.app.ui.common.aiMessageRes
 import cat.receptari.app.ui.importer.ImportDraftHandoff
 import cat.receptari.app.ui.importer.ImportEffect
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import java.util.UUID
 import javax.inject.Inject
 
@@ -41,6 +44,9 @@ sealed interface ImageImportEvent {
     data class PagesAdded(val images: List<ByteArray>) : ImageImportEvent
     data class PageRemoved(val id: String) : ImageImportEvent
     data object Extract : ImageImportEvent
+
+    /** The sheet was closed: drop the pages and stop any extraction in flight. */
+    data object Reset : ImageImportEvent
 }
 
 @HiltViewModel
@@ -55,6 +61,8 @@ class ImageImportViewModel @Inject constructor(
     private val effectChannel = Channel<ImportEffect>(Channel.BUFFERED)
     val effects = effectChannel.receiveAsFlow()
 
+    private var extraction: Job? = null
+
     fun onEvent(event: ImageImportEvent) {
         when (event) {
             is ImageImportEvent.PagesAdded -> _uiState.update { state ->
@@ -66,6 +74,10 @@ class ImageImportViewModel @Inject constructor(
             }
 
             ImageImportEvent.Extract -> extract()
+            ImageImportEvent.Reset -> {
+                extraction?.cancel()
+                _uiState.value = ImageImportUiState()
+            }
         }
     }
 
@@ -74,10 +86,11 @@ class ImageImportViewModel @Inject constructor(
         if (pages.isEmpty() || _uiState.value.isExtracting) return
 
         _uiState.update { it.copy(isExtracting = true) }
-        viewModelScope.launch {
+        extraction = viewModelScope.launch {
             // All pages go in one request: a recipe spread over two cookbook pages is one
             // recipe, and sending them separately would produce two half-recipes (PRD §9).
             val result = aiClient.extractFromImages(pages.map { it.bytes })
+            coroutineContext.ensureActive()
             _uiState.update { it.copy(isExtracting = false) }
 
             result.fold(

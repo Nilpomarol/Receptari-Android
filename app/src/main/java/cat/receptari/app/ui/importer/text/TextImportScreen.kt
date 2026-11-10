@@ -1,21 +1,19 @@
 package cat.receptari.app.ui.importer.text
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.automirrored.outlined.Notes
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,11 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
-import cat.receptari.app.core.designsystem.PaperScaffold
-import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.ui.importer.ImportEffect
+import cat.receptari.app.ui.importer.ImportForm
+import cat.receptari.app.ui.importer.rememberPasteAction
 
 @Composable
 fun TextImportRoute(
@@ -67,7 +65,6 @@ fun TextImportRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextImportScreen(
     uiState: TextImportUiState,
@@ -76,74 +73,50 @@ fun TextImportScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    PaperScaffold(
+    val paste = rememberPasteAction { onEvent(TextImportEvent.TextChanged(it)) }
+
+    ImportForm(
+        icon = Icons.AutoMirrored.Outlined.Notes,
+        title = stringResource(R.string.import_text_title),
+        explanation = stringResource(R.string.import_text_explanation),
+        isExtracting = uiState.isExtracting,
+        canExtract = uiState.canExtract,
+        onExtract = { onEvent(TextImportEvent.Extract) },
+        onNavigateBack = onNavigateBack,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            PaperTopBar(
-                title = { Text(stringResource(R.string.import_text_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                        )
-                    }
-                },
-            )
-        },
-    ) { innerPadding ->
-        Column(
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .fillMaxWidth()
+                .weight(1f),
         ) {
-            Text(
-                text = stringResource(R.string.import_text_explanation),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
             OutlinedTextField(
-
                 colors = paperFieldColors(),
                 value = uiState.text,
                 onValueChange = { onEvent(TextImportEvent.TextChanged(it)) },
                 label = { Text(stringResource(R.string.import_text_label)) },
+                shape = MaterialTheme.shapes.medium,
                 enabled = !uiState.isExtracting,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier = Modifier.fillMaxSize(),
             )
-
-            Button(
-                onClick = { onEvent(TextImportEvent.Extract) },
-                enabled = uiState.canExtract,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (uiState.isExtracting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
+            // On an empty page the quickest way in is the clipboard; the pill leaves once
+            // there is text.
+            if (uiState.text.isEmpty() && !uiState.isExtracting) {
+                OutlinedButton(
+                    onClick = paste,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .height(44.dp),
+                ) {
+                    Icon(Icons.Outlined.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
-                        text = stringResource(R.string.import_extracting),
-                        modifier = Modifier.padding(start = 12.dp),
+                        text = stringResource(R.string.settings_api_key_paste),
+                        modifier = Modifier.padding(start = 8.dp),
                     )
-                } else {
-                    Text(stringResource(R.string.import_action_extract))
                 }
             }
-
-            Text(
-                text = stringResource(R.string.import_review_notice),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
         }
     }
 }
@@ -154,7 +127,7 @@ private const val SAMPLE_TEXT = "Truita de patates\n\n4 ous\n2 patates"
 @Preview
 @Composable
 private fun TextImportScreenPreview() {
-    ReceptariTheme() {
+    ReceptariTheme {
         TextImportScreen(
             uiState = TextImportUiState(text = SAMPLE_TEXT),
             onEvent = {},

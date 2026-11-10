@@ -108,6 +108,7 @@ import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
 import cat.receptari.app.core.designsystem.Emblem
 import cat.receptari.app.core.designsystem.Hairline
+import cat.receptari.app.core.designsystem.IconDisc
 import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import cat.receptari.app.core.designsystem.PaperModalBottomSheet
 import cat.receptari.app.core.designsystem.PaperScaffold
@@ -446,31 +447,6 @@ private fun SettingsCard(
 ) {
     PaperCard(modifier = modifier.fillMaxWidth(), contentPadding = contentPadding) {
         Column(content = content)
-    }
-}
-
-/** A wax-tinted disc with an icon in it: what marks a row as an action of its own kind. */
-@Composable
-private fun IconDisc(
-    icon: ImageVector,
-    modifier: Modifier = Modifier,
-    size: Dp = 40.dp,
-    container: Color = MaterialTheme.colorScheme.primaryContainer,
-    content: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-) {
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(container),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = content,
-            modifier = Modifier.size(size / 2),
-        )
     }
 }
 

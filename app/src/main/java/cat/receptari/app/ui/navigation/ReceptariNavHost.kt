@@ -47,9 +47,9 @@ import cat.receptari.app.ui.detail.RecipeDetailRoute
 import cat.receptari.app.ui.cook.CookModeRoute
 import cat.receptari.app.ui.edit.RecipeEditRoute
 import cat.receptari.app.ui.folders.FolderRoute
-import cat.receptari.app.ui.importer.image.ImageImportRoute
+import cat.receptari.app.ui.importer.image.ImageImportSheetRoute
 import cat.receptari.app.ui.importer.text.TextImportRoute
-import cat.receptari.app.ui.importer.website.WebsiteImportRoute
+import cat.receptari.app.ui.importer.website.WebsiteImportSheetRoute
 import cat.receptari.app.ui.library.LibraryRoute
 import cat.receptari.app.ui.settings.SettingsRoute
 
@@ -73,6 +73,7 @@ fun ReceptariNavHost(
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in Destination.TopLevel
     var adding by rememberSaveable { mutableStateOf(false) }
+    var importSheet by rememberSaveable { mutableStateOf<ImportSheet?>(null) }
 
     Column(modifier = modifier) {
     Box(modifier = Modifier.weight(1f)) {
@@ -164,25 +165,11 @@ fun ReceptariNavHost(
             )
         }
 
-        composable(Destination.IMPORT_WEBSITE) {
-            WebsiteImportRoute(
-                onNavigateBack = navController::popBackStack,
-                onDraftReady = { navController.toDraftEditor() },
-            )
-        }
-
         composable(Destination.IMPORT_TEXT) {
             TextImportRoute(
                 onNavigateBack = navController::popBackStack,
                 // The source screens have done their job once the draft exists; going back
                 // from the editor belongs in the library, not in the paste box.
-                onDraftReady = { navController.toDraftEditor() },
-            )
-        }
-
-        composable(Destination.IMPORT_IMAGE) {
-            ImageImportRoute(
-                onNavigateBack = navController::popBackStack,
                 onDraftReady = { navController.toDraftEditor() },
             )
         }
@@ -236,13 +223,34 @@ fun ReceptariNavHost(
     if (adding) {
         AddRecipeSheet(
             onDismiss = { adding = false },
-            onImportFromWebsite = { navController.navigate(Destination.IMPORT_WEBSITE) },
+            onImportFromWebsite = { importSheet = ImportSheet.Website },
             onImportFromText = { navController.navigate(Destination.IMPORT_TEXT) },
-            onImportFromImage = { navController.navigate(Destination.IMPORT_IMAGE) },
+            onImportFromImage = { importSheet = ImportSheet.Image },
             onCreateManually = { navController.navigate(Destination.edit()) },
         )
     }
+
+    // The single-step sources open as sheets over whichever page is behind them.
+    when (importSheet) {
+        ImportSheet.Website -> WebsiteImportSheetRoute(
+            onDismiss = { importSheet = null },
+            onDraftReady = {
+                importSheet = null
+                navController.toDraftEditor()
+            },
+        )
+        ImportSheet.Image -> ImageImportSheetRoute(
+            onDismiss = { importSheet = null },
+            onDraftReady = {
+                importSheet = null
+                navController.toDraftEditor()
+            },
+        )
+        null -> Unit
+    }
 }
+
+private enum class ImportSheet { Website, Image }
 
 private val AddableRoutes = setOf(Destination.LIBRARY, Destination.FAVORITES)
 

@@ -415,6 +415,31 @@ fun SegmentedTabs(
     }
 }
 
+/** A wax-tinted disc with an icon in it: what marks a row or a page as being of its own kind. */
+@Composable
+fun IconDisc(
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    container: Color = MaterialTheme.colorScheme.primaryContainer,
+    content: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(container),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = content,
+            modifier = Modifier.size(size / 2),
+        )
+    }
+}
+
 /** A small fact with its pictogram: "🕓 2 h 30 min", "👥 6 racions". */
 @Composable
 fun IconFact(
