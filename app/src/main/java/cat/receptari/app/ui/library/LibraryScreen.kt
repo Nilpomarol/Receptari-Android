@@ -264,25 +264,7 @@ fun LibraryScreen(
                         }
                     }
                     if (!state.isLibraryEmpty) {
-                        item(key = "controls", contentType = "controls") {
-                            Column {
-                                SearchField(
-                                    query = state.searchQuery,
-                                    onQueryChange = { onEvent(LibraryEvent.SearchQueryChanged(it)) },
-                                    filterCount = state.userFilterCount,
-                                    onOpenFilters = { filtersOpen = true },
-                                    modifier = Modifier.padding(horizontal = PageMargin),
-                                )
-                                ListHeader(
-                                    state = state,
-                                    onSelectLayout = { onEvent(LibraryEvent.ListLayoutSelected(it)) },
-                                    modifier = Modifier.padding(horizontal = PageMargin),
-                                )
-                                if (state.userFilterCount > 0) {
-                                    ActiveFilters(state = state, onEvent = onEvent)
-                                }
-                            }
-                        }
+                        libraryControls(state, onEvent, onOpenFilters = { filtersOpen = true })
                     }
                 }
 
@@ -316,26 +298,7 @@ fun LibraryScreen(
                         )
                     }
 
-                    state.recipes.isEmpty() -> item(key = "no-results") {
-                        EmptyState(
-                            title = stringResource(R.string.library_no_results_title),
-                            body = stringResource(R.string.library_no_results_body),
-                            modifier = Modifier.fillParentMaxHeight(EmptyStateHeight),
-                            action = if (state.userFilterCount > 0) {
-                                {
-                                    TextButton(onClick = { onEvent(LibraryEvent.ClearFilters) }) {
-                                        Icon(Icons.Default.Clear, contentDescription = null)
-                                        Text(
-                                            text = stringResource(R.string.library_clear_filters),
-                                            modifier = Modifier.padding(start = 8.dp),
-                                        )
-                                    }
-                                }
-                            } else {
-                                null
-                            },
-                        )
-                    }
+                    state.recipes.isEmpty() -> noResultsItem(state, onEvent)
 
                     else -> recipeItems(
                         recipes = state.recipes,
@@ -696,6 +659,64 @@ private fun RemovableFilter(label: String, onRemove: () -> Unit) {
 }
 
 /**
+ * The search field, the count-and-layout line and the removable filters, as one item: the
+ * controls over a list of recipes, shared by the library and by a folder's page.
+ */
+internal fun LazyListScope.libraryControls(
+    state: LibraryUiState,
+    onEvent: (LibraryEvent) -> Unit,
+    onOpenFilters: () -> Unit,
+) {
+    item(key = "controls", contentType = "controls") {
+        Column {
+            SearchField(
+                query = state.searchQuery,
+                onQueryChange = { onEvent(LibraryEvent.SearchQueryChanged(it)) },
+                filterCount = state.userFilterCount,
+                onOpenFilters = onOpenFilters,
+                modifier = Modifier.padding(horizontal = PageMargin),
+            )
+            ListHeader(
+                state = state,
+                onSelectLayout = { onEvent(LibraryEvent.ListLayoutSelected(it)) },
+                modifier = Modifier.padding(horizontal = PageMargin),
+            )
+            if (state.userFilterCount > 0) {
+                ActiveFilters(state = state, onEvent = onEvent)
+            }
+        }
+    }
+}
+
+/** Nothing matched the search or the filters: say so, and offer to clear the filters. */
+internal fun LazyListScope.noResultsItem(
+    state: LibraryUiState,
+    onEvent: (LibraryEvent) -> Unit,
+) {
+    item(key = "no-results") {
+                EmptyState(
+                    title = stringResource(R.string.library_no_results_title),
+                    body = stringResource(R.string.library_no_results_body),
+                    modifier = Modifier.fillParentMaxHeight(EmptyStateHeight),
+                    action = if (state.userFilterCount > 0) {
+                        {
+                            TextButton(onClick = { onEvent(LibraryEvent.ClearFilters) }) {
+                                Icon(Icons.Default.Clear, contentDescription = null)
+                                Text(
+                                    text = stringResource(R.string.library_clear_filters),
+                                    modifier = Modifier.padding(start = 8.dp),
+                                )
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                )
+    
+    }
+}
+
+/**
  * Sort, state filters and tags together: everything that changes the list, in one place.
  *
  * The title and the way out stay put while the choices scroll between them. Every choice
@@ -706,7 +727,7 @@ private fun RemovableFilter(label: String, onRemove: () -> Unit) {
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun FilterSheet(
+internal fun FilterSheet(
     state: LibraryUiState,
     onEvent: (LibraryEvent) -> Unit,
     onDismiss: () -> Unit,

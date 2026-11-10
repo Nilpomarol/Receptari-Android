@@ -533,12 +533,12 @@ splits ingredients and method into tabs; and folders become photo banners.
 
 **Structure.**
 - Bottom bar with four tabs: Recipes (the library), Favourites (the same page with the
-  favourites filter pinned), Folders (photo banners, each fronted by its most recently
-  updated photo), Settings. Each tab keeps its own back stack. The bar hides on every page
+  favourites filter pinned), Folders (photo tiles like the library's, each fronted by its most recently
+  updated photo, with a last tile that starts a new folder), Settings. Each tab keeps its own back stack. The bar hides on every page
   below a tab. It is a flat custom bar (`PaperNavigationBar`): small-caps names under a hairline, and a
   wax-red ribbon bookmark that hangs from the rule over the current tab and slides between
-  tabs. Adding a recipe is a floating wax-seal button (`PaperActionButton`) over the Recipes,
-  Favourites and Folders pages.
+  tabs. Adding a recipe is a floating wax-seal button (`PaperActionButton`) over the Recipes and
+  Favourites pages.
 - The library masthead folds as the list scrolls (`CollapsingMasthead`), quietly: the pot and
   wordmark keep their size and stay centred, and only ride up into a slim bar while the tagline
   fades. It is one set of marks, placed in the layout phase, so scrolling never recomposes it. Tapping it

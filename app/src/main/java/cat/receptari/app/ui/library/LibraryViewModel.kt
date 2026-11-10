@@ -45,11 +45,13 @@ data class LibraryUiState(
     val isSharingSelection: Boolean = false,
     /** The Favourites tab: the same page with the favourites filter fixed on. */
     val isFavoritesPage: Boolean = false,
+    /** A folder's page: the same list with that folder fixed on. */
+    val isFolderPage: Boolean = false,
     val listLayout: RecipeListLayout = RecipeListLayout.Grid,
 ) {
-    /** Filters the reader chose, not counting the one the Favourites tab pins. */
+    /** Filters the reader chose, not counting the one a Favourites or folder page pins. */
     val userFilterCount: Int
-        get() = filter.activeCount - if (isFavoritesPage) 1 else 0
+        get() = filter.activeCount - (if (isFavoritesPage) 1 else 0) - (if (isFolderPage) 1 else 0)
 
     /** Empty because there is nothing to show at all, rather than because nothing matched. */
     val isLibraryEmpty: Boolean
@@ -93,7 +95,8 @@ class LibraryViewModel @Inject constructor(
 
     private val favoritesPage: Boolean =
         savedStateHandle.get<Boolean>(Destination.FAVORITES_ONLY_ARG) ?: false
-    private val baseFilter = RecipeFilter(favoritesOnly = favoritesPage)
+    private val folderId: String? = savedStateHandle[Destination.FOLDER_ID_ARG]
+    private val baseFilter = RecipeFilter(favoritesOnly = favoritesPage, folderId = folderId)
     private val query = MutableStateFlow(RecipeQuery(filter = baseFilter))
     private val isSelectionMode = MutableStateFlow(false)
     private val selectedRecipeIds = MutableStateFlow<Set<String>>(emptySet())
@@ -129,6 +132,7 @@ class LibraryViewModel @Inject constructor(
             selectedRecipeIds = selection.second,
             isSharingSelection = selection.third,
             isFavoritesPage = favoritesPage,
+            isFolderPage = folderId != null,
             listLayout = layout,
         )
     }.stateIn(

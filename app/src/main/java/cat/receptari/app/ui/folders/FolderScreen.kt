@@ -1,11 +1,15 @@
 package cat.receptari.app.ui.folders
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import cat.receptari.app.core.designsystem.Sprig
+import cat.receptari.app.core.designsystem.Rubric
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,13 +40,19 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.PaperScaffold
-import cat.receptari.app.core.designsystem.PaperTopBar
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
 import cat.receptari.app.domain.model.Folder
 import cat.receptari.app.domain.model.FolderColor
 import cat.receptari.app.domain.model.FolderIcon
 import cat.receptari.app.domain.model.RecipeSummary
+import cat.receptari.app.ui.library.FilterSheet
+import cat.receptari.app.ui.library.LibraryEvent
+import cat.receptari.app.ui.library.LibraryUiState
+import cat.receptari.app.ui.library.LibraryViewModel
+import cat.receptari.app.ui.library.libraryControls
+import cat.receptari.app.ui.library.noResultsItem
 import cat.receptari.app.ui.library.recipeItems
 
 @Composable
@@ -51,8 +61,12 @@ fun FolderRoute(
     onOpenRecipe: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FolderViewModel = hiltViewModel(),
+    // The recipes are listed by the library's own view model, pinned to this folder by the
+    // route's folder id, so search, filters and sorting are the home page's.
+    libraryViewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val library by libraryViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.effects.collect { effect ->
@@ -64,7 +78,9 @@ fun FolderRoute(
 
     FolderScreen(
         state = state,
+        library = library,
         onEvent = viewModel::onEvent,
+        onLibraryEvent = libraryViewModel::onEvent,
         onNavigateBack = onNavigateBack,
         onOpenRecipe = onOpenRecipe,
         modifier = modifier,
@@ -75,81 +91,102 @@ fun FolderRoute(
 @Composable
 fun FolderScreen(
     state: FolderContentsUiState,
+    library: LibraryUiState,
     onEvent: (FolderContentsEvent) -> Unit,
+    onLibraryEvent: (LibraryEvent) -> Unit,
     onNavigateBack: () -> Unit,
     onOpenRecipe: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var filtersOpen by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     PaperScaffold(
         modifier = modifier,
+        // The header carries the folder itself: its icon and name, the recipe count under
+        // them, and the actions at the end, all flat on the paper above one hairline.
         topBar = {
-            PaperTopBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        state.folder?.let { folder ->
-                            Icon(
-                                imageVector = folder.icon.toImageVector(),
-                                contentDescription = null,
-                                tint = folder.color.toColor(),
-                                modifier = Modifier
-                                    .padding(end = 8.dp)
-                                    .size(22.dp),
-                            )
-                        }
-                        Text(state.folder?.name.orEmpty())
-                    }
-                },
-                navigationIcon = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.nav_back),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                },
-                actions = {
+                    FolderTitle(
+                        folder = state.folder,
+                        recipeCount = state.recipes.size,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 4.dp),
+                    )
                     IconButton(onClick = { renaming = true }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(R.string.folders_rename),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     IconButton(onClick = { confirmDelete = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(R.string.folders_delete),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                },
-            )
+                }
+                Hairline()
+            }
         },
     ) { innerPadding ->
-        when {
-            state.isLoading -> Box(Modifier.fillMaxSize().padding(innerPadding))
+        LazyColumn(
+            modifier = Modifier.padding(innerPadding),
+            contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
+        ) {
+            if (!library.isLoading && !library.isLibraryEmpty) {
+                libraryControls(library, onLibraryEvent, onOpenFilters = { filtersOpen = true })
+            }
+            when {
+                library.isLoading -> Unit
 
-            state.recipes.isEmpty() -> EmptyState(
-                title = stringResource(R.string.folder_empty_title),
-                body = stringResource(R.string.folder_empty_body),
-                modifier = Modifier.padding(innerPadding),
-            )
+                library.isLibraryEmpty -> item(key = "empty", contentType = "empty") {
+                    EmptyState(
+                        title = stringResource(R.string.folder_empty_title),
+                        body = stringResource(R.string.folder_empty_body),
+                        modifier = Modifier.padding(top = 40.dp),
+                    )
+                }
 
-            else -> LazyColumn(
-                modifier = Modifier.padding(innerPadding),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
-            ) {
-                recipeItems(
-                    recipes = state.recipes,
-                    layout = state.listLayout,
+                library.recipes.isEmpty() -> noResultsItem(library, onLibraryEvent)
+
+                else -> recipeItems(
+                    recipes = library.recipes,
+                    layout = library.listLayout,
                     onClick = { onOpenRecipe(it.id) },
                     onToggleFavorite = {
-                        onEvent(FolderContentsEvent.ToggleFavorite(it.id, it.isFavorite))
+                        onLibraryEvent(LibraryEvent.ToggleFavorite(it.id, it.isFavorite))
                     },
+                    itemModifier = Modifier.padding(horizontal = 20.dp),
                 )
             }
         }
+    }
+
+    if (filtersOpen) {
+        FilterSheet(
+            state = library,
+            onEvent = onLibraryEvent,
+            onDismiss = { filtersOpen = false },
+        )
     }
 
     if (renaming) {
@@ -210,19 +247,49 @@ fun FolderScreen(
     }
 }
 
+/** The folder's icon and name in its own colour, with the recipe count in small caps under it. */
+@Composable
+private fun FolderTitle(folder: Folder?, recipeCount: Int, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            folder?.let {
+                Icon(
+                    imageVector = it.icon.toImageVector(),
+                    contentDescription = null,
+                    tint = it.color.toColor(),
+                    modifier = Modifier
+                        .padding(end = 10.dp)
+                        .size(22.dp),
+                )
+            }
+            Text(
+                text = folder?.name.orEmpty(),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Rubric(
+            text = pluralStringResource(R.plurals.folders_recipe_count, recipeCount, recipeCount),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 @Composable
 private fun EmptyState(title: String, body: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 40.dp),
-        verticalArrangement = Arrangement.Center,
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Sprig(modifier = Modifier.size(width = 64.dp, height = 32.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 12.dp),
         )
         Aside(text = body, modifier = Modifier.padding(top = 10.dp))
     }
@@ -241,7 +308,9 @@ private fun FolderScreenPreview() {
                 ),
                 isLoading = false,
             ),
+            library = LibraryUiState(isLoading = false),
             onEvent = {},
+            onLibraryEvent = {},
             onNavigateBack = {},
             onOpenRecipe = {},
         )

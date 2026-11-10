@@ -244,7 +244,7 @@ fun ReceptariNavHost(
     }
 }
 
-private val AddableRoutes = setOf(Destination.LIBRARY, Destination.FAVORITES, Destination.COLLECTIONS)
+private val AddableRoutes = setOf(Destination.LIBRARY, Destination.FAVORITES)
 
 private data class TopLevelTab(
     val route: String,
