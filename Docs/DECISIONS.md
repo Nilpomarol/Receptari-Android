@@ -574,3 +574,44 @@ instead of behind a filter or a shelf that scrolled away.
   id and signature), not with debug. On a Pixel 10 Pro XL with the profile applied, library
   scrolling showed 1.3% janky frames, against 5.6% for the debug build.
 
+
+---
+
+## ADR-013 — Recipe page: the photo is the header, the lists are the page
+
+**Date:** 2026-11-11 · **Status:** Accepted, supersedes the recipe-page bullet of ADR-012
+
+### Context
+Ingredients and method are what the page is for; the rest is complementary. Earlier layouts
+spent most of the first screen on photo, title, rating and a card of times. Four header
+directions were mocked up (short banner, book heading without photo, photo as header, one
+scroll without tabs); the owner chose the photo as header, plain ruled ingredient lines, and
+one quiet line of facts.
+
+### Decision
+- The photo runs edge to edge under the status bar (250 dp). The folder rubric (tap to
+  refile), the title and one quiet line — tappable gold stars · total time · servings — are
+  printed on its lower scrim. Without a photo the same head is printed on paper under the bar.
+  The page rises over the photo's foot as a sheet with 20 dp rounded shoulders; the photo is
+  cut away there (`PageRiseShape`) so the paper grain runs on unbroken.
+- The top bar floats over the photo with cream icons and light status-bar icons, then folds
+  into a paper bar, with ink icons and the title, as the photo scrolls away. The printed head
+  fades before it reaches the icons, and the paper only comes in over the last 56 dp, so no
+  half-clear band sits on the photo; the bar is ruled only once it is whole.
+- Ingredients / Preparació (`SegmentedTabs`) sits right under the photo and pins under the bar;
+  once pinned, bar and tabs are one paper sheet with a single rule beneath (`BarSheet`).
+- Ingredients are plain lines ruled with hairlines (group names as rubrics), with round ticks
+  that strike a line through. A slim servings line with a small stepper heads the list, since
+  that is where scaling acts. Method: numerals in wax discs, hairlines between steps, and a
+  timer pill on any step that names a duration.
+- Under either tab: notes on a card, a card of `CardRow`s (folder, tags, source — opens its
+  page when it is a web address — cook history), and a colophon. *Start cooking* and *Mark as
+  cooked* stay pinned at the foot.
+
+### Consequences
+- Prep and cook times are no longer shown on the page; the total (given or derived) is.
+- Settings' row (`ActionRow`) moves to the design system as `CardRow` / `CardRowDivider`.
+- The page draws its own top bar rather than `PaperTopBar`, because it must fold over a photo.
+- Scroll-driven state (bar backing, pinned tabs) is read in the layout and draw phases; only
+  two booleans recompose (title in the bar, icons on the photo).
+- No new strings; the page reuses existing keys.

@@ -23,7 +23,6 @@ import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.unit.Dp
 import cat.receptari.app.core.designsystem.OrnamentHeading
 import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.Sprig
@@ -32,14 +31,12 @@ import cat.receptari.app.core.designsystem.pageFrame
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -51,7 +48,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -75,12 +71,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,6 +101,8 @@ import cat.receptari.app.BuildConfig
 import cat.receptari.app.MainActivity
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.CardRow
+import cat.receptari.app.core.designsystem.CardRowDivider
 import cat.receptari.app.core.designsystem.Emblem
 import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.IconDisc
@@ -327,7 +324,7 @@ fun SettingsScreen(
                 footnote = stringResource(R.string.settings_sharing_explanation),
             ) {
                 SettingsCard {
-                    ActionRow(
+                    CardRow(
                         icon = Icons.AutoMirrored.Outlined.Send,
                         title = stringResource(R.string.settings_share_library),
                         subtitle = if (uiState.isTransferBusy) stringResource(R.string.transfer_preparing) else null,
@@ -335,14 +332,14 @@ fun SettingsScreen(
                         enabled = !uiState.isTransferBusy,
                         busy = uiState.isTransferBusy,
                     )
-                    RowDivider()
-                    ActionRow(
+                    CardRowDivider()
+                    CardRow(
                         icon = Icons.Outlined.WifiTethering,
                         title = stringResource(R.string.import_receive_nearby),
                         onClick = onReceiveNearby,
                     )
-                    RowDivider()
-                    ActionRow(
+                    CardRowDivider()
+                    CardRow(
                         icon = Icons.Outlined.FileOpen,
                         title = stringResource(R.string.import_from_shared_copy),
                         onClick = onImportSharedCopy,
@@ -450,58 +447,6 @@ private fun SettingsCard(
     }
 }
 
-/** One action on a card: its disc, its name in the display face, a note, and a chevron. */
-@Composable
-private fun ActionRow(
-    icon: ImageVector,
-    title: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    enabled: Boolean = true,
-    busy: Boolean = false,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .heightIn(min = 64.dp)
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconDisc(icon = icon)
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 14.dp),
-        ) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            if (subtitle != null) {
-                Aside(
-                    text = subtitle,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-        }
-        if (busy) {
-            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-        } else {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/** A hairline between rows of a card, starting where the row's text starts. */
-@Composable
-private fun RowDivider() {
-    Hairline(modifier = Modifier.padding(start = 54.dp))
-}
-
 @Composable
 private fun BackupSection(
     state: SettingsUiState,
@@ -527,7 +472,7 @@ private fun BackupSection(
         modifier = modifier,
     ) {
         SettingsCard {
-            ActionRow(
+            CardRow(
                 icon = Icons.Outlined.SaveAlt,
                 title = stringResource(R.string.settings_backup_export),
                 subtitle = status,
@@ -535,8 +480,8 @@ private fun BackupSection(
                 enabled = !state.isBackupBusy,
                 busy = state.isBackupBusy,
             )
-            RowDivider()
-            ActionRow(
+            CardRowDivider()
+            CardRow(
                 icon = Icons.Outlined.Restore,
                 title = stringResource(R.string.settings_restore_choose),
                 onClick = { onEvent(SettingsEvent.ChooseRestore) },

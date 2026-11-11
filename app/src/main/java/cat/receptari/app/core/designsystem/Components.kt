@@ -1,6 +1,9 @@
 package cat.receptari.app.core.designsystem
 
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -438,6 +441,68 @@ fun IconDisc(
             modifier = Modifier.size(size / 2),
         )
     }
+}
+
+/**
+ * One row on a [PaperCard]: its disc, its name in the display face, an optional note, and a
+ * chevron when it leads somewhere. Without [onClick] it is a plain statement on the card.
+ */
+@Composable
+fun CardRow(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    busy: Boolean = false,
+    discContainer: Color = MaterialTheme.colorScheme.primaryContainer,
+    discContent: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
+            .heightIn(min = 64.dp)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconDisc(icon = icon, container = discContainer, content = discContent)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 14.dp),
+        ) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            if (subtitle != null) {
+                Aside(
+                    text = subtitle,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        when {
+            busy -> CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+            onClick != null -> Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** A hairline between [CardRow]s, starting where the row's text starts. */
+@Composable
+fun CardRowDivider(modifier: Modifier = Modifier) {
+    Hairline(modifier = modifier.padding(start = 54.dp))
 }
 
 /** A small fact with its pictogram: "🕓 2 h 30 min", "👥 6 racions". */
