@@ -28,6 +28,7 @@ import com.anthropic.models.messages.MessageCreateParams
 import com.anthropic.models.messages.OutputConfig
 import com.anthropic.models.messages.StopReason
 import com.anthropic.models.messages.TextBlockParam
+import com.anthropic.models.messages.ThinkingConfigDisabled
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.future.await
@@ -126,12 +127,12 @@ class ClaudeAiClient @Inject constructor(
     override suspend fun translate(request: TranslationRequest): Result<TranslationResult> =
         call { client ->
             try {
-                client.translate(request, TRANSLATION_MODEL)
+                client.translate(request, MODEL)
             } catch (_: TranslationContractException) {
-                // Haiku is the cost-conscious default. Sonnet gets one chance only when
-                // Haiku produced valid JSON with an unsafe set of ids or blank fields.
+                // Sonnet gets one chance only when Haiku produced valid JSON with an unsafe
+                // set of ids or blank fields.
                 try {
-                    client.translate(request, MODEL)
+                    client.translate(request, TRANSLATION_FALLBACK_MODEL)
                 } catch (_: TranslationContractException) {
                     throw AiError.UnreadableResponse
                 }
@@ -147,6 +148,9 @@ class ClaudeAiClient @Inject constructor(
                 .model(model)
                 .maxTokens(TRANSLATION_MAX_TOKENS)
                 .system(TranslationSchema.SYSTEM_PROMPT)
+                // Haiku 5.5 and Sonnet 5 both think unless told not to; a constrained
+                // field-by-field translation gains nothing from it.
+                .thinking(ThinkingConfigDisabled.builder().build())
                 .outputConfig(
                     OutputConfig.builder()
                         .format(
@@ -193,7 +197,10 @@ class ClaudeAiClient @Inject constructor(
             .system(RecipeSchema.SYSTEM_PROMPT)
             // No extended thinking: this is transcription against a fixed schema, not
             // reasoning. Thinking would add latency and cost to a request the user is
-            // waiting on, and pays for itself nowhere in a copy-it-verbatim task.
+            // waiting on, and pays for itself nowhere in a copy-it-verbatim task. It must be
+            // disabled explicitly: current models think when the parameter is omitted, and
+            // those tokens also eat into MAX_TOKENS.
+            .thinking(ThinkingConfigDisabled.builder().build())
             .outputConfig(
                 OutputConfig.builder()
                     .format(
@@ -286,10 +293,10 @@ class ClaudeAiClient @Inject constructor(
 
     private companion object {
         /** ADR-002. Changing this is a decision, not a tweak. */
-        const val MODEL = "claude-sonnet-5"
+        const val MODEL = "claude-haiku-5-5"
 
-        /** Translation is constrained and reviewable, so the cheaper model is sufficient. */
-        const val TRANSLATION_MODEL = "claude-haiku-4-5"
+        /** One retry when Haiku's translation breaks the id/blank-field contract. */
+        const val TRANSLATION_FALLBACK_MODEL = "claude-sonnet-5"
 
         /** Comfortably above the longest realistic recipe; truncation is unrecoverable. */
         const val MAX_TOKENS = 8_192L

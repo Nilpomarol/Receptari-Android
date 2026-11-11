@@ -33,7 +33,7 @@ These were decided deliberately. Do not silently change them; see
 | Persistence | Room (KSP), local-only. **UUID string primary keys**, `updatedAt` on every row |
 | Preferences | DataStore (Preferences) |
 | AI | Claude API called **directly from the device**, with a user-supplied API key |
-| Default AI model | `claude-sonnet-5` |
+| Default AI model | `claude-haiku-5-5` (Sonnet 5 as translation fallback only) |
 | Theming | Fixed printed-book design system in `core/designsystem`. **No Material You / dynamic colour** (ADR-009) |
 | Typography | Bundled OFL fonts: Pinyon Script (wordmark only), Playfair Display (headings), Lora (body) |
 | UI language | Catalan is the default (`values/`), with `values-es/` and `values-en/` overlays |

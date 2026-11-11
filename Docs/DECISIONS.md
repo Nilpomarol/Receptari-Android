@@ -42,7 +42,15 @@ from the device with a user-supplied key, or from a backend proxy holding a shar
 
 ### Decision
 The app calls the Claude API directly. The user enters their own API key in Settings. No
-backend. Default model `claude-sonnet-5`.
+backend. Default model `claude-haiku-5-5` for extraction and translation, with
+`claude-sonnet-5` as a one-time fallback only when a translation breaks its contract.
+
+**Revised 2026-11-11** (was `claude-sonnet-5`). A side-by-side run on three pasted texts and
+two photographed two-page recipes (cookbook print and a printed handout with show-through)
+had Haiku 5.5 match Sonnet 5 on every text case and beat it on photos: Sonnet misread
+"¾ teaspoon salt" as ¼, Haiku made no errors. Haiku was ~20× cheaper (~$0.001 vs ~$0.02 per
+photo import) and about twice as fast. Handwriting was not tested; every import still lands
+in the editable preview, so a misread is caught there.
 
 ### Rationale
 Zero infrastructure to build, host, secure, or pay for. It matches the PRD's privacy

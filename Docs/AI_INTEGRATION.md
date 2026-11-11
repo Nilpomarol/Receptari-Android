@@ -130,7 +130,7 @@ Operates on the **structured recipe**, not on raw HTML or a whole page.
 | section names and step text | URLs and source metadata |
 | | tags and approved `Ingredient.originalText` fields |
 
-Targets: Catalan, Spanish, English (ADR-004). Translation uses Claude Haiku 4.5 because this
+Targets: Catalan, Spanish, English (ADR-004). Translation uses Claude Haiku 5.5 because this
 is a tightly constrained language task. If Haiku returns the wrong ids or blank fields,
 Sonnet 5 gets one fallback attempt; ordinary API failures are not silently retried with the
 more expensive model.
@@ -160,6 +160,8 @@ version, so list, search, detail, scaling, and cook mode do not acquire a langua
 
 ## 8. Cost, latency, and failure
 
+- Extraction and translation run on Claude Haiku 5.5 with thinking explicitly disabled
+  (ADR-002); current models think when the parameter is omitted.
 - Model choice, request shape, streaming, and caching: **read the `claude-api` skill before
   writing this code.** Do not work from memory.
 - Long-running imports run in a foreground-safe way with visible progress; the user can
