@@ -67,6 +67,7 @@ import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
@@ -894,70 +895,42 @@ internal fun QuickTagSheet(
         ) {
             OrnamentHeading(title = stringResource(R.string.detail_quick_tags_title))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    colors = paperFieldColors(),
-                    value = draft,
-                    onValueChange = { draft = it },
-                    placeholder = { Text(stringResource(R.string.edit_tag_add_hint)) },
-                    singleLine = true,
-                    shape = CircleShape,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Label,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    },
-                    trailingIcon = if (draft.isNotBlank()) {
-                        {
-                            IconButton(onClick = { draft = "" }) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        }
-                    } else null,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            if (canCreate) {
-                                onAddTag(draft.trim())
-                                draft = ""
-                            }
-                        },
-                    ),
-                    modifier = Modifier.weight(1f),
-                )
-
-                Button(
-                    enabled = canCreate,
-                    onClick = {
-                        if (canCreate) {
-                            onAddTag(draft.trim())
-                            draft = ""
-                        }
-                    },
-                    shape = CircleShape,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.edit_tag_add),
-                        modifier = Modifier.padding(start = 4.dp),
-                    )
+            // One field; the wax plus appears inside it only when there is a new tag to add.
+            val addDraft = {
+                if (canCreate) {
+                    onAddTag(draft.trim())
+                    draft = ""
                 }
             }
+            OutlinedTextField(
+                colors = paperFieldColors(),
+                value = draft,
+                onValueChange = { draft = it },
+                placeholder = { Text(stringResource(R.string.edit_tag_add_hint)) },
+                singleLine = true,
+                shape = CircleShape,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.Label,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                },
+                trailingIcon = if (canCreate) {
+                    {
+                        FilledIconButton(onClick = addDraft, modifier = Modifier.size(36.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = stringResource(R.string.edit_tag_add),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                } else null,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { addDraft() }),
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             if (allTags.isNotEmpty()) {
                 FlowRow(
@@ -968,14 +941,10 @@ internal fun QuickTagSheet(
                     allTags.forEach { tag ->
                         val assigned = tag.lowercase() in currentLower
                         FilterPill(
-                            label = tag,
+                            label = "#$tag", // i18n-exempt: a tag's own name, as the recipe page prints it
                             selected = assigned,
                             onClick = { if (assigned) onRemoveTag(tag) else onAddTag(tag) },
-                            icon = if (assigned) {
-                                Icons.Default.Check
-                            } else {
-                                Icons.AutoMirrored.Outlined.Label
-                            },
+                            icon = if (assigned) Icons.Default.Check else null,
                         )
                     }
                 }
