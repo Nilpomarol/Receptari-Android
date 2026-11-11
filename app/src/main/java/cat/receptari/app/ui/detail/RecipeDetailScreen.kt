@@ -39,10 +39,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import cat.receptari.app.core.designsystem.CardRowDivider
+import cat.receptari.app.core.designsystem.IconDisc
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -73,7 +76,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -104,7 +106,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import cat.receptari.app.core.designsystem.FilterPill
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.pageFrame
 import cat.receptari.app.core.designsystem.PaperConfirmBottomSheet
 import cat.receptari.app.core.designsystem.paperFieldColors
 import cat.receptari.app.core.designsystem.paperGrain
@@ -767,36 +768,16 @@ internal fun QuickFolderSheet(
         PaperModalBottomSheet(
             onDismissRequest = onDismiss,
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-            ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                 OrnamentHeading(title = stringResource(R.string.detail_quick_folder_title))
-                Button(
-                    onClick = { creatingFolder = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 14.dp),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Text(
-                        text = stringResource(R.string.edit_folder_add),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 140.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    contentPadding = PaddingValues(bottom = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                // Ruled like the settings page: one folder to a line, the current one ticked.
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false).padding(top = 6.dp),
                 ) {
                     item(key = "no-folder") {
-                        NoFolderTile(
+                        FolderChoiceRow(
+                            icon = Icons.Outlined.FolderOff,
+                            name = stringResource(R.string.edit_folder_none),
                             isSelected = currentFolder == null,
                             onClick = {
                                 onSelectFolder(null)
@@ -805,9 +786,13 @@ internal fun QuickFolderSheet(
                         )
                     }
                     items(availableFolders, key = { it.id }) { folder ->
-                        FolderSelectorTile(
-                            folder = folder,
+                        CardRowDivider()
+                        FolderChoiceRow(
+                            icon = folder.icon.toImageVector(),
+                            name = folder.name,
                             isSelected = folder.id == currentFolder?.id,
+                            discContainer = folder.color.toColor().copy(alpha = 0.16f),
+                            discContent = folder.color.toColor(),
                             onClick = {
                                 onSelectFolder(folder)
                                 onDismiss()
@@ -815,122 +800,57 @@ internal fun QuickFolderSheet(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FolderSelectorTile(
-    folder: Folder,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = ReceptariTheme.palette
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 96.dp)
-            .pageFrame(
-                shape = MaterialTheme.shapes.large,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else palette.rule,
-            ),
-        shape = MaterialTheme.shapes.large,
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        Box(
-            modifier = Modifier
-                .paperGrain()
-                .clickable(onClick = onClick)
-                .padding(14.dp),
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = folder.icon.toImageVector(),
-                        contentDescription = null,
-                        tint = folder.color.toColor(),
-                    )
-                    if (isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
-                Text(
-                    text = folder.name,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp),
+                // Pinned under the list so it is never scrolled out of reach.
+                Hairline()
+                FolderChoiceRow(
+                    icon = Icons.Default.Add,
+                    name = stringResource(R.string.edit_folder_add),
+                    isSelected = false,
+                    nameColor = MaterialTheme.colorScheme.primary,
+                    onClick = { creatingFolder = true },
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
             }
         }
     }
 }
 
+/** One line of the folder sheet: the folder's disc, its name, and a wax tick when it is the current one. */
 @Composable
-private fun NoFolderTile(
+private fun FolderChoiceRow(
+    icon: ImageVector,
+    name: String,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    discContainer: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    discContent: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    nameColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
-    val palette = ReceptariTheme.palette
-    Surface(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 96.dp)
-            .pageFrame(
-                shape = MaterialTheme.shapes.large,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else palette.rule,
-            ),
-        shape = MaterialTheme.shapes.large,
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+            .clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = 56.dp)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .paperGrain()
-                .clickable(onClick = onClick)
-                .padding(14.dp),
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.FolderOff,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
-                Text(
-                    text = stringResource(R.string.edit_folder_none),
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
+        IconDisc(icon = icon, size = 38.dp, container = discContainer, content = discContent)
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleMedium,
+            color = nameColor,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(horizontal = 14.dp),
+        )
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp),
+            )
         }
     }
 }
