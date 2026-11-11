@@ -30,8 +30,12 @@ data class ReceptariPalette(
     /** The engraved sprigs and leaves (ADR-012). Decoration only; never text. */
     val botanical: Color,
     /** Secondary inks used only for user-selected folder stamps. */
+    val folderTerracotta: Color,
+    val folderOlive: Color,
     val folderForest: Color,
+    val folderTeal: Color,
     val folderIndigo: Color,
+    val folderPlum: Color,
     val folderCocoa: Color,
     val folderSlate: Color,
     /** How strongly the paper texture prints over the base colour. Zero is a flat fill. */
@@ -44,8 +48,12 @@ private val LightPalette = ReceptariPalette(
     gold = Gold,
     heart = Claret,
     botanical = Botanical,
+    folderTerracotta = Terracotta,
+    folderOlive = Olive,
     folderForest = Forest,
+    folderTeal = Teal,
     folderIndigo = Indigo,
+    folderPlum = Plum,
     folderCocoa = Cocoa,
     folderSlate = Slate,
     paperIntensity = 0.42f,
@@ -57,8 +65,12 @@ private val DarkPalette = ReceptariPalette(
     gold = GoldDark,
     heart = ClaretDark,
     botanical = BotanicalDark,
+    folderTerracotta = TerracottaDark,
+    folderOlive = OliveDark,
     folderForest = ForestDark,
+    folderTeal = TealDark,
     folderIndigo = IndigoDark,
+    folderPlum = PlumDark,
     folderCocoa = CocoaDark,
     folderSlate = SlateDark,
     // Texture on a dark ground reads as sensor noise long before it reads as paper.

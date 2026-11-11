@@ -53,8 +53,12 @@ internal val GoldOn = Color(0xFF2A1C00)
 internal val Claret = Color(0xFF9E2B24)
 
 /** Additional inks reserved for folder stamps. Muted enough to sit on aged paper. */
+internal val Terracotta = Color(0xFFB05A32)
+internal val Olive = Color(0xFF6A7033)
 internal val Forest = Color(0xFF386447)
+internal val Teal = Color(0xFF2E6F73)
 internal val Indigo = Color(0xFF4B547D)
+internal val Plum = Color(0xFF7B4468)
 internal val Cocoa = Color(0xFF73513A)
 internal val Slate = Color(0xFF5C6670)
 
@@ -87,8 +91,12 @@ internal val GoldDarkOn = Color(0xFF3A2800)
 
 internal val ClaretDark = Color(0xFFE08A80)
 
+internal val TerracottaDark = Color(0xFFE0A07C)
+internal val OliveDark = Color(0xFFC0C27A)
 internal val ForestDark = Color(0xFF8AB69A)
+internal val TealDark = Color(0xFF8FC4C6)
 internal val IndigoDark = Color(0xFFA6AED8)
+internal val PlumDark = Color(0xFFCFA0BE)
 internal val CocoaDark = Color(0xFFC7A68D)
 internal val SlateDark = Color(0xFFAEB7C0)
 

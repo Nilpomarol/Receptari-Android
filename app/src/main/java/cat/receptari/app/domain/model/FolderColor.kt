@@ -3,17 +3,20 @@ package cat.receptari.app.domain.model
 /**
  * The label colour a folder is filed under.
  *
- * A fixed, curated set — not a free colour picker — matching the four accent hues already
- * used throughout the app (ratings, favourites, primary and secondary roles), the same way
- * ADR-009 ties every other colour in the book to one hand-picked palette.
+ * A fixed, curated set — not a free colour picker — of muted inks that sit on aged paper, the
+ * same way ADR-009 ties every other colour in the book to one hand-picked palette. Declared
+ * in colour-wheel order, which is the order the picker shows them in. Stored by name, so a
+ * constant is never renamed or removed.
  */
 enum class FolderColor {
-    OLIVE,
+    CLARET,
     TERRACOTTA,
     GOLD,
-    CLARET,
+    OLIVE,
     FOREST,
+    TEAL,
     INDIGO,
+    PLUM,
     COCOA,
     SLATE,
 }

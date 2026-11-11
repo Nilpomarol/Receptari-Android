@@ -248,8 +248,12 @@
     <string name="folder_color_indigo">Índigo</string>
     <string name="folder_color_cocoa">Cacau</string>
     <string name="folder_color_slate">Pissarra</string>
-    <string name="folder_preview_label">Vista prèvia</string>
-    <string name="folder_preview_untitled">Carpeta sense títol</string>
+    <string name="folder_color_teal">Turquesa</string>
+    <string name="folder_color_plum">Pruna</string>
+    <string name="folder_icon_ramen">Pasta i fideus</string>
+    <string name="folder_icon_lunch">Entrepans</string>
+    <string name="folder_icon_breakfast">Esmorzars</string>
+    <string name="folder_icon_wine">Begudes</string>
     <string name="folder_icon_label">Icona</string>
     <string name="folder_icon_folder">Carpeta</string>
     <string name="folder_icon_restaurant">Restaurant</string>

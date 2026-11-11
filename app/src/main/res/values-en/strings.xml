@@ -234,8 +234,12 @@
     <string name="folder_color_indigo">Indigo</string>
     <string name="folder_color_cocoa">Cocoa</string>
     <string name="folder_color_slate">Slate</string>
-    <string name="folder_preview_label">Preview</string>
-    <string name="folder_preview_untitled">Untitled folder</string>
+    <string name="folder_color_teal">Teal</string>
+    <string name="folder_color_plum">Plum</string>
+    <string name="folder_icon_ramen">Pasta and noodles</string>
+    <string name="folder_icon_lunch">Sandwiches</string>
+    <string name="folder_icon_breakfast">Breakfast</string>
+    <string name="folder_icon_wine">Drinks</string>
     <string name="folder_icon_label">Icon</string>
     <string name="folder_icon_folder">Folder</string>
     <string name="folder_icon_restaurant">Restaurant</string>
