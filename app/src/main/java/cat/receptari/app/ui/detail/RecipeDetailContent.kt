@@ -114,14 +114,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.view.WindowCompat
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
-import cat.receptari.app.core.designsystem.Emblem
 import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.IconDisc
 import cat.receptari.app.core.designsystem.MetaLine
 import cat.receptari.app.core.designsystem.OrnamentHeading
 import cat.receptari.app.core.designsystem.Rubric
 import cat.receptari.app.core.designsystem.SegmentedTabs
-import cat.receptari.app.core.designsystem.Sprig
 import cat.receptari.app.core.designsystem.ingredientLine
 import cat.receptari.app.core.designsystem.paperGrain
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
@@ -144,7 +142,7 @@ import kotlinx.coroutines.launch
  *   the title and one quiet line (stars · time · servings) printed on it
  *   Ingredients | Preparació, pinned under the top bar once it reaches it
  *   the open tab: plain ruled ingredient lines, or the numbered method
- *   notes, a card about the recipe (folder, tags, source, history), and a colophon
+ *   notes, then the folder, tags, source and history
  *
  * The top bar floats over the photo in cream and folds into a paper bar, carrying the title,
  * as the photo scrolls away. Without a photo the same head is printed on paper under the bar.
@@ -331,8 +329,6 @@ internal fun RecipeContent(
                     onOpenTagSheet = { showTagSheet = true },
                 )
             }
-
-            item(key = "colophon") { Colophon() }
         }
 
         // One sheet of paper behind the bar and, once they pin, the tabs: no seam between them.
@@ -1181,18 +1177,4 @@ private fun formatDate(instant: Instant): String = remember(instant) {
     DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
         .withZone(ZoneId.systemDefault())
         .format(instant)
-}
-
-/** The printer's mark that closes the page: the book's emblem between two sprigs. */
-@Composable
-private fun Colophon(modifier: Modifier = Modifier, sprig: Dp = 44.dp) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(top = 36.dp, bottom = 8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Sprig(mirrored = true, modifier = Modifier.size(width = sprig, height = 26.dp))
-        Emblem(modifier = Modifier.size(34.dp).padding(horizontal = 2.dp))
-        Sprig(modifier = Modifier.size(width = sprig, height = 26.dp))
-    }
 }
