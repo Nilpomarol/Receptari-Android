@@ -3,17 +3,12 @@ package cat.receptari.app.ui.edit
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cat.receptari.app.domain.model.Folder
-import cat.receptari.app.domain.model.FolderColor
-import cat.receptari.app.domain.model.FolderIcon
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.model.IngredientSection
 import cat.receptari.app.domain.model.InstructionSection
 import cat.receptari.app.domain.model.Recipe
 import cat.receptari.app.domain.model.Step
-import cat.receptari.app.domain.model.Tag
 import cat.receptari.app.domain.parser.IngredientParser
-import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
 import cat.receptari.app.domain.repository.RecipeRepository
 import cat.receptari.app.ui.importer.ImportDraftHandoff
@@ -21,7 +16,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -58,8 +52,29 @@ data class FormSection(
 )
 
 /**
- * Serializable so the form survives process death (see [RecipeEditViewModel] init). Folders
- * are domain objects owned by the repository, so they are re-resolved by id on restore.
+ * Splits text typed or pasted into one line at its line breaks. Null when there are none.
+ *
+ * The first part stays on the line; blank lines in a pasted block are dropped. Text ending in
+ * a break (Enter at the end of a step) yields an empty trailing part: a fresh line to write on.
+ * Nothing inside a part is changed, so each line still reaches the parser verbatim.
+ */
+internal fun splitEnteredText(text: String): List<String>? {
+    if ('\n' !in text) return null
+    val lines = text.split('\n').map { it.removeSuffix("\r") }
+    val rest = lines.drop(1).filter { it.isNotBlank() }
+    val head = lines.first()
+    return when {
+        rest.isEmpty() -> listOf(head, "")
+        head.isBlank() -> rest
+        else -> listOf(head) + rest
+    }
+}
+
+/**
+ * Serializable so the form survives process death (see [RecipeEditViewModel] init).
+ *
+ * The form holds the recipe's own content only. Rating, folder, tags and favourite are the
+ * reader's relationship with the recipe and are edited from the recipe page.
  */
 @Serializable
 data class RecipeEditUiState(
@@ -73,13 +88,9 @@ data class RecipeEditUiState(
     val cookTime: String = "",
     val totalTime: String = "",
     val servings: String = "",
-    val rating: Int? = null,
     val notes: String = "",
     val sourceName: String = "",
     val sourceUrl: String = "",
-    val tags: List<String> = emptyList(),
-    @Transient val folder: Folder? = null,
-    @Transient val availableFolders: List<Folder> = emptyList(),
     val ingredientSections: List<FormSection> = listOf(FormSection()),
     val instructionSections: List<FormSection> = listOf(FormSection()),
     val showTitleError: Boolean = false,
@@ -96,13 +107,6 @@ sealed interface RecipeEditEvent {
     data class NotesChanged(val value: String) : RecipeEditEvent
     data class SourceNameChanged(val value: String) : RecipeEditEvent
     data class SourceUrlChanged(val value: String) : RecipeEditEvent
-    data class RatingChanged(val value: Int?) : RecipeEditEvent
-
-    data class TagAdded(val name: String) : RecipeEditEvent
-    data class TagRemoved(val name: String) : RecipeEditEvent
-
-    data class FolderSelected(val folder: Folder?) : RecipeEditEvent
-    data class FolderCreateRequested(val name: String) : RecipeEditEvent
 
     data class ImagePicked(val bytes: ByteArray) : RecipeEditEvent {
         override fun equals(other: Any?) = this === other
@@ -128,6 +132,19 @@ sealed interface RecipeEditEvent {
         val afterLineId: String? = null,
         val newLineId: String = UUID.randomUUID().toString(),
     ) : RecipeEditEvent
+    /**
+     * A line received text containing line breaks: a paste, or Enter inside a step. The
+     * line keeps [headText] and [newLines] are inserted directly below it, so a pasted block
+     * of ingredients becomes one row per line. Ids come from the caller so it can focus the
+     * last one.
+     */
+    data class LineSplit(
+        val kind: SectionKind,
+        val sectionId: String,
+        val lineId: String,
+        val headText: String,
+        val newLines: List<FormLine>,
+    ) : RecipeEditEvent
     data class LineRemoved(val kind: SectionKind, val sectionId: String, val lineId: String) : RecipeEditEvent
     data class LineMoved(val kind: SectionKind, val sectionId: String, val lineId: String, val delta: Int) : RecipeEditEvent
 
@@ -146,7 +163,6 @@ sealed interface RecipeEditEffect {
 @Serializable
 private data class EditSession(
     val form: RecipeEditUiState,
-    val folderId: String?,
     val originalLanguage: String?,
     val imagesWritten: List<String>,
 )
@@ -155,7 +171,6 @@ private data class EditSession(
 class RecipeEditViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val recipeRepository: RecipeRepository,
-    private val folderRepository: FolderRepository,
     private val imageStore: ImageStore,
     private val clock: Clock,
     importDraftHandoff: ImportDraftHandoff,
@@ -188,13 +203,9 @@ class RecipeEditViewModel @Inject constructor(
 
     /** Preserved so an edit does not reset when the recipe was originally created. */
     private var createdAt: Instant = Instant.now(clock)
-    private var existingTagIds: Map<String, String> = emptyMap()
     private var originalTitle: String? = null
     private var originalLanguage: String? = null
     private var displayLanguage: String? = null
-
-    /** Folder to re-select once folders load, after a restore from process death. */
-    private var restoredFolderId: String? = null
     private var isSaving = false
 
     init {
@@ -204,16 +215,7 @@ class RecipeEditViewModel @Inject constructor(
             runCatching { sessionJson.decodeFromString<EditSession>(stored) }.getOrNull()
         }
 
-        viewModelScope.launch {
-            folderRepository.observeAll().collect { folders ->
-                val pending = restoredFolderId?.let { id -> folders.firstOrNull { it.id == id } }
-                if (pending != null) restoredFolderId = null
-                _uiState.update { it.copy(availableFolders = folders, folder = pending ?: it.folder) }
-            }
-        }
-
         if (restored != null) {
-            restoredFolderId = restored.folderId
             originalLanguage = restored.originalLanguage
             imagesWrittenThisSession += restored.imagesWritten
             _uiState.value = restored.form.copy(isLoading = false)
@@ -232,7 +234,6 @@ class RecipeEditViewModel @Inject constructor(
             // a filled-in import warns rather than silently discarding the extraction.
             importDraftHandoff.consume()?.let { draft ->
                 _uiState.value = draft.toFormState()
-                    .copy(availableFolders = _uiState.value.availableFolders)
                 // Recorded now because the source language is only knowable at import time,
                 // and Phase 5 translation needs to know what it is translating from.
                 originalLanguage = draft.originalLanguage
@@ -246,7 +247,6 @@ class RecipeEditViewModel @Inject constructor(
                 savedStateHandle[SESSION_KEY] = sessionJson.encodeToString(
                     EditSession(
                         form = state,
-                        folderId = state.folder?.id ?: restoredFolderId,
                         originalLanguage = originalLanguage,
                         imagesWritten = imagesWrittenThisSession.toList(),
                     ),
@@ -269,13 +269,12 @@ class RecipeEditViewModel @Inject constructor(
         originalTitle = recipe.originalTitle
         originalLanguage = recipe.originalLanguage
         displayLanguage = recipe.displayLanguage
-        existingTagIds = recipe.tags.associate { it.name to it.id }
 
-        savedSnapshot = recipe.toEditState(_uiState.value.availableFolders)
+        savedSnapshot = recipe.toEditState()
         if (restoredForm == null) _uiState.value = savedSnapshot
     }
 
-    private fun Recipe.toEditState(availableFolders: List<Folder>): RecipeEditUiState {
+    private fun Recipe.toEditState(): RecipeEditUiState {
         val preserveSourceText = displayLanguage != null
         return RecipeEditUiState(
             id = id,
@@ -288,13 +287,9 @@ class RecipeEditViewModel @Inject constructor(
             cookTime = cookTimeMinutes?.toString().orEmpty(),
             totalTime = totalTimeMinutes?.toString().orEmpty(),
             servings = baseServings?.toString().orEmpty(),
-            rating = rating,
             notes = notes.orEmpty(),
             sourceName = sourceName.orEmpty(),
             sourceUrl = sourceUrl.orEmpty(),
-            tags = tags.map { it.name },
-            folder = folder,
-            availableFolders = availableFolders,
             // The editor works on the text the user (or the import) actually wrote. Parsing
             // happens on save, so `originalText` is whatever is on screen — never a
             // re-rendered approximation of it.
@@ -370,31 +365,6 @@ class RecipeEditViewModel @Inject constructor(
             is RecipeEditEvent.NotesChanged -> _uiState.update { it.copy(notes = event.value) }
             is RecipeEditEvent.SourceNameChanged -> _uiState.update { it.copy(sourceName = event.value) }
             is RecipeEditEvent.SourceUrlChanged -> _uiState.update { it.copy(sourceUrl = event.value) }
-            is RecipeEditEvent.RatingChanged -> _uiState.update { it.copy(rating = event.value) }
-
-            is RecipeEditEvent.TagAdded -> _uiState.update { state ->
-                val name = event.name.trim()
-                if (name.isEmpty() || state.tags.any { it.equals(name, ignoreCase = true) }) {
-                    state
-                } else {
-                    state.copy(tags = state.tags + name)
-                }
-            }
-
-            is RecipeEditEvent.TagRemoved ->
-                _uiState.update { it.copy(tags = it.tags - event.name) }
-
-            is RecipeEditEvent.FolderSelected ->
-                _uiState.update { it.copy(folder = event.folder) }
-
-            is RecipeEditEvent.FolderCreateRequested -> viewModelScope.launch {
-                val name = event.name.trim()
-                if (name.isEmpty()) return@launch
-                // Colour and icon are picked afterwards from the folder's own screen; a
-                // quick add from the editor should not ask for more than a name.
-                val folder = folderRepository.create(name, FolderColor.OLIVE, FolderIcon.FOLDER)
-                _uiState.update { it.copy(folder = folder) }
-            }
 
             is RecipeEditEvent.ImagePicked -> viewModelScope.launch {
                 // A corrupt or undecodable file must not take the whole editor down.
@@ -441,6 +411,18 @@ class RecipeEditViewModel @Inject constructor(
                     lines + newLine
                 } else {
                     lines.toMutableList().apply { add(index + 1, newLine) }
+                }
+            }
+
+            is RecipeEditEvent.LineSplit -> updateLines(event.kind, event.sectionId) { lines ->
+                val index = lines.indexOfFirst { it.id == event.lineId }
+                if (index < 0) {
+                    lines
+                } else {
+                    lines.toMutableList().apply {
+                        set(index, get(index).copy(text = event.headText))
+                        addAll(index + 1, event.newLines)
+                    }
                 }
             }
 
@@ -497,8 +479,6 @@ class RecipeEditViewModel @Inject constructor(
             cookTimeMinutes = state.cookTime.toIntOrNull(),
             totalTimeMinutes = state.totalTime.toIntOrNull(),
             baseServings = state.servings.toIntOrNull(),
-            isFavorite = false,
-            rating = state.rating,
             notes = state.notes.trim().takeIf { it.isNotEmpty() },
             sourceName = state.sourceName.trim().takeIf { it.isNotEmpty() },
             sourceUrl = state.sourceUrl.trim().takeIf { it.isNotEmpty() },
@@ -508,19 +488,19 @@ class RecipeEditViewModel @Inject constructor(
             updatedAt = now,
             ingredientSections = state.ingredientSections.toIngredientSections(),
             instructionSections = state.instructionSections.toInstructionSections(),
-            tags = state.tags.map { name ->
-                Tag(id = existingTagIds[name] ?: UUID.randomUUID().toString(), name = name)
-            },
-            folder = state.folder,
         )
 
-        val merged = if (state.isNew) {
-            recipe
-        } else {
-            // Favourite state and cooked history are owned elsewhere; the editor must
-            // not clobber them by writing its own defaults back.
-            recipe.copy(isFavorite = recipeRepository.getRecipe(state.id)?.isFavorite ?: false)
-        }
+        // Favourite, rating, tags and folder are owned by the recipe page. Read them back at
+        // save time so the editor never clobbers them with stale or default values.
+        val current = if (state.isNew) null else recipeRepository.getRecipe(state.id)
+        val merged = current?.let {
+            recipe.copy(
+                isFavorite = it.isFavorite,
+                rating = it.rating,
+                tags = it.tags,
+                folder = it.folder,
+            )
+        } ?: recipe
 
         recipeRepository.save(merged)
 
@@ -542,8 +522,8 @@ class RecipeEditViewModel @Inject constructor(
      * form look dirty.
      */
     private fun RecipeEditUiState.differsFrom(other: RecipeEditUiState): Boolean =
-        copy(showTitleError = false, isLoading = false, availableFolders = emptyList()) !=
-            other.copy(showTitleError = false, isLoading = false, availableFolders = emptyList())
+        copy(showTitleError = false, isLoading = false) !=
+            other.copy(showTitleError = false, isLoading = false)
 
     private fun List<FormSection>.toIngredientSections(): List<IngredientSection> =
         mapNotNull { section ->
