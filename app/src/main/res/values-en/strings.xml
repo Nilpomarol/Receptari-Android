@@ -320,6 +320,10 @@
     <string name="settings_api_key_valid">The key works</string>
     <string name="settings_api_key_remove_title">Remove the key?</string>
     <string name="settings_api_key_remove_body">You will need to enter it again to import recipes automatically.</string>
+    <string name="settings_openai_key">OpenAI API key</string>
+    <string name="settings_openai_key_connect">Connect OpenAI</string>
+    <string name="settings_openai_key_explanation">Translating recipes needs your OpenAI API key. It is stored encrypted on this device and is only ever sent to api.openai.com.</string>
+    <string name="settings_openai_key_remove_body">You will need to enter it again to translate recipes.</string>
 
     <string name="settings_backup_title">Backup</string>
     <string name="settings_backup_explanation">Export your whole library and its images as one file. Your Claude key and active timers are not included. Restoring it replaces the current library.</string>
@@ -348,14 +352,15 @@
     </plurals>
 
     <string name="ai_error_no_key">Set your API key in Settings.</string>
+    <string name="ai_error_no_translation_key">Set your OpenAI key in Settings to translate recipes.</string>
     <string name="ai_error_invalid_key">The key was not accepted. Check it.</string>
     <string name="ai_error_rate_limited">Too many requests. Try again in a moment.</string>
-    <string name="ai_error_quota">The Claude account has run out of credit.</string>
+    <string name="ai_error_quota">The AI service account has run out of credit.</string>
     <string name="ai_error_offline">No internet connection.</string>
-    <string name="ai_error_refused">Claude could not process this content.</string>
+    <string name="ai_error_refused">The AI service could not process this content.</string>
     <string name="ai_error_unreadable">The response could not be read. Try again.</string>
     <string name="ai_error_unexpected">Something went wrong.</string>
-    <string name="ai_error_unavailable">Claude is busy right now. Try again in a little while.</string>
+    <string name="ai_error_unavailable">The AI service is busy right now. Try again in a little while.</string>
 
     <string name="common_coming_soon">Not available yet</string>
     <string name="common_cancel">Cancel</string>

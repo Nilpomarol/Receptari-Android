@@ -33,7 +33,7 @@ These were decided deliberately. Do not silently change them; see
 | Persistence | Room (KSP), local-only. **UUID string primary keys**, `updatedAt` on every row |
 | Preferences | DataStore (Preferences) |
 | AI | Claude API called **directly from the device**, with a user-supplied API key |
-| Default AI model | `claude-haiku-5-5` (Sonnet 5 as translation fallback only) |
+| AI models | Import: `claude-haiku-5-5`. Translation: OpenAI `gpt-6-luna`, `gpt-6.1-terra` as contract fallback (ADR-014) |
 | Theming | Fixed printed-book design system in `core/designsystem`. **No Material You / dynamic colour** (ADR-009) |
 | Typography | Bundled OFL fonts: Pinyon Script (wordmark only), Playfair Display (headings), Lora (body) |
 | UI language | Catalan is the default (`values/`), with `values-es/` and `values-en/` overlays |
@@ -156,11 +156,13 @@ Adding a new UI language later must require only a new `values-XX/` folder and o
 
 Full detail: [`Docs/AI_INTEGRATION.md`](Docs/AI_INTEGRATION.md).
 
-- All model access goes through the `AiClient` interface in `domain/`. Nothing outside
-  `data/remote/` knows the vendor, the model id, or the wire format.
-- The API key is user-supplied, stored encrypted (Android Keystore-backed AES-GCM over
+- All model access goes through the `AiClient` (import) and `RecipeTranslator`
+  (translation) interfaces in `domain/`. Nothing outside `data/remote/` knows the vendor,
+  the model id, or the wire format.
+- Both API keys are user-supplied, stored encrypted (Android Keystore-backed AES-GCM over
   DataStore), and **never logged, never included in error messages, never sent anywhere
-  except `api.anthropic.com`**.
+  except their own provider: the Claude key to `api.anthropic.com`, the OpenAI key to
+  `api.openai.com`**.
 - AI output is **assistance, not truth** (PRD §14). Import extraction always lands in an
   editable preview and is never persisted directly. Recipe translation is the deliberate
   exception: it applies immediately as a reversible, language-keyed display overlay; the

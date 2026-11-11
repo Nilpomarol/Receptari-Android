@@ -263,8 +263,8 @@ whatever was recovered, never in an error dead end.
 - ☑ Translate only ingredient meaning; render quantity, localized unit grammar, and
   connectors deterministically in Kotlin
 
-Translation defaults to Claude Haiku 5.5 for cost and latency, with a single Sonnet 5
-fallback only when Haiku violates the structured field contract. Room 3→4 adds the nullable
+Translation runs on OpenAI GPT-6 Luna with its own user-supplied key, with a single GPT-6.1
+Terra fallback only when Luna violates the structured field contract (ADR-014). Room 3→4 adds the nullable
 active-display fields; Room 4→5 adds the overlay cache and backfills an existing v4
 translation. Tags remain untouched because they are global library metadata. Unit,
 use-case, persistence, and migration tests cover the pipeline; live API quality remains a

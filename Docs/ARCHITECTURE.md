@@ -45,7 +45,7 @@ cat.receptari.app
 │   │                              Step, Tag, CookEvent, RecipeSummary, ParsedIngredient
 │   ├── repository/                RecipeRepository, TagRepository, CookHistoryRepository,
 │   │                              SettingsRepository  (interfaces only)
-│   ├── ai/                        AiClient interface, ExtractionRequest/Result, TranslationRequest
+│   ├── ai/                        AiClient, RecipeTranslator, ExtractionRequest/Result, TranslationRequest
 │   ├── parser/                    IngredientParser, UnitLexicon, QuantityParser
 │   ├── scaling/                   ServingScaler, QuantityFormatter
 │   └── usecase/                   ImportFromUrl, ImportFromImages, ImportFromText,
@@ -60,6 +60,7 @@ cat.receptari.app
 │   │   └── mapper/                entity <-> domain model mapping
 │   ├── remote/
 │   │   ├── claude/                ClaudeAiClient (implements domain AiClient), DTOs, prompts
+│   │   ├── openai/                OpenAiTranslator (implements RecipeTranslator), schema, DTOs
 │   │   └── web/                   HtmlFetcher, JsonLdRecipeParser, MicrodataRecipeParser
 │   ├── image/                     ImageStore — copy/compress/delete files in app storage
 │   ├── settings/                  DataStore display preferences + Keystore-backed encrypted API key storage

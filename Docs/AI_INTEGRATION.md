@@ -23,15 +23,21 @@ data/remote/claude/
     prompt/                   system prompts + JSON schemas, one per task
 ```
 
-Nothing outside `data/remote/claude/` knows the vendor, the model id, or the wire format.
-ADR-002 chose device-direct calls; moving to a backend proxy later is a change inside this
-package only.
+Nothing outside `data/remote/claude/` and `data/remote/openai/` knows the vendor, the model
+id, or the wire format. ADR-002 chose device-direct calls; moving to a backend proxy later is
+a change inside those packages only. Import and translation are separate interfaces because
+they run on different providers (ADR-014).
 
 ```kotlin
-interface AiClient {
+interface AiClient {            // Claude
+    suspend fun testKey(): Result<Unit>
     suspend fun extractFromText(text: String): Result<DraftRecipe>
     suspend fun extractFromImages(images: List<ByteArray>): Result<DraftRecipe>
     suspend fun extractFromWebContent(url: String, content: String): Result<DraftRecipe>
+}
+
+interface RecipeTranslator {    // OpenAI
+    suspend fun testKey(): Result<Unit>
     suspend fun translate(request: TranslationRequest): Result<TranslationResult>
 }
 ```
@@ -42,14 +48,16 @@ interface AiClient {
 
 Non-negotiable rules:
 
-- The key is **user-supplied**, entered in Settings. The app ships no key.
+- There are two keys, Claude (import) and OpenAI (translation), each **user-supplied** and
+  entered in Settings. The app ships no key. Everything below applies to both.
 - Stored encrypted at rest: AES-GCM with an Android Keystore-backed key, ciphertext in
   DataStore. Never in `SharedPreferences` in plaintext, never in `local.properties`, never
   in the APK.
 - **Never logged.** Not in debug builds, not in OkHttp logging interceptors (the
-  `x-api-key` header must be redacted), not in crash traces, not in error messages shown to
-  the user.
-- Sent to `api.anthropic.com` and nowhere else.
+  `x-api-key` / `Authorization` headers must be redacted), not in crash traces, not in error
+  messages shown to the user.
+- The Claude key is sent to `api.anthropic.com` and the OpenAI key to `api.openai.com`, and
+  nowhere else.
 - Settings offers "test key" (lists models: authenticated but generates no tokens, so free) and "remove key".
 - With no key configured, the manual-creation and website-JSON-LD paths still work fully.
   The UI must degrade, not break.
@@ -130,10 +138,11 @@ Operates on the **structured recipe**, not on raw HTML or a whole page.
 | section names and step text | URLs and source metadata |
 | | tags and approved `Ingredient.originalText` fields |
 
-Targets: Catalan, Spanish, English (ADR-004). Translation uses Claude Haiku 5.5 because this
-is a tightly constrained language task. If Haiku returns the wrong ids or blank fields,
-Sonnet 5 gets one fallback attempt; ordinary API failures are not silently retried with the
-more expensive model.
+Targets: Catalan, Spanish, English (ADR-004). Translation uses OpenAI GPT-6 Luna through the
+Responses API with a strict JSON schema and reasoning off, because its Catalan was clearly
+better than Claude Haiku's (ADR-014). If Luna returns the wrong ids or blank fields, GPT-6.1
+Terra gets one fallback attempt; ordinary API failures are not silently retried with the
+larger model.
 
 Every new translation starts from the canonical source fields, never from the currently
 displayed translation. Send only the translatable fields as a structured payload keyed by
@@ -160,8 +169,9 @@ version, so list, search, detail, scaling, and cook mode do not acquire a langua
 
 ## 8. Cost, latency, and failure
 
-- Extraction and translation run on Claude Haiku 5.5 with thinking explicitly disabled
-  (ADR-002); current models think when the parameter is omitted.
+- Extraction runs on Claude Haiku 5.5 with thinking explicitly disabled (ADR-002); current
+  models think when the parameter is omitted. Translation runs on GPT-6 Luna with reasoning
+  effort `none` (ADR-014).
 - Model choice, request shape, streaming, and caching: **read the `claude-api` skill before
   writing this code.** Do not work from memory.
 - Long-running imports run in a foreground-safe way with visible progress; the user can

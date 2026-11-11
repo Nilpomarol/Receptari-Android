@@ -337,6 +337,10 @@
     <string name="settings_api_key_valid">La clau funciona</string>
     <string name="settings_api_key_remove_title">Vols eliminar la clau?</string>
     <string name="settings_api_key_remove_body">Hauràs de tornar-la a introduir per importar receptes automàticament.</string>
+    <string name="settings_openai_key">Clau de l\'API d\'OpenAI</string>
+    <string name="settings_openai_key_connect">Connecta amb OpenAI</string>
+    <string name="settings_openai_key_explanation">Traduir receptes necessita la teva clau d\'OpenAI. Es desa xifrada al dispositiu i només s\'envia a api.openai.com.</string>
+    <string name="settings_openai_key_remove_body">Hauràs de tornar-la a introduir per traduir receptes.</string>
 
     <!-- Backup and restore -->
     <string name="settings_backup_title">Còpia de seguretat</string>
@@ -367,14 +371,15 @@
 
     <!-- AI errors -->
     <string name="ai_error_no_key">Configura la clau de l\'API a Configuració.</string>
+    <string name="ai_error_no_translation_key">Configura la clau d\'OpenAI a Configuració per traduir receptes.</string>
     <string name="ai_error_invalid_key">La clau no s\'ha acceptat. Comprova-la.</string>
     <string name="ai_error_rate_limited">Massa peticions seguides. Torna-ho a provar d\'aquí a un moment.</string>
-    <string name="ai_error_quota">El compte de Claude s\'ha quedat sense crèdit.</string>
+    <string name="ai_error_quota">El compte del servei d\'IA s\'ha quedat sense crèdit.</string>
     <string name="ai_error_offline">Sense connexió a internet.</string>
-    <string name="ai_error_refused">Claude no ha pogut processar aquest contingut.</string>
+    <string name="ai_error_refused">El servei d\'IA no ha pogut processar aquest contingut.</string>
     <string name="ai_error_unreadable">No s\'ha pogut llegir la resposta. Torna-ho a provar.</string>
     <string name="ai_error_unexpected">Hi ha hagut un error inesperat.</string>
-    <string name="ai_error_unavailable">Claude està saturat ara mateix. Torna-ho a provar d\'aquí a una estona.</string>
+    <string name="ai_error_unavailable">El servei d\'IA està saturat ara mateix. Torna-ho a provar d\'aquí a una estona.</string>
 
     <!-- Common -->
     <string name="common_coming_soon">Encara no està disponible</string>

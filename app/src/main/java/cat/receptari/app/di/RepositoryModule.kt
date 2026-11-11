@@ -12,10 +12,10 @@ import cat.receptari.app.data.repository.RecipeRepositoryImpl
 import cat.receptari.app.data.repository.RecipeTransferRepositoryImpl
 import cat.receptari.app.data.repository.RecipeTranslationRepositoryImpl
 import cat.receptari.app.data.repository.TagRepositoryImpl
-import cat.receptari.app.data.settings.ApiKeyStore
+import cat.receptari.app.data.remote.openai.OpenAiTranslator
 import cat.receptari.app.domain.ai.AiClient
 import cat.receptari.app.domain.importer.WebPageSource
-import cat.receptari.app.domain.repository.ApiKeyRepository
+import cat.receptari.app.domain.ai.RecipeTranslator
 import cat.receptari.app.domain.repository.BackupRepository
 import cat.receptari.app.domain.repository.CookHistoryRepository
 import cat.receptari.app.domain.repository.FolderRepository
@@ -78,11 +78,11 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindApiKeyRepository(impl: ApiKeyStore): ApiKeyRepository
+    abstract fun bindAiClient(impl: ClaudeAiClient): AiClient
 
     @Binds
     @Singleton
-    abstract fun bindAiClient(impl: ClaudeAiClient): AiClient
+    abstract fun bindRecipeTranslator(impl: OpenAiTranslator): RecipeTranslator
 
     @Binds
     @Singleton

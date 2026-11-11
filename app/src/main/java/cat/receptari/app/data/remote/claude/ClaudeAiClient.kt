@@ -5,8 +5,6 @@ import cat.receptari.app.core.util.IoDispatcher
 import cat.receptari.app.domain.ai.AiClient
 import cat.receptari.app.domain.ai.AiError
 import cat.receptari.app.domain.ai.DraftRecipe
-import cat.receptari.app.domain.ai.TranslationRequest
-import cat.receptari.app.domain.ai.TranslationResult
 import cat.receptari.app.domain.repository.ApiKeyRepository
 import com.anthropic.client.AnthropicClient
 import com.anthropic.client.AnthropicClientAsync
@@ -34,7 +32,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -123,72 +120,6 @@ class ClaudeAiClient @Inject constructor(
                 .await()
                 .toDraft()
         }
-
-    override suspend fun translate(request: TranslationRequest): Result<TranslationResult> =
-        call { client ->
-            try {
-                client.translate(request, MODEL)
-            } catch (_: TranslationContractException) {
-                // Sonnet gets one chance only when Haiku produced valid JSON with an unsafe
-                // set of ids or blank fields.
-                try {
-                    client.translate(request, TRANSLATION_FALLBACK_MODEL)
-                } catch (_: TranslationContractException) {
-                    throw AiError.UnreadableResponse
-                }
-            }
-        }
-
-    private suspend fun AnthropicClientAsync.translate(
-        request: TranslationRequest,
-        model: String,
-    ): TranslationResult {
-        val message = messages().create(
-            MessageCreateParams.builder()
-                .model(model)
-                .maxTokens(TRANSLATION_MAX_TOKENS)
-                .system(TranslationSchema.SYSTEM_PROMPT)
-                // Haiku 5.5 and Sonnet 5 both think unless told not to; a constrained
-                // field-by-field translation gains nothing from it.
-                .thinking(ThinkingConfigDisabled.builder().build())
-                .outputConfig(
-                    OutputConfig.builder()
-                        .format(
-                            JsonOutputFormat.builder()
-                                .schema(
-                                    JsonOutputFormat.Schema.builder()
-                                        .additionalProperties(
-                                            TranslationSchema.MAP.mapValues { (_, value) ->
-                                                JsonValue.from(value)
-                                            },
-                                        )
-                                        .build(),
-                                )
-                                .build(),
-                        )
-                        .build(),
-                )
-                .addUserMessage(json.encodeToString(request.toDto()))
-                .build(),
-        ).await()
-        return message.toTranslationResult(request)
-    }
-
-    private fun Message.toTranslationResult(request: TranslationRequest): TranslationResult {
-        when (stopReason().orElse(null)) {
-            StopReason.REFUSAL -> throw AiError.Refused
-            StopReason.MAX_TOKENS -> throw TranslationContractException()
-            else -> Unit
-        }
-        val body = content().firstOrNull { it.isText() }?.asText()?.text()
-            ?: throw TranslationContractException()
-        val dto = try {
-            json.decodeFromString<TranslationResultDto>(body)
-        } catch (_: Exception) {
-            throw TranslationContractException()
-        }
-        return dto.toResult(request)
-    }
 
     private fun extractionParams(): MessageCreateParams.Builder =
         MessageCreateParams.builder()
@@ -295,12 +226,8 @@ class ClaudeAiClient @Inject constructor(
         /** ADR-002. Changing this is a decision, not a tweak. */
         const val MODEL = "claude-haiku-5-5"
 
-        /** One retry when Haiku's translation breaks the id/blank-field contract. */
-        const val TRANSLATION_FALLBACK_MODEL = "claude-sonnet-5"
-
         /** Comfortably above the longest realistic recipe; truncation is unrecoverable. */
         const val MAX_TOKENS = 8_192L
-        const val TRANSLATION_MAX_TOKENS = 8_192L
 
         const val CREDIT_MARKER = "credit balance"
 

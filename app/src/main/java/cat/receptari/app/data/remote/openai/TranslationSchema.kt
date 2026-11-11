@@ -1,4 +1,4 @@
-package cat.receptari.app.data.remote.claude
+package cat.receptari.app.data.remote.openai
 
 internal object TranslationSchema {
     private val field: Map<String, Any> = mapOf(

@@ -4,7 +4,9 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cat.receptari.app.R
+import cat.receptari.app.core.util.TranslationKey
 import cat.receptari.app.domain.ai.AiClient
+import cat.receptari.app.domain.ai.RecipeTranslator
 import cat.receptari.app.domain.backup.BackupArchive
 import cat.receptari.app.domain.backup.BackupError
 import cat.receptari.app.domain.backup.RestorePreview
@@ -29,33 +31,39 @@ import java.io.File
 import java.time.Instant
 import javax.inject.Inject
 
+/** Which of the two keys a key action is about: Claude imports, OpenAI translates (ADR-014). */
+enum class KeyProvider { Claude, OpenAi }
+
 data class SettingsUiState(
     val hasKey: Boolean = false,
+    val hasTranslationKey: Boolean = false,
     /**
      * Held in memory only while the user is typing. Never logged, never persisted in plain
      * text — [ApiKeyRepository] encrypts before it touches disk.
      */
     val keyInput: String = "",
     val keyVisible: Boolean = false,
-    val isEditingKey: Boolean = false,
-    val isTesting: Boolean = false,
-    val showRemoveDialog: Boolean = false,
+    /** The key whose entry sheet is open, if any. */
+    val editingKey: KeyProvider? = null,
+    val testingKey: KeyProvider? = null,
+    /** The key the remove confirmation is asking about, if it is showing. */
+    val removingKey: KeyProvider? = null,
     val isBackupBusy: Boolean = false,
     val isTransferBusy: Boolean = false,
     val restorePreview: RestorePreview? = null,
     val lastBackupAt: Instant? = null,
 ) {
-    val canSave: Boolean get() = keyInput.isNotBlank() && !isTesting
+    val canSave: Boolean get() = keyInput.isNotBlank()
 }
 
 sealed interface SettingsEvent {
     data class KeyChanged(val value: String) : SettingsEvent
     data object ToggleKeyVisible : SettingsEvent
-    data object EditKey : SettingsEvent
+    data class EditKey(val provider: KeyProvider) : SettingsEvent
     data object CancelEditKey : SettingsEvent
     data object SaveKey : SettingsEvent
-    data object TestKey : SettingsEvent
-    data object RequestRemoveKey : SettingsEvent
+    data class TestKey(val provider: KeyProvider) : SettingsEvent
+    data class RequestRemoveKey(val provider: KeyProvider) : SettingsEvent
     data object ConfirmRemoveKey : SettingsEvent
     data object DismissRemoveDialog : SettingsEvent
     data object CreateBackup : SettingsEvent
@@ -78,7 +86,9 @@ sealed interface SettingsEffect {
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val apiKeyRepository: ApiKeyRepository,
+    @param:TranslationKey private val translationKeyRepository: ApiKeyRepository,
     private val aiClient: AiClient,
+    private val translator: RecipeTranslator,
     private val backupRepository: BackupRepository,
     private val cookingTimerRepository: CookingTimerRepository,
     private val transferRepository: RecipeTransferRepository,
@@ -98,6 +108,10 @@ class SettingsViewModel @Inject constructor(
             .onEach { hasKey -> _uiState.update { it.copy(hasKey = hasKey) } }
             .launchIn(viewModelScope)
 
+        translationKeyRepository.observeHasKey()
+            .onEach { hasKey -> _uiState.update { it.copy(hasTranslationKey = hasKey) } }
+            .launchIn(viewModelScope)
+
         backupRepository.observeLastBackupAt()
             .onEach { at -> _uiState.update { it.copy(lastBackupAt = at) } }
             .launchIn(viewModelScope)
@@ -111,20 +125,20 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.ToggleKeyVisible ->
                 _uiState.update { it.copy(keyVisible = !it.keyVisible) }
 
-            SettingsEvent.EditKey ->
-                _uiState.update { it.copy(isEditingKey = true, keyInput = "", keyVisible = false) }
+            is SettingsEvent.EditKey ->
+                _uiState.update { it.copy(editingKey = event.provider, keyInput = "", keyVisible = false) }
 
             SettingsEvent.CancelEditKey -> clearInput()
 
             SettingsEvent.SaveKey -> saveKey()
 
-            SettingsEvent.TestKey -> testKey()
+            is SettingsEvent.TestKey -> testKey(event.provider)
 
-            SettingsEvent.RequestRemoveKey ->
-                _uiState.update { it.copy(showRemoveDialog = true) }
+            is SettingsEvent.RequestRemoveKey ->
+                _uiState.update { it.copy(removingKey = event.provider) }
 
             SettingsEvent.DismissRemoveDialog ->
-                _uiState.update { it.copy(showRemoveDialog = false) }
+                _uiState.update { it.copy(removingKey = null) }
 
             SettingsEvent.ConfirmRemoveKey -> removeKey()
             SettingsEvent.CreateBackup -> createBackup()
@@ -221,22 +235,31 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private fun repository(provider: KeyProvider): ApiKeyRepository = when (provider) {
+        KeyProvider.Claude -> apiKeyRepository
+        KeyProvider.OpenAi -> translationKeyRepository
+    }
+
     private fun saveKey() {
+        val provider = _uiState.value.editingKey ?: return
         val key = _uiState.value.keyInput.trim()
         if (key.isEmpty()) return
         viewModelScope.launch {
-            apiKeyRepository.setKey(key)
+            repository(provider).setKey(key)
             clearInput()
             _messages.send(SettingsMessage(R.string.settings_api_key_saved))
         }
     }
 
-    private fun testKey() {
-        if (_uiState.value.isTesting) return
-        _uiState.update { it.copy(isTesting = true) }
+    private fun testKey(provider: KeyProvider) {
+        if (_uiState.value.testingKey != null) return
+        _uiState.update { it.copy(testingKey = provider) }
         viewModelScope.launch {
-            val result = aiClient.testKey()
-            _uiState.update { it.copy(isTesting = false) }
+            val result = when (provider) {
+                KeyProvider.Claude -> aiClient.testKey()
+                KeyProvider.OpenAi -> translator.testKey()
+            }
+            _uiState.update { it.copy(testingKey = null) }
             _messages.send(
                 SettingsMessage(
                     result.fold(
@@ -249,9 +272,10 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun removeKey() {
+        val provider = _uiState.value.removingKey ?: return
         viewModelScope.launch {
-            apiKeyRepository.clearKey()
-            _uiState.update { it.copy(showRemoveDialog = false) }
+            repository(provider).clearKey()
+            _uiState.update { it.copy(removingKey = null) }
             clearInput()
             _messages.send(SettingsMessage(R.string.settings_api_key_removed))
         }
@@ -259,7 +283,7 @@ class SettingsViewModel @Inject constructor(
 
     /** Drops the typed key from memory as soon as it is no longer needed. */
     private fun clearInput() {
-        _uiState.update { it.copy(keyInput = "", keyVisible = false, isEditingKey = false) }
+        _uiState.update { it.copy(keyInput = "", keyVisible = false, editingKey = null) }
     }
 }
 

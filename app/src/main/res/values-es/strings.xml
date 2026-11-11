@@ -325,6 +325,10 @@
     <string name="settings_api_key_valid">La clave funciona</string>
     <string name="settings_api_key_remove_title">¿Eliminar la clave?</string>
     <string name="settings_api_key_remove_body">Tendrás que volver a introducirla para importar recetas automáticamente.</string>
+    <string name="settings_openai_key">Clave de la API de OpenAI</string>
+    <string name="settings_openai_key_connect">Conecta con OpenAI</string>
+    <string name="settings_openai_key_explanation">Traducir recetas necesita tu clave de OpenAI. Se guarda cifrada en el dispositivo y solo se envía a api.openai.com.</string>
+    <string name="settings_openai_key_remove_body">Tendrás que volver a introducirla para traducir recetas.</string>
 
     <string name="settings_backup_title">Copia de seguridad</string>
     <string name="settings_backup_explanation">Exporta toda la biblioteca y sus imágenes en un único archivo. La clave de Claude y los temporizadores activos no se incluyen. Al restaurarlo se sustituye la biblioteca actual.</string>
@@ -353,14 +357,15 @@
     </plurals>
 
     <string name="ai_error_no_key">Configura la clave de la API en Ajustes.</string>
+    <string name="ai_error_no_translation_key">Configura la clave de OpenAI en Ajustes para traducir recetas.</string>
     <string name="ai_error_invalid_key">La clave no se ha aceptado. Compruébala.</string>
     <string name="ai_error_rate_limited">Demasiadas peticiones seguidas. Inténtalo de nuevo en un momento.</string>
-    <string name="ai_error_quota">La cuenta de Claude se ha quedado sin crédito.</string>
+    <string name="ai_error_quota">La cuenta del servicio de IA se ha quedado sin crédito.</string>
     <string name="ai_error_offline">Sin conexión a internet.</string>
-    <string name="ai_error_refused">Claude no ha podido procesar este contenido.</string>
+    <string name="ai_error_refused">El servicio de IA no ha podido procesar este contenido.</string>
     <string name="ai_error_unreadable">No se ha podido leer la respuesta. Inténtalo de nuevo.</string>
     <string name="ai_error_unexpected">Se ha producido un error inesperado.</string>
-    <string name="ai_error_unavailable">Claude está saturado ahora mismo. Vuelve a intentarlo dentro de un rato.</string>
+    <string name="ai_error_unavailable">El servicio de IA está saturado ahora mismo. Vuelve a intentarlo dentro de un rato.</string>
 
     <string name="common_coming_soon">Todavía no disponible</string>
     <string name="common_cancel">Cancelar</string>

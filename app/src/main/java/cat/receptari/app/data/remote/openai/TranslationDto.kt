@@ -1,4 +1,4 @@
-package cat.receptari.app.data.remote.claude
+package cat.receptari.app.data.remote.openai
 
 import cat.receptari.app.domain.ai.TranslationField
 import cat.receptari.app.domain.ai.TranslationRequest

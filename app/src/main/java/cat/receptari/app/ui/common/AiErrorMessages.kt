@@ -16,6 +16,7 @@ import cat.receptari.app.domain.importer.ImportError
 @StringRes
 fun AiError.messageRes(): Int = when (this) {
     AiError.NoApiKey -> R.string.ai_error_no_key
+    AiError.NoTranslationKey -> R.string.ai_error_no_translation_key
     AiError.InvalidApiKey -> R.string.ai_error_invalid_key
     AiError.RateLimited -> R.string.ai_error_rate_limited
     AiError.ServiceUnavailable -> R.string.ai_error_unavailable

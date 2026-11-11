@@ -6,33 +6,32 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import cat.receptari.app.core.util.IoDispatcher
 import cat.receptari.app.domain.repository.ApiKeyRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
- * The API key, encrypted at rest.
+ * One provider's API key, encrypted at rest.
  *
  * The DataStore file is named `secrets` to match the exclusions in `backup_rules.xml` and
- * `data_extraction_rules.xml` — the key is device-local and must not travel to cloud backup
- * or a device transfer (ADR-002).
+ * `data_extraction_rules.xml` — keys are device-local and must not travel to cloud backup
+ * or a device transfer (ADR-002). Each provider's key is a separate entry in that file
+ * ([preferenceName]); `ApiKeyModule` creates one store per provider.
  */
 private val Context.secretsDataStore: DataStore<Preferences> by preferencesDataStore(name = "secrets")
 
-@Singleton
-class ApiKeyStore @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+class ApiKeyStore(
+    private val context: Context,
     private val cipher: ApiKeyCipher,
-    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val ioDispatcher: CoroutineDispatcher,
+    preferenceName: String,
 ) : ApiKeyRepository {
+
+    private val API_KEY = stringPreferencesKey(preferenceName)
 
     override fun observeHasKey(): Flow<Boolean> =
         context.secretsDataStore.data
@@ -63,9 +62,5 @@ class ApiKeyStore @Inject constructor(
         withContext(ioDispatcher) {
             context.secretsDataStore.edit { it.remove(API_KEY) }
         }
-    }
-
-    private companion object {
-        val API_KEY = stringPreferencesKey("claude_api_key")
     }
 }

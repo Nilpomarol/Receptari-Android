@@ -22,9 +22,6 @@ interface AiClient {
 
     /** @param content page text already stripped of markup by the caller. */
     suspend fun extractFromWebContent(url: String, content: String): Result<DraftRecipe>
-
-    /** Translates only the structured, user-reviewable fields in [request] (PRD §11). */
-    suspend fun translate(request: TranslationRequest): Result<TranslationResult>
 }
 
 /**
@@ -36,6 +33,7 @@ interface AiClient {
  */
 sealed class AiError(message: String) : Exception(message) {
     data object NoApiKey : AiError("No API key configured")
+    data object NoTranslationKey : AiError("No translation API key configured")
     data object InvalidApiKey : AiError("The API key was rejected")
     data object RateLimited : AiError("Rate limited")
     data object ServiceUnavailable : AiError("The service is overloaded or unavailable")

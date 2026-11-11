@@ -1,6 +1,6 @@
 package cat.receptari.app.domain.translation
 
-import cat.receptari.app.domain.ai.AiClient
+import cat.receptari.app.domain.ai.RecipeTranslator
 import cat.receptari.app.domain.ai.RecipeLanguage
 import cat.receptari.app.domain.ai.TranslationField
 import cat.receptari.app.domain.ai.TranslationRequest
@@ -17,7 +17,7 @@ import java.time.Instant
 import javax.inject.Inject
 
 class TranslateRecipe @Inject constructor(
-    private val aiClient: AiClient,
+    private val translator: RecipeTranslator,
     private val translationRepository: RecipeTranslationRepository,
     private val clock: Clock,
 ) {
@@ -37,7 +37,7 @@ class TranslateRecipe @Inject constructor(
         }
 
         val prepared = PreparedTranslation.from(recipe, target)
-        return aiClient.translate(prepared.request).mapCatching { result ->
+        return translator.translate(prepared.request).mapCatching { result ->
             prepared.merge(result, now)
         }
     }

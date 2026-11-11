@@ -56,6 +56,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material.icons.outlined.WifiTethering
 import androidx.compose.material3.Button
@@ -312,10 +313,27 @@ fun SettingsScreen(
             }
 
             SettingsSection(
-                title = stringResource(R.string.settings_api_key),
+                title = stringResource(KeyProvider.Claude.titleRes),
                 icon = Icons.Outlined.VpnKey,
             ) {
-                ApiKeyCard(state = uiState, onEvent = onEvent)
+                ApiKeyCard(
+                    provider = KeyProvider.Claude,
+                    hasKey = uiState.hasKey,
+                    testing = uiState.testingKey,
+                    onEvent = onEvent,
+                )
+            }
+
+            SettingsSection(
+                title = stringResource(KeyProvider.OpenAi.titleRes),
+                icon = Icons.Outlined.Translate,
+            ) {
+                ApiKeyCard(
+                    provider = KeyProvider.OpenAi,
+                    hasKey = uiState.hasTranslationKey,
+                    testing = uiState.testingKey,
+                    onEvent = onEvent,
+                )
             }
 
             SettingsSection(
@@ -353,14 +371,14 @@ fun SettingsScreen(
         }
     }
 
-    if (uiState.isEditingKey) {
-        ApiKeySheet(state = uiState, onEvent = onEvent)
+    uiState.editingKey?.let { provider ->
+        ApiKeySheet(provider = provider, state = uiState, onEvent = onEvent)
     }
 
-    if (uiState.showRemoveDialog) {
+    uiState.removingKey?.let { provider ->
         PaperConfirmBottomSheet(
             title = stringResource(R.string.settings_api_key_remove_title),
-            subtitle = stringResource(R.string.settings_api_key_remove_body),
+            subtitle = stringResource(provider.removeBodyRes),
             onDismissRequest = { onEvent(SettingsEvent.DismissRemoveDialog) },
             confirmButton = {
                 TextButton(onClick = { onEvent(SettingsEvent.ConfirmRemoveKey) }) {
@@ -499,12 +517,14 @@ private fun BackupSection(
  */
 @Composable
 private fun ApiKeyCard(
-    state: SettingsUiState,
+    provider: KeyProvider,
+    hasKey: Boolean,
+    testing: KeyProvider?,
     onEvent: (SettingsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SettingsCard(modifier = modifier, contentPadding = PaddingValues(18.dp)) {
-        if (state.hasKey) {
+        if (hasKey) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconDisc(
                     icon = Icons.Default.Check,
@@ -534,8 +554,8 @@ private fun ApiKeyCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = { onEvent(SettingsEvent.TestKey) }, enabled = !state.isTesting) {
-                    if (state.isTesting) {
+                TextButton(onClick = { onEvent(SettingsEvent.TestKey(provider)) }, enabled = testing == null) {
+                    if (testing == provider) {
                         CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                     } else {
                         Icon(Icons.Outlined.TaskAlt, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -545,10 +565,10 @@ private fun ApiKeyCard(
                         modifier = Modifier.padding(start = 6.dp),
                     )
                 }
-                TextButton(onClick = { onEvent(SettingsEvent.EditKey) }) {
+                TextButton(onClick = { onEvent(SettingsEvent.EditKey(provider)) }) {
                     Text(stringResource(R.string.settings_api_key_replace))
                 }
-                TextButton(onClick = { onEvent(SettingsEvent.RequestRemoveKey) }) {
+                TextButton(onClick = { onEvent(SettingsEvent.RequestRemoveKey(provider)) }) {
                     Text(
                         text = stringResource(R.string.settings_api_key_remove),
                         color = MaterialTheme.colorScheme.error,
@@ -559,19 +579,19 @@ private fun ApiKeyCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconDisc(icon = Icons.Outlined.AutoAwesome, size = 48.dp)
                 Text(
-                    text = stringResource(R.string.settings_api_key_connect),
+                    text = stringResource(provider.connectRes),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(start = 14.dp),
                 )
             }
             Text(
-                text = stringResource(R.string.settings_api_key_explanation),
+                text = stringResource(provider.explanationRes),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp),
             )
             Button(
-                onClick = { onEvent(SettingsEvent.EditKey) },
+                onClick = { onEvent(SettingsEvent.EditKey(provider)) },
                 shape = CircleShape,
                 modifier = Modifier
                     .padding(top = 16.dp)
@@ -589,13 +609,38 @@ private fun ApiKeyCard(
     }
 }
 
+private val KeyProvider.titleRes: Int
+    get() = when (this) {
+        KeyProvider.Claude -> R.string.settings_api_key
+        KeyProvider.OpenAi -> R.string.settings_openai_key
+    }
+
+private val KeyProvider.connectRes: Int
+    get() = when (this) {
+        KeyProvider.Claude -> R.string.settings_api_key_connect
+        KeyProvider.OpenAi -> R.string.settings_openai_key_connect
+    }
+
+private val KeyProvider.explanationRes: Int
+    get() = when (this) {
+        KeyProvider.Claude -> R.string.settings_api_key_explanation
+        KeyProvider.OpenAi -> R.string.settings_openai_key_explanation
+    }
+
+private val KeyProvider.removeBodyRes: Int
+    get() = when (this) {
+        KeyProvider.Claude -> R.string.settings_api_key_remove_body
+        KeyProvider.OpenAi -> R.string.settings_openai_key_remove_body
+    }
+
 /**
- * Entering a key: most people copy it from the Anthropic console, so pasting is one tap and
+ * Entering a key: most people copy it from the provider's console, so pasting is one tap and
  * the field is there to check or correct it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ApiKeySheet(
+    provider: KeyProvider,
     state: SettingsUiState,
     onEvent: (SettingsEvent) -> Unit,
 ) {
@@ -608,7 +653,7 @@ private fun ApiKeySheet(
                 .imePadding(),
         ) {
             OrnamentHeading(
-                title = stringResource(R.string.settings_api_key),
+                title = stringResource(provider.titleRes),
                 icon = Icons.Outlined.VpnKey,
             )
             OutlinedTextField(

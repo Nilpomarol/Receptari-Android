@@ -168,6 +168,8 @@ fun RecipeDetailRoute(
     val settingsActionLabel = stringResource(R.string.settings_title)
     val aiErrorMessages = mapOf(
         R.string.ai_error_no_key to stringResource(R.string.ai_error_no_key),
+        R.string.ai_error_no_translation_key to stringResource(R.string.ai_error_no_translation_key),
+        R.string.ai_error_unavailable to stringResource(R.string.ai_error_unavailable),
         R.string.ai_error_invalid_key to stringResource(R.string.ai_error_invalid_key),
         R.string.ai_error_rate_limited to stringResource(R.string.ai_error_rate_limited),
         R.string.ai_error_quota to stringResource(R.string.ai_error_quota),
@@ -254,7 +256,7 @@ fun RecipeDetailRoute(
                     snackbarHostState.showSnackbar(translationAppliedMessage)
                 }
                 is RecipeDetailEffect.TranslationFailed -> {
-                    val missingKey = effect.error is AiError.NoApiKey
+                    val missingKey = effect.error is AiError.NoTranslationKey
                     val result = snackbarHostState.showSnackbar(
                         message = aiErrorMessages.getValue(effect.error.aiMessageRes()),
                         actionLabel = if (missingKey) {

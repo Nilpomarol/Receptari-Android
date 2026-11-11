@@ -1,11 +1,10 @@
 package cat.receptari.app.ui.detail
 
 import androidx.lifecycle.SavedStateHandle
-import cat.receptari.app.domain.ai.AiClient
-import cat.receptari.app.domain.ai.DraftRecipe
 import cat.receptari.app.domain.ai.RecipeLanguage
 import cat.receptari.app.domain.ai.TranslationRequest
 import cat.receptari.app.domain.ai.TranslationResult
+import cat.receptari.app.domain.ai.RecipeTranslator
 import cat.receptari.app.domain.model.CookEvent
 import cat.receptari.app.domain.model.CookingTimer
 import cat.receptari.app.domain.model.Recipe
@@ -66,7 +65,7 @@ class RecipeDetailTranslationTest {
     fun `selecting a new language saves it without opening an editor`() = runTest {
         val recipeRepository = FakeRecipeRepository(sourceRecipe())
         val translations = FakeTranslationRepository()
-        val ai = FakeAiClient()
+        val ai = FakeTranslator()
         val viewModel = detailViewModel(recipeRepository, translations, ai)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect {}
@@ -88,7 +87,7 @@ class RecipeDetailTranslationTest {
         val viewModel = detailViewModel(
             recipeRepository = FakeRecipeRepository(sourceRecipe()),
             translations = translations,
-            ai = FakeAiClient(),
+            ai = FakeTranslator(),
         )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect {}
@@ -104,7 +103,7 @@ class RecipeDetailTranslationTest {
     private fun detailViewModel(
         recipeRepository: FakeRecipeRepository,
         translations: FakeTranslationRepository,
-        ai: FakeAiClient,
+        ai: FakeTranslator,
     ): RecipeDetailViewModel {
         val clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)
         return RecipeDetailViewModel(
@@ -170,7 +169,7 @@ class RecipeDetailTranslationTest {
         ): Set<String> = available
     }
 
-    private class FakeAiClient : AiClient {
+    private class FakeTranslator : RecipeTranslator {
         override suspend fun translate(request: TranslationRequest): Result<TranslationResult> =
             Result.success(
                 TranslationResult(
@@ -184,15 +183,7 @@ class RecipeDetailTranslationTest {
             )
 
         override suspend fun testKey(): Result<Unit> = Result.success(Unit)
-        override suspend fun extractFromText(text: String): Result<DraftRecipe> = unsupported()
-        override suspend fun extractFromImages(images: List<ByteArray>): Result<DraftRecipe> = unsupported()
-        override suspend fun extractFromWebContent(
-            url: String,
-            content: String,
-        ): Result<DraftRecipe> = unsupported()
 
-        private fun unsupported(): Result<DraftRecipe> =
-            Result.failure(UnsupportedOperationException())
     }
 
     private class FakeRecipeRepository(initial: Recipe) : RecipeRepository {

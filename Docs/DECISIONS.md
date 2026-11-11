@@ -52,6 +52,9 @@ had Haiku 5.5 match Sonnet 5 on every text case and beat it on photos: Sonnet mi
 photo import) and about twice as fast. Handwriting was not tested; every import still lands
 in the editable preview, so a misread is caught there.
 
+**Revised 2026-11-11 again:** translation moved to OpenAI (ADR-014). Claude remains the
+import provider; this ADR's device-direct, user-supplied-key model now covers both.
+
 ### Rationale
 Zero infrastructure to build, host, secure, or pay for. It matches the PRD's privacy
 stance literally: recipe content goes to Anthropic and nowhere else, with no intermediary
@@ -623,3 +626,42 @@ one quiet line of facts.
 - Scroll-driven state (bar backing, pinned tabs) is read in the layout and draw phases; only
   two booleans recompose (title in the bar, icons on the photo).
 - No new strings; the page reuses existing keys.
+
+---
+
+## ADR-014 — Translation runs on OpenAI GPT-6 Luna, with a second user-supplied key
+
+**Date:** 2026-11-11 · **Status:** Accepted, revises the translation half of ADR-002
+
+### Context
+Haiku 5.5's Catalan read as translated rather than written: literal phrasing and the odd
+non-word. Six cases (three recipes, English/Spanish/Catalan sources, two targets each) were
+run through every current Claude model, two free machine-translation services (Softcatalà,
+Apertium) and four OpenAI models with the app's own prompt and schema. For Catalan, Opus 5.5
+and Fable 5.2 were best among Claude, then the Sonnets, then Haiku. GPT-6 Luna and GPT-6.1
+Terra matched the best Claude output and rephrased idiomatically rather than word for word,
+which the owner preferred; Sol and Astra wrote errors such as "mòlt" for "molt". The free
+services were clearly worse.
+
+### Decision
+- Translation calls OpenAI's Responses API from the device with `gpt-6-luna`, reasoning
+  effort `none`, and a strict JSON schema (the same prompt and schema the Claude path used).
+  `gpt-6.1-terra` gets one fallback attempt only when Luna's answer breaks the id/blank-field
+  contract, mirroring the old Haiku → Sonnet rule.
+- Extraction stays on Claude Haiku 5.5 (`AiClient`). Translation is its own domain interface,
+  `RecipeTranslator`, so neither caller knows which vendor answers it.
+- The user enters a second key, for OpenAI, in Settings. It is stored exactly like the Claude
+  key (same Keystore-backed cipher, same excluded `secrets` DataStore, its own entry) and is
+  sent only to `api.openai.com`. "Test key" lists models, which is free.
+- Plain OkHttp + kotlinx.serialization, not an OpenAI SDK. ADR-007 chose the Anthropic SDK
+  for typed errors, retries and structured outputs across four request types; here there is
+  one POST and one GET, the error mapping is five branches, and both libraries are already
+  in the app, so an SDK would add size for nothing.
+
+### Consequences
+- Two keys, two accounts, two bills. Import works without the OpenAI key and translation
+  works without the Claude key; each missing key gets its own message.
+- Recipe text sent for translation goes to OpenAI rather than Anthropic. The payload is
+  unchanged: structured fields only, no quantities, units, URLs or source (PRD §11).
+- Retry, error mapping and cancellation for this path are hand-written in
+  `OpenAiTranslator`; they must be kept in step with the API by hand.

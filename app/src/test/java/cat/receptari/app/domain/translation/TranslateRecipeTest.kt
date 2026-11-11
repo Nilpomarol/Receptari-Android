@@ -1,11 +1,10 @@
 package cat.receptari.app.domain.translation
 
-import cat.receptari.app.domain.ai.AiClient
-import cat.receptari.app.domain.ai.DraftRecipe
 import cat.receptari.app.domain.ai.RecipeLanguage
 import cat.receptari.app.domain.ai.TranslationField
 import cat.receptari.app.domain.ai.TranslationRequest
 import cat.receptari.app.domain.ai.TranslationResult
+import cat.receptari.app.domain.ai.RecipeTranslator
 import cat.receptari.app.domain.model.Ingredient
 import cat.receptari.app.domain.model.IngredientSection
 import cat.receptari.app.domain.model.InstructionSection
@@ -23,7 +22,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TranslateRecipeTest {
-    private val ai = FakeAiClient()
+    private val ai = FakeTranslator()
     private val cache = FakeTranslationRepository()
     private val useCase = TranslateRecipe(
         ai,
@@ -266,20 +265,16 @@ class TranslateRecipeTest {
             .orEmpty()
     }
 
-    private class FakeAiClient : AiClient {
+    private class FakeTranslator : RecipeTranslator {
         var request: TranslationRequest? = null
         var answer: Result<TranslationResult> = Result.failure(IllegalStateException())
 
         override suspend fun testKey(): Result<Unit> = Result.success(Unit)
-        override suspend fun extractFromText(text: String): Result<DraftRecipe> = unsupported()
-        override suspend fun extractFromImages(images: List<ByteArray>): Result<DraftRecipe> = unsupported()
-        override suspend fun extractFromWebContent(url: String, content: String): Result<DraftRecipe> = unsupported()
         override suspend fun translate(request: TranslationRequest): Result<TranslationResult> {
             this.request = request
             return answer
         }
 
-        private fun unsupported(): Result<DraftRecipe> = Result.failure(UnsupportedOperationException())
     }
 
     private companion object {
