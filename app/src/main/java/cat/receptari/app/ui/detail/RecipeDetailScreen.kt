@@ -40,7 +40,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -852,6 +856,62 @@ private fun FolderChoiceRow(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(22.dp),
             )
+        }
+    }
+}
+
+/** Edits just the recipe's note, apart from the recipe editor. Saving an empty note removes it. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun QuickNotesSheet(
+    currentNotes: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var draft by remember { mutableStateOf(currentNotes) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+
+    PaperModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .padding(horizontal = 20.dp),
+        ) {
+            OrnamentHeading(title = stringResource(R.string.detail_notes))
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .focusRequester(focus),
+                colors = paperFieldColors(),
+                placeholder = { Text(stringResource(R.string.detail_notes_hint)) },
+                textStyle = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
+                minLines = 5,
+                maxLines = 12,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp, bottom = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+                Button(
+                    onClick = {
+                        onSave(draft)
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f).padding(start = 8.dp),
+                ) {
+                    Text(stringResource(R.string.edit_save))
+                }
+            }
         }
     }
 }

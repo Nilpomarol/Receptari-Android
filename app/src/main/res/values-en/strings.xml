@@ -60,6 +60,9 @@
     <string name="detail_ingredients">Ingredients</string>
     <string name="detail_instructions">Instructions</string>
     <string name="detail_notes">Notes</string>
+    <string name="detail_notes_add">Add a note</string>
+    <string name="detail_notes_edit">Edit notes</string>
+    <string name="detail_notes_hint">Something to remember about this recipe…</string>
     <string name="detail_source">Source</string>
     <string name="detail_source_line">Source: %1$s</string>
     <string name="detail_time_pair">%1$s %2$d min</string>

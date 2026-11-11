@@ -62,6 +62,9 @@
     <string name="detail_ingredients">Ingredientes</string>
     <string name="detail_instructions">Preparación</string>
     <string name="detail_notes">Notas</string>
+    <string name="detail_notes_add">Añade una nota</string>
+    <string name="detail_notes_edit">Editar las notas</string>
+    <string name="detail_notes_hint">Algo que quieras recordar de esta receta…</string>
     <string name="detail_source">Fuente</string>
     <string name="detail_source_line">Fuente: %1$s</string>
     <string name="detail_time_pair">%1$s %2$d min</string>

@@ -69,6 +69,7 @@ sealed interface RecipeDetailEvent {
     data object Delete : RecipeDetailEvent
     data class SetRating(val rating: Int?) : RecipeDetailEvent
     data class SetFolder(val folder: Folder?) : RecipeDetailEvent
+    data class SetNotes(val notes: String) : RecipeDetailEvent
     data class AddTag(val tagName: String) : RecipeDetailEvent
     data class RemoveTag(val tagName: String) : RecipeDetailEvent
     data class FolderCreateRequested(
@@ -219,6 +220,12 @@ class RecipeDetailViewModel @Inject constructor(
             is RecipeDetailEvent.SetFolder -> viewModelScope.launch {
                 val recipe = uiState.value.recipe ?: return@launch
                 recipeRepository.save(recipe.copy(folder = event.folder))
+            }
+
+            is RecipeDetailEvent.SetNotes -> viewModelScope.launch {
+                val recipe = uiState.value.recipe ?: return@launch
+                // Blank means no note; the text is otherwise kept exactly as written.
+                recipeRepository.save(recipe.copy(notes = event.notes.trim().takeIf { it.isNotEmpty() }))
             }
 
             is RecipeDetailEvent.FolderCreateRequested -> viewModelScope.launch {

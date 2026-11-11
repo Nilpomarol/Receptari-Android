@@ -72,6 +72,9 @@
     <string name="detail_ingredients">Ingredients</string>
     <string name="detail_instructions">Preparació</string>
     <string name="detail_notes">Notes</string>
+    <string name="detail_notes_add">Afegeix una nota</string>
+    <string name="detail_notes_edit">Edita les notes</string>
+    <string name="detail_notes_hint">Un truc que vols recordar d’aquesta recepta…</string>
     <string name="detail_source">Font</string>
     <string name="detail_source_line">Font: %1$s</string>
     <string name="detail_time_pair">%1$s %2$d min</string>

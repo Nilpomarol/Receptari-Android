@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.History
@@ -202,6 +203,7 @@ internal fun RecipeContent(
 
     var showFolderSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
+    var showNotesSheet by remember { mutableStateOf(false) }
     var selectedTab by rememberSaveable { mutableIntStateOf(IngredientsTab) }
     // Ticking off ingredients is a scratch mark for this session at the stove, not data.
     val checked = remember(recipe.id) { mutableStateListOf<String>() }
@@ -317,8 +319,8 @@ internal fun RecipeContent(
                 methodItems(recipe, onSetTimer)
             }
 
-            recipe.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-                item(key = "notes") { NotesCard(notes = notes) }
+            item(key = "notes") {
+                NotesCard(notes = recipe.notes?.takeIf { it.isNotBlank() }, onEdit = { showNotesSheet = true })
             }
 
             item(key = "about") {
@@ -369,6 +371,14 @@ internal fun RecipeContent(
                 onEvent(RecipeDetailEvent.FolderCreateRequested(name, color, icon))
                 showFolderSheet = false
             },
+        )
+    }
+
+    if (showNotesSheet) {
+        QuickNotesSheet(
+            currentNotes = recipe.notes.orEmpty(),
+            onDismiss = { showNotesSheet = false },
+            onSave = { onEvent(RecipeDetailEvent.SetNotes(it)) },
         )
     }
 
@@ -977,20 +987,53 @@ private fun StepTimerChip(
 
 // --- Foot of the page ----------------------------------------------------------------
 
-/** The cook's own notes, under a heading, on a card of their own. */
+/**
+ * The cook's own notes, set as a margin note: italic text against a wax rule. Tapping it edits
+ * the note in place ([onEdit]); with no note yet it is an invitation to write one.
+ */
 @Composable
-private fun NotesCard(notes: String, modifier: Modifier = Modifier) {
+private fun NotesCard(notes: String?, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+    val wax = MaterialTheme.colorScheme.primary
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = PagePadding).padding(top = 28.dp)) {
         OrnamentHeading(
             title = stringResource(R.string.detail_notes),
             icon = Icons.Outlined.EditNote,
             modifier = Modifier.padding(bottom = 10.dp),
         )
-        PaperCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(18.dp)) {
-            Text(
-                text = notes,
-                style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+                .clip(MaterialTheme.shapes.small)
+                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.detail_notes_edit), onClick = onEdit),
+        ) {
+            Box(modifier = Modifier.width(3.dp).fillMaxHeight().background(wax.copy(alpha = 0.7f)))
+            if (notes != null) {
+                Text(
+                    text = notes,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
+                    modifier = Modifier.weight(1f).padding(start = 14.dp, top = 6.dp, bottom = 6.dp),
+                )
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 10.dp, top = 8.dp).size(18.dp),
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = wax,
+                    modifier = Modifier.padding(start = 14.dp).align(Alignment.CenterVertically).size(18.dp),
+                )
+                Text(
+                    text = stringResource(R.string.detail_notes_add),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
+                    color = wax,
+                    modifier = Modifier.padding(start = 8.dp, top = 10.dp, bottom = 10.dp),
+                )
+            }
         }
     }
 }
