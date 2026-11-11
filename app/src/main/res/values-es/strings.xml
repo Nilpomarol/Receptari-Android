@@ -57,6 +57,22 @@
     <string name="filter_never_cooked">Nunca cocinadas</string>
     <string name="filter_recently_cooked">Cocinadas el último mes</string>
     <string name="filter_tags">Etiquetas</string>
+    <string name="tags_title">Etiquetas</string>
+    <string name="tags_empty_title">Todavía no hay etiquetas</string>
+    <string name="tags_empty_body">Aparecen aquí cuando pones una en una receta.</string>
+    <plurals name="tags_count">
+        <item quantity="one">%1$d etiqueta</item>
+        <item quantity="other">%1$d etiquetas</item>
+    </plurals>
+    <string name="tags_manage">Gestionar las etiquetas</string>
+    <string name="tags_edit_title">Editar la etiqueta</string>
+    <string name="tags_merge_notice">Ya existe «%1$s». Las dos etiquetas se fusionarán.</string>
+    <string name="tag_recipes_empty">Ninguna receta lleva esta etiqueta.</string>
+    <string name="tags_merge">Fusionar</string>
+    <plurals name="tags_delete_confirm_body">
+        <item quantity="one">Se quitará «%1$s» de %2$d receta. La receta se conserva.</item>
+        <item quantity="other">Se quitará «%1$s» de %2$d recetas. Las recetas se conservan.</item>
+    </plurals>
     <string name="tags_clear">Quita las etiquetas</string>
 
     <string name="detail_ingredients">Ingredientes</string>

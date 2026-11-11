@@ -286,6 +286,52 @@ class RecipeDaoTest {
         assertEquals(listOf(recipe.id), recipeDao.searchIds("Vedella"))
     }
 
+    // --- managing tags ------------------------------------------------------------
+
+    @Test
+    fun renamingATagRenamesItOnTheRecipeAndInSearch() = runBlocking {
+        val recipe = sampleRecipe()
+        save(recipe)
+
+        database.tagDao().renameOrMerge("tag-1", "Dinar", Tag.normalize("Dinar"))
+
+        assertEquals(listOf("Dinar"), recipeDao.getAggregate(recipe.id)!!.toDomain().tags.map { it.name })
+        assertEquals(listOf(recipe.id), recipeDao.searchIds("Dinar"))
+        assertTrue(recipeDao.searchIds("Sopar").isEmpty())
+    }
+
+    @Test
+    fun renamingToAnotherTagsNameMergesAndKeepsOneLink() = runBlocking {
+        val recipe = sampleRecipe()
+        save(recipe)
+        save(timedRecipe("recipe-2").copy(tags = listOf(Tag(id = "tag-2", name = "Dinar"))))
+        // The first recipe carries both tags, so the merge must not link it twice.
+        database.recipeDao().insertTagLinks(
+            listOf(cat.receptari.app.data.local.entity.RecipeTagCrossRef(recipe.id, "tag-2")),
+        )
+
+        database.tagDao().renameOrMerge("tag-1", "dinar", Tag.normalize("dinar"))
+
+        val counts = database.tagDao().observeAllWithCounts().first()
+        assertEquals(listOf("Dinar" to 2), counts.map { it.tag.name to it.recipeCount })
+        assertEquals(listOf("Dinar"), recipeDao.getAggregate(recipe.id)!!.toDomain().tags.map { it.name })
+        assertEquals(setOf(recipe.id, "recipe-2"), recipeDao.searchIds("Dinar").toSet())
+        assertTrue(recipeDao.searchIds("Sopar").isEmpty())
+    }
+
+    @Test
+    fun deletingATagKeepsTheRecipeAndClearsItFromSearch() = runBlocking {
+        val recipe = sampleRecipe()
+        save(recipe)
+
+        database.tagDao().deleteTag("tag-1")
+
+        assertTrue(recipeDao.getAggregate(recipe.id)!!.toDomain().tags.isEmpty())
+        assertTrue(database.tagDao().observeAllWithCounts().first().isEmpty())
+        assertTrue(recipeDao.searchIds("Sopar").isEmpty())
+        assertEquals(listOf(recipe.id), recipeDao.searchIds("pollastre"))
+    }
+
     // --- helpers ------------------------------------------------------------------
 
     private suspend fun save(recipe: Recipe) {

@@ -66,6 +66,22 @@
     <string name="filter_never_cooked">Mai cuinades</string>
     <string name="filter_recently_cooked">Cuinades el darrer mes</string>
     <string name="filter_tags">Etiquetes</string>
+    <string name="tags_title">Etiquetes</string>
+    <string name="tags_empty_title">Encara no hi ha etiquetes</string>
+    <string name="tags_empty_body">Apareixen aquí quan en poses una a una recepta.</string>
+    <plurals name="tags_count">
+        <item quantity="one">%1$d etiqueta</item>
+        <item quantity="other">%1$d etiquetes</item>
+    </plurals>
+    <string name="tags_manage">Gestiona les etiquetes</string>
+    <string name="tags_edit_title">Edita l\'etiqueta</string>
+    <string name="tags_merge_notice">Ja existeix «%1$s». Les dues etiquetes es fusionaran.</string>
+    <string name="tag_recipes_empty">Cap recepta porta aquesta etiqueta.</string>
+    <string name="tags_merge">Fusiona</string>
+    <plurals name="tags_delete_confirm_body">
+        <item quantity="one">S\'eliminarà «%1$s» de %2$d recepta. La recepta es conserva.</item>
+        <item quantity="other">S\'eliminarà «%1$s» de %2$d receptes. Les receptes es conserven.</item>
+    </plurals>
     <string name="tags_clear">Treu les etiquetes</string>
 
     <!-- Recipe detail -->

@@ -1,9 +1,12 @@
 package cat.receptari.app.data.repository
 
+import cat.receptari.app.data.local.dao.TagCountRow
 import cat.receptari.app.data.local.dao.TagDao
 import cat.receptari.app.data.local.entity.TagEntity
+import cat.receptari.app.domain.model.Tag
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -62,8 +65,98 @@ class TagRepositoryImplTest {
         assertEquals(0, dao.stored.size)
     }
 
+    @Test
+    fun `renaming changes the name and its dedupe key`() = runTest {
+        val tag = dao.add("Postrs")
+
+        repository.rename(tag.id, "  Postres ")
+
+        val renamed = dao.stored.single()
+        assertEquals("Postres", renamed.name)
+        assertEquals("postres", renamed.normalizedName)
+    }
+
+    @Test
+    fun `a blank new name changes nothing`() = runTest {
+        val tag = dao.add("Postres")
+
+        repository.rename(tag.id, "   ")
+
+        assertEquals("Postres", dao.stored.single().name)
+    }
+
+    @Test
+    fun `renaming to another tags name merges the two`() = runTest {
+        val sweets = dao.add("Dolços")
+        val desserts = dao.add("Postres")
+        dao.link("r1", sweets.id)
+        dao.link("r2", sweets.id)
+        dao.link("r2", desserts.id)
+
+        repository.rename(sweets.id, "postres")
+
+        // One tag is left, it keeps its own name, and r2 holds it once rather than twice.
+        assertEquals(listOf(desserts), dao.stored)
+        assertEquals(setOf("r1" to desserts.id, "r2" to desserts.id), dao.links)
+    }
+
+    @Test
+    fun `deleting a tag unlinks its recipes and removes it`() = runTest {
+        val keep = dao.add("Postres")
+        val drop = dao.add("Ràpid")
+        dao.link("r1", keep.id)
+        dao.link("r1", drop.id)
+
+        repository.delete(drop.id)
+
+        assertEquals(listOf(keep), dao.stored)
+        assertEquals(setOf("r1" to keep.id), dao.links)
+    }
+
+    @Test
+    fun `counts are the number of recipes carrying each tag`() = runTest {
+        val tag = dao.add("Postres")
+        dao.add("Sense receptes")
+        dao.link("r1", tag.id)
+        dao.link("r2", tag.id)
+
+        val counts = repository.observeAllWithCounts().first().associate { it.tag.name to it.recipeCount }
+
+        assertEquals(mapOf("Postres" to 2, "Sense receptes" to 0), counts)
+    }
+
     private class FakeTagDao : TagDao {
         val stored = mutableListOf<TagEntity>()
+        val links = mutableSetOf<Pair<String, String>>()
+
+        fun add(name: String): TagEntity =
+            TagEntity(UUID.randomUUID().toString(), name, Tag.normalize(name)).also { stored += it }
+
+        fun link(recipeId: String, tagId: String) {
+            links += recipeId to tagId
+        }
+
+        override fun observeAllWithCounts(): Flow<List<TagCountRow>> =
+            flowOf(stored.map { tag -> TagCountRow(tag, links.count { it.second == tag.id }) })
+
+        override suspend fun recipeIdsWithTag(tagId: String): List<String> =
+            links.filter { it.second == tagId }.map { it.first }
+
+        override suspend fun updateName(id: String, name: String, normalizedName: String) {
+            val index = stored.indexOfFirst { it.id == id }
+            stored[index] = stored[index].copy(name = name, normalizedName = normalizedName)
+        }
+
+        override suspend fun relink(sourceId: String, targetId: String) {
+            links += links.filter { it.second == sourceId }.map { it.first to targetId }
+        }
+
+        override suspend fun deleteById(id: String) {
+            stored.removeAll { it.id == id }
+            links.removeAll { it.second == id }
+        }
+
+        override suspend fun refreshSearchTagNames(recipeIds: List<String>) = Unit
 
         override fun observeAll(): Flow<List<TagEntity>> = flowOf(stored.toList())
 

@@ -24,8 +24,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,6 +99,7 @@ class CollectionsViewModel @Inject constructor(
 @Composable
 fun CollectionsRoute(
     onOpenFolder: (String) -> Unit,
+    onOpenTags: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollectionsViewModel = hiltViewModel(),
 ) {
@@ -104,6 +107,7 @@ fun CollectionsRoute(
     CollectionsScreen(
         state = state,
         onOpenFolder = onOpenFolder,
+        onOpenTags = onOpenTags,
         onCreateFolder = viewModel::createFolder,
         modifier = modifier,
     )
@@ -118,6 +122,7 @@ fun CollectionsRoute(
 fun CollectionsScreen(
     state: CollectionsUiState,
     onOpenFolder: (String) -> Unit,
+    onOpenTags: () -> Unit,
     onCreateFolder: (String, FolderColor, FolderIcon) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -136,20 +141,31 @@ fun CollectionsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "header", span = { GridItemSpan(maxLineSpan) }) {
-                Column(
+                Row(
                     modifier = Modifier
                         .statusBarsPadding()
                         .padding(top = 20.dp, bottom = 10.dp),
+                    verticalAlignment = Alignment.Top,
                 ) {
-                    Text(
-                        text = stringResource(R.string.folders_title),
-                        style = MaterialTheme.typography.headlineLarge,
-                    )
-                    Rubric(
-                        text = stringResource(R.string.folders_subtitle),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.folders_title),
+                            style = MaterialTheme.typography.headlineLarge,
+                        )
+                        Rubric(
+                            text = stringResource(R.string.folders_subtitle),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    // Tags are the other way of filing a recipe, so they are managed from here.
+                    IconButton(onClick = onOpenTags) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Label,
+                            contentDescription = stringResource(R.string.tags_manage),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
 
@@ -334,6 +350,7 @@ private fun CollectionsScreenPreview() {
                 isLoading = false,
             ),
             onOpenFolder = {},
+            onOpenTags = {},
             onCreateFolder = { _, _, _ -> },
         )
     }

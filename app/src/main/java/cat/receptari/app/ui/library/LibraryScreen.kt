@@ -138,6 +138,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun LibraryRoute(
     onOpenRecipe: (String) -> Unit,
     onAddRecipe: () -> Unit,
+    onOpenTags: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
@@ -167,6 +168,7 @@ fun LibraryRoute(
         onAddRecipe = onAddRecipe,
         snackbarHostState = snackbarHostState,
         modifier = modifier,
+        onOpenTags = onOpenTags,
     )
 
     transferArchive?.let { archive ->
@@ -204,6 +206,7 @@ fun LibraryScreen(
     onAddRecipe: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onOpenTags: (() -> Unit)? = null,
 ) {
     var filtersOpen by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -345,6 +348,7 @@ fun LibraryScreen(
             state = state,
             onEvent = onEvent,
             onDismiss = { filtersOpen = false },
+            onManageTags = onOpenTags,
         )
     }
 }
@@ -732,6 +736,7 @@ internal fun FilterSheet(
     onEvent: (LibraryEvent) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    onManageTags: (() -> Unit)? = null,
 ) {
     PaperModalBottomSheet(modifier = modifier, onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
@@ -797,6 +802,11 @@ internal fun FilterSheet(
                                     checked = tag.id in state.filter.tagIds,
                                     onToggle = { onEvent(LibraryEvent.ToggleTagFilter(tag.id)) },
                                 )
+                            }
+                        }
+                        onManageTags?.let { manage ->
+                            TextButton(onClick = { onDismiss(); manage() }) {
+                                Text(stringResource(R.string.tags_manage))
                             }
                         }
                     }

@@ -5,6 +5,7 @@ import cat.receptari.app.data.local.dao.TagDao
 import cat.receptari.app.data.local.entity.TagEntity
 import cat.receptari.app.data.local.mapper.toDomain
 import cat.receptari.app.domain.model.Tag
+import cat.receptari.app.domain.model.TagSummary
 import cat.receptari.app.domain.repository.TagRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,21 @@ class TagRepositoryImpl @Inject constructor(
         tagDao.observeAll()
             .map { tags -> tags.map { it.toDomain() } }
             .flowOn(ioDispatcher)
+
+    override fun observeAllWithCounts(): Flow<List<TagSummary>> =
+        tagDao.observeAllWithCounts()
+            .map { rows -> rows.map { TagSummary(it.tag.toDomain(), it.recipeCount) } }
+            .flowOn(ioDispatcher)
+
+    override suspend fun rename(id: String, newName: String) = withContext(ioDispatcher) {
+        val name = newName.trim()
+        if (name.isEmpty()) return@withContext
+        tagDao.renameOrMerge(id, name, Tag.normalize(name))
+    }
+
+    override suspend fun delete(id: String) = withContext(ioDispatcher) {
+        tagDao.deleteTag(id)
+    }
 
     override suspend fun findOrCreate(names: List<String>): List<Tag> = withContext(ioDispatcher) {
         // Deduplicate the request itself: "Postres" and "postres" typed on the same recipe

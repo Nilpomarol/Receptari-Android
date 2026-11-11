@@ -135,6 +135,10 @@ class RecipeDetailTranslationTest {
         override fun observeAll(): Flow<List<Tag>> = kotlinx.coroutines.flow.flowOf(emptyList())
         override suspend fun findOrCreate(names: List<String>): List<Tag> =
             names.map { Tag(it.lowercase(), it) }
+        override fun observeAllWithCounts(): Flow<List<cat.receptari.app.domain.model.TagSummary>> =
+            kotlinx.coroutines.flow.flowOf(emptyList())
+        override suspend fun rename(id: String, newName: String) = Unit
+        override suspend fun delete(id: String) = Unit
     }
 
     private fun sourceRecipe(): Recipe = Recipe(

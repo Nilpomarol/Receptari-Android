@@ -3,6 +3,12 @@ package cat.receptari.app.domain.model
 import java.text.Normalizer
 import java.util.Locale
 
+/** A tag with the number of recipes that carry it. */
+data class TagSummary(
+    val tag: Tag,
+    val recipeCount: Int,
+)
+
 /**
  * A user-defined tag. Flat — no hierarchy, no colours, no categories (PRD §5).
  *

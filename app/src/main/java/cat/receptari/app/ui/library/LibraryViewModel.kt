@@ -47,11 +47,14 @@ data class LibraryUiState(
     val isFavoritesPage: Boolean = false,
     /** A folder's page: the same list with that folder fixed on. */
     val isFolderPage: Boolean = false,
+    /** A tag's page: the same list with that tag fixed on. */
+    val isTagPage: Boolean = false,
     val listLayout: RecipeListLayout = RecipeListLayout.Grid,
 ) {
     /** Filters the reader chose, not counting the one a Favourites or folder page pins. */
     val userFilterCount: Int
-        get() = filter.activeCount - (if (isFavoritesPage) 1 else 0) - (if (isFolderPage) 1 else 0)
+        get() = filter.activeCount - (if (isFavoritesPage) 1 else 0) - (if (isFolderPage) 1 else 0) -
+            (if (isTagPage) 1 else 0)
 
     /** Empty because there is nothing to show at all, rather than because nothing matched. */
     val isLibraryEmpty: Boolean
@@ -96,7 +99,12 @@ class LibraryViewModel @Inject constructor(
     private val favoritesPage: Boolean =
         savedStateHandle.get<Boolean>(Destination.FAVORITES_ONLY_ARG) ?: false
     private val folderId: String? = savedStateHandle[Destination.FOLDER_ID_ARG]
-    private val baseFilter = RecipeFilter(favoritesOnly = favoritesPage, folderId = folderId)
+    private val tagId: String? = savedStateHandle[Destination.TAG_ID_ARG]
+    private val baseFilter = RecipeFilter(
+        favoritesOnly = favoritesPage,
+        folderId = folderId,
+        tagIds = setOfNotNull(tagId),
+    )
     private val query = MutableStateFlow(RecipeQuery(filter = baseFilter))
     private val isSelectionMode = MutableStateFlow(false)
     private val selectedRecipeIds = MutableStateFlow<Set<String>>(emptySet())
@@ -133,6 +141,7 @@ class LibraryViewModel @Inject constructor(
             isSharingSelection = selection.third,
             isFavoritesPage = favoritesPage,
             isFolderPage = folderId != null,
+            isTagPage = tagId != null,
             listLayout = layout,
         )
     }.stateIn(
@@ -184,13 +193,14 @@ class LibraryViewModel @Inject constructor(
                 query.update {
                     it.withFilter { filter ->
                         val tags = filter.tagIds.toMutableSet()
-                        if (!tags.add(event.tagId)) tags.remove(event.tagId)
+                        // A tag's own page keeps its tag whatever else is toggled.
+                        if (!tags.add(event.tagId) && event.tagId != tagId) tags.remove(event.tagId)
                         filter.copy(tagIds = tags)
                     }
                 }
 
             LibraryEvent.ClearTagFilters ->
-                query.update { it.withFilter { filter -> filter.copy(tagIds = emptySet()) } }
+                query.update { it.withFilter { filter -> filter.copy(tagIds = setOfNotNull(tagId)) } }
 
             LibraryEvent.ClearFilters ->
                 query.update { it.copy(filter = baseFilter) }

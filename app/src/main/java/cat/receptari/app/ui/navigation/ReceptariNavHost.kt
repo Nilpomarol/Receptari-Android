@@ -52,6 +52,8 @@ import cat.receptari.app.ui.importer.text.TextImportRoute
 import cat.receptari.app.ui.importer.website.WebsiteImportSheetRoute
 import cat.receptari.app.ui.library.LibraryRoute
 import cat.receptari.app.ui.settings.SettingsRoute
+import cat.receptari.app.ui.tags.TagRecipesRoute
+import cat.receptari.app.ui.tags.TagsRoute
 
 @Composable
 fun ReceptariNavHost(
@@ -95,6 +97,7 @@ fun ReceptariNavHost(
             LibraryRoute(
                 onOpenRecipe = { navController.navigate(Destination.detail(it)) },
                 onAddRecipe = { adding = true },
+                onOpenTags = { navController.navigate(Destination.TAGS) },
             )
         }
 
@@ -110,11 +113,33 @@ fun ReceptariNavHost(
             LibraryRoute(
                 onOpenRecipe = { navController.navigate(Destination.detail(it)) },
                 onAddRecipe = { adding = true },
+                onOpenTags = { navController.navigate(Destination.TAGS) },
             )
         }
 
         composable(Destination.COLLECTIONS) {
-            CollectionsRoute(onOpenFolder = { navController.navigate(Destination.folder(it)) })
+            CollectionsRoute(
+                onOpenFolder = { navController.navigate(Destination.folder(it)) },
+                onOpenTags = { navController.navigate(Destination.TAGS) },
+            )
+        }
+
+        composable(Destination.TAGS) {
+            TagsRoute(
+                onNavigateBack = navController::popBackStack,
+                onOpenTag = { navController.navigate(Destination.tag(it)) },
+            )
+        }
+
+        composable(
+            route = Destination.TAG_ROUTE,
+            arguments = listOf(navArgument(Destination.TAG_ID_ARG) { type = NavType.StringType }),
+        ) { entry ->
+            TagRecipesRoute(
+                tagId = entry.arguments?.getString(Destination.TAG_ID_ARG).orEmpty(),
+                onNavigateBack = navController::popBackStack,
+                onOpenRecipe = { navController.navigate(Destination.detail(it)) },
+            )
         }
 
         composable(
