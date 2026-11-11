@@ -56,6 +56,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -806,7 +807,15 @@ internal fun FilterSheet(
                         }
                         onManageTags?.let { manage ->
                             TextButton(onClick = { onDismiss(); manage() }) {
-                                Text(stringResource(R.string.tags_manage))
+                                Icon(
+                                    imageVector = Icons.Outlined.Tag,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Text(
+                                    text = stringResource(R.string.tags_manage),
+                                    modifier = Modifier.padding(start = 6.dp),
+                                )
                             }
                         }
                     }

@@ -24,10 +24,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +48,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
+import cat.receptari.app.core.designsystem.CardRow
+import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.PaperScaffold
 import cat.receptari.app.core.designsystem.Rubric
 import cat.receptari.app.core.designsystem.theme.ReceptariTheme
@@ -58,10 +59,12 @@ import cat.receptari.app.domain.model.FolderIcon
 import cat.receptari.app.domain.model.FolderSummary
 import cat.receptari.app.domain.repository.FolderRepository
 import cat.receptari.app.domain.repository.ImageStore
+import cat.receptari.app.domain.repository.TagRepository
 import coil3.compose.AsyncImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -69,24 +72,29 @@ import javax.inject.Inject
 
 data class CollectionsUiState(
     val folders: List<FolderSummary> = emptyList(),
+    val tagCount: Int = 0,
     val isLoading: Boolean = true,
 )
 
 @HiltViewModel
 class CollectionsViewModel @Inject constructor(
     private val folderRepository: FolderRepository,
+    tagRepository: TagRepository,
     imageStore: ImageStore,
 ) : ViewModel() {
 
-    val uiState: StateFlow<CollectionsUiState> = folderRepository.observeAllWithCounts()
-        .map { folders ->
-            CollectionsUiState(
-                folders = folders.map { summary ->
-                    summary.copy(coverImagePath = summary.coverImagePath?.let(imageStore::absolutePathOf))
-                },
-                isLoading = false,
-            )
-        }
+    val uiState: StateFlow<CollectionsUiState> = combine(
+        folderRepository.observeAllWithCounts(),
+        tagRepository.observeAll().map { it.size },
+    ) { folders, tagCount ->
+        CollectionsUiState(
+            folders = folders.map { summary ->
+                summary.copy(coverImagePath = summary.coverImagePath?.let(imageStore::absolutePathOf))
+            },
+            tagCount = tagCount,
+            isLoading = false,
+        )
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CollectionsUiState())
 
     fun createFolder(name: String, color: FolderColor, icon: FolderIcon) {
@@ -158,14 +166,21 @@ fun CollectionsScreen(
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
-                    // Tags are the other way of filing a recipe, so they are managed from here.
-                    IconButton(onClick = onOpenTags) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Label,
-                            contentDescription = stringResource(R.string.tags_manage),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+                }
+            }
+
+            // Tags are the other way of filing a recipe, so they open from here, above the folders.
+            item(key = "tags", span = { GridItemSpan(maxLineSpan) }) {
+                PaperCard(
+                    modifier = Modifier.padding(bottom = 6.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+                ) {
+                    CardRow(
+                        icon = Icons.Outlined.Tag,
+                        title = stringResource(R.string.tags_title),
+                        subtitle = pluralStringResource(R.plurals.tags_count, state.tagCount, state.tagCount),
+                        onClick = onOpenTags,
+                    )
                 }
             }
 
