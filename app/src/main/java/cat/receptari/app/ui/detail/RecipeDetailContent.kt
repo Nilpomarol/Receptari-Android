@@ -765,7 +765,7 @@ private fun IngredientGroup(
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = PagePadding)) {
         section.name?.let { name ->
-            Rubric(text = name, modifier = Modifier.padding(top = 18.dp, bottom = 2.dp))
+            Rubric(text = name, modifier = Modifier.padding(top = 14.dp, bottom = 0.dp))
         }
         section.ingredients.forEach { ingredient ->
             IngredientRow(
@@ -792,12 +792,12 @@ private fun IngredientRow(
         modifier = modifier
             .fillMaxWidth()
             .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() })
-            .padding(vertical = 12.dp),
+            .padding(vertical = 7.dp),
     ) {
         Box(
             modifier = Modifier
                 .padding(top = 3.dp)
-                .size(22.dp)
+                .size(18.dp)
                 .clip(CircleShape)
                 .background(if (checked) wax else Color.Transparent)
                 .border(1.5.dp, if (checked) wax else ReceptariTheme.palette.rule, CircleShape),
@@ -808,7 +808,7 @@ private fun IngredientRow(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(14.dp),
+                    modifier = Modifier.size(12.dp),
                 )
             }
         }
@@ -817,7 +817,7 @@ private fun IngredientRow(
             style = MaterialTheme.typography.bodyLarge,
             color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             textDecoration = if (checked) TextDecoration.LineThrough else null,
-            modifier = Modifier.weight(1f).padding(start = 14.dp),
+            modifier = Modifier.weight(1f).padding(start = 12.dp),
         )
     }
 }
