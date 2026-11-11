@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.FolderOff
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -393,6 +394,16 @@ fun RecipeDetailScreen(
                 onSetTimer = { timerSetup = it },
                 onNavigateBack = onNavigateBack,
             ) {
+                IconButton(
+                    onClick = {
+                        timerSetup = TimerSetupRequest(stepId = null, label = recipe.title, initialMinutes = null)
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Timer,
+                        contentDescription = stringResource(R.string.timer_set),
+                    )
+                }
                 IconButton(onClick = { onEvent(RecipeDetailEvent.ToggleFavorite) }) {
                     Icon(
                         imageVector = if (recipe.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,

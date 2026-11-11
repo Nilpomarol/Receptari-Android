@@ -27,11 +27,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
@@ -828,14 +830,6 @@ private fun LazyListScope.methodItems(
     recipe: Recipe,
     onSetTimer: (TimerSetupRequest) -> Unit,
 ) {
-    item(key = "timer-any") {
-        TimerChip(
-            text = stringResource(R.string.timer_set),
-            onClick = { onSetTimer(TimerSetupRequest(stepId = null, label = recipe.title, initialMinutes = null)) },
-            modifier = Modifier.padding(start = PagePadding, top = 8.dp, bottom = 8.dp),
-        )
-    }
-
     // Step numbers run on across sections (PRD §3.4); each section opens with its rubric.
     var number = 0
     recipe.instructionSections.forEach { section ->
@@ -850,6 +844,7 @@ private fun LazyListScope.methodItems(
         section.steps.forEachIndexed { index, step ->
             number += 1
             val stepNumber = number
+            val isFirst = index == 0
             val isLast = index == section.steps.lastIndex
             item(key = "step-${step.id}") {
                 val label = stringResource(R.string.timer_step_label, stepNumber, recipe.title)
@@ -862,7 +857,8 @@ private fun LazyListScope.methodItems(
                 StepRow(
                     number = stepNumber,
                     text = step.text,
-                    showRule = !isLast,
+                    isFirst = isFirst,
+                    isLast = isLast,
                     timerMinutes = minutes,
                     onSetTimer = {
                         onSetTimer(
@@ -883,15 +879,26 @@ private fun LazyListScope.methodItems(
 private fun StepRow(
     number: Int,
     text: String,
-    showRule: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean,
     timerMinutes: Int?,
     onSetTimer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(horizontal = PagePadding)) {
-        Row(modifier = Modifier.padding(vertical = 14.dp)) {
+    val pad = 10.dp
+    // A rail runs down the disc column so the discs read as one sequence; it starts and ends at the discs.
+    val rail = when {
+        isFirst && isLast -> null
+        isFirst -> Modifier.padding(top = pad + StepDisc / 2).fillMaxHeight()
+        isLast -> Modifier.height(pad + StepDisc / 2)
+        else -> Modifier.fillMaxHeight()
+    }
+    Row(modifier = modifier.fillMaxWidth().padding(horizontal = PagePadding).height(IntrinsicSize.Min)) {
+        Box(modifier = Modifier.width(StepDisc).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+            if (rail != null) Box(modifier = rail.width(2.dp).background(ReceptariTheme.palette.rule))
             Box(
                 modifier = Modifier
+                    .padding(top = pad)
                     .size(StepDisc)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary),
@@ -903,49 +910,52 @@ private fun StepRow(
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
             }
-            Column(modifier = Modifier.weight(1f).padding(start = 16.dp, top = 4.dp)) {
-                Text(text = text, style = MaterialTheme.typography.bodyLarge)
-                timerMinutes?.let { minutes ->
-                    TimerChip(
-                        text = if (minutes > 0) formatDuration(minutes) else stringResource(R.string.timer_set),
-                        description = stringResource(R.string.timer_for_step, number),
-                        onClick = onSetTimer,
-                        modifier = Modifier.padding(top = 10.dp),
-                    )
-                }
-            }
         }
-        if (showRule) Hairline(modifier = Modifier.padding(start = StepDisc + 16.dp), alpha = 0.35f)
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f).padding(start = 16.dp, top = pad + 4.dp, bottom = pad + 6.dp),
+        )
+        // Beside the text, level with the disc, so a timed step is no taller than an untimed one.
+        timerMinutes?.let { minutes ->
+            StepTimerChip(
+                text = if (minutes > 0) formatDuration(minutes) else stringResource(R.string.timer_set),
+                description = stringResource(R.string.timer_for_step, number),
+                onClick = onSetTimer,
+                modifier = Modifier.padding(start = 12.dp, top = pad + 1.dp),
+            )
+        }
     }
 }
 
-/** A wax-outlined pill with a timer glyph: what starts a timer on this page. */
+/** The step's timer: glyph over duration, a narrow tall tab beside the text. */
 @Composable
-private fun TimerChip(
+private fun StepTimerChip(
     text: String,
+    description: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    description: String? = null,
 ) {
-    Row(
+    Column(
         modifier = modifier
-            .clip(CircleShape)
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), CircleShape)
+            .widthIn(max = 56.dp)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(horizontal = 8.dp, vertical = 9.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Icon(
             imageVector = Icons.Outlined.Timer,
             contentDescription = description,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(17.dp),
+            modifier = Modifier.size(18.dp),
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
         )
     }
 }
