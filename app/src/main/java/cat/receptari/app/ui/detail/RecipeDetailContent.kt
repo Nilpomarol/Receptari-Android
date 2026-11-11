@@ -5,6 +5,10 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import cat.receptari.app.core.designsystem.FilterPill
+import cat.receptari.app.domain.model.Folder
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -110,14 +114,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.view.WindowCompat
 import cat.receptari.app.R
 import cat.receptari.app.core.designsystem.Aside
-import cat.receptari.app.core.designsystem.CardRow
-import cat.receptari.app.core.designsystem.CardRowDivider
 import cat.receptari.app.core.designsystem.Emblem
 import cat.receptari.app.core.designsystem.Hairline
 import cat.receptari.app.core.designsystem.IconDisc
 import cat.receptari.app.core.designsystem.MetaLine
 import cat.receptari.app.core.designsystem.OrnamentHeading
-import cat.receptari.app.core.designsystem.PaperCard
 import cat.receptari.app.core.designsystem.Rubric
 import cat.receptari.app.core.designsystem.SegmentedTabs
 import cat.receptari.app.core.designsystem.Sprig
@@ -1039,9 +1040,11 @@ private fun NotesCard(notes: String?, onEdit: () -> Unit, modifier: Modifier = M
 }
 
 /**
- * Where the recipe sits in the book and where it came from, as the settings page's rows:
- * folder and tags lead to their sheets, the source opens its page, and the history is stated.
+ * Where the recipe is filed and where it came from, set as the page's filing: the folder and
+ * the tags as chips that open their sheets, then the source and the cooking history as two
+ * quiet lines under a rule.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AboutCard(
     recipe: Recipe,
@@ -1050,51 +1053,125 @@ private fun AboutCard(
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
-    val folder = recipe.folder
-    val tags = recipe.tags.joinToString("  ") { "#${it.name}" } // i18n-exempt: tag names
     val source = recipe.sourceName ?: recipe.sourceUrl
     val sourceUrl = recipe.sourceUrl?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
 
-    PaperCard(
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = PagePadding).padding(top = 28.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            FolderChip(folder = recipe.folder, onClick = onOpenFolderSheet)
+            recipe.tags.forEach { tag ->
+                FilterPill(label = "#${tag.name}", selected = false, onClick = onOpenTagSheet) // i18n-exempt: tag names
+            }
+            if (recipe.tags.isEmpty()) {
+                FilterPill(
+                    label = stringResource(R.string.detail_add_tag),
+                    selected = false,
+                    onClick = onOpenTagSheet,
+                    icon = Icons.Default.Add,
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, ReceptariTheme.palette.rule, CircleShape)
+                        .clickable(role = Role.Button, onClick = onOpenTagSheet),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.detail_add_tag),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+
+        Hairline(modifier = Modifier.padding(top = 18.dp, bottom = 8.dp), alpha = 0.35f)
+
+        source?.let {
+            FactLine(
+                icon = Icons.AutoMirrored.Outlined.MenuBook,
+                text = stringResource(R.string.detail_source_line, it),
+                onClick = sourceUrl?.let { url -> { runCatching { uriHandler.openUri(url) } } },
+            )
+        }
+        FactLine(
+            icon = Icons.Outlined.History,
+            text = if (recipe.cookCount == 0) {
+                stringResource(R.string.detail_never_cooked)
+            } else {
+                pluralStringResource(R.plurals.detail_cook_count, recipe.cookCount, recipe.cookCount)
+            },
+            subtitle = recipe.lastCookedAt?.let { stringResource(R.string.detail_last_cooked, formatDate(it)) },
+        )
+    }
+}
+
+/** The folder as a chip in its own ink; with none, an invitation to file the recipe. */
+@Composable
+private fun FolderChip(folder: Folder?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val ink = folder?.color?.toColor() ?: MaterialTheme.colorScheme.primary
+    Row(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(ink.copy(alpha = 0.12f))
+            .border(1.dp, ink.copy(alpha = 0.6f), CircleShape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 10.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            imageVector = folder?.icon?.toImageVector() ?: Icons.Outlined.Folder,
+            contentDescription = null,
+            tint = ink,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = folder?.name ?: stringResource(R.string.detail_add_folder),
+            style = MaterialTheme.typography.labelLarge,
+            color = ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** A quiet line with its pictogram: the source (a wax link when it has an address) or the history. */
+@Composable
+private fun FactLine(
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = PagePadding)
-            .padding(top = 28.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+            .padding(vertical = 8.dp),
     ) {
-        Column {
-            CardRow(
-                icon = folder?.icon?.toImageVector() ?: Icons.Outlined.Folder,
-                title = folder?.name ?: stringResource(R.string.detail_add_folder),
-                onClick = onOpenFolderSheet,
-                discContainer = folder?.color?.toColor()?.copy(alpha = 0.16f)
-                    ?: MaterialTheme.colorScheme.primaryContainer,
-                discContent = folder?.color?.toColor() ?: MaterialTheme.colorScheme.onPrimaryContainer,
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp).size(18.dp),
+        )
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (onClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                textDecoration = if (onClick != null) TextDecoration.Underline else null,
             )
-            CardRowDivider()
-            CardRow(
-                icon = Icons.AutoMirrored.Outlined.Label,
-                title = tags.ifEmpty { stringResource(R.string.detail_add_tag) },
-                onClick = onOpenTagSheet,
-            )
-            source?.let {
-                CardRowDivider()
-                CardRow(
-                    icon = Icons.AutoMirrored.Outlined.MenuBook,
-                    title = stringResource(R.string.detail_source_line, it),
-                    onClick = if (sourceUrl != null) ({ runCatching { uriHandler.openUri(sourceUrl) } }) else null,
-                )
-            }
-            CardRowDivider()
-            CardRow(
-                icon = Icons.Outlined.History,
-                title = if (recipe.cookCount == 0) {
-                    stringResource(R.string.detail_never_cooked)
-                } else {
-                    pluralStringResource(R.plurals.detail_cook_count, recipe.cookCount, recipe.cookCount)
-                },
-                subtitle = recipe.lastCookedAt?.let { stringResource(R.string.detail_last_cooked, formatDate(it)) },
-            )
+            subtitle?.let { Aside(text = it, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp)) }
         }
     }
 }
