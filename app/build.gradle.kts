@@ -31,8 +31,8 @@ android {
         applicationId = "cat.receptari.app"
         minSdk = 33
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1"
+        versionCode = 2
+        versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Development utilities such as the sample-data seeder live in androidTest but must
         // never run as part of the suite; they are invoked explicitly with
