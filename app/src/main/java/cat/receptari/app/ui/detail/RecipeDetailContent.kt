@@ -244,12 +244,27 @@ internal fun RecipeContent(
     }
 
     val tabsPinned: () -> Boolean = { tabsTop() <= barPx }
+    // Where each tab was left (list index, offset) while the tabs were pinned, so coming back
+    // to a tab puts you where you were rather than at its top.
+    val tabScroll = remember { mutableMapOf<Int, Pair<Int, Int>>() }
     val onSelectTab: (Int) -> Unit = { index ->
         if (index != selectedTab) {
+            val pinned = tabsPinned()
+            if (pinned) {
+                tabScroll[selectedTab] = listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
+            } else {
+                tabScroll.remove(selectedTab)
+            }
             selectedTab = index
-            // Pinned and deep in the other tab: open the new one at its top.
-            if (tabsPinned()) {
-                scope.launch { listState.scrollToItem(TabsIndex, scrollOffset = -barPx) }
+            if (pinned) {
+                val saved = tabScroll[index]
+                scope.launch {
+                    if (saved != null) {
+                        listState.scrollToItem(saved.first, saved.second)
+                    } else {
+                        listState.scrollToItem(TabsIndex, scrollOffset = -barPx)
+                    }
+                }
             }
         }
     }
