@@ -347,8 +347,9 @@ Seen on the emulator after a round of fixes (2026-11-09).
 - ☑ Focused cook mode: one large step at a time, section context, quick ingredient access,
   persistent timer controls, safe-area-aware navigation, and keep-screen-on for the full session
 - ☑ Release build config, local-only signing via ignored `keystore.properties`, and
-  ProGuard/R8 plus resource shrinking. The first private release is version `0.1`
-  (`versionCode 1`); contributors and CI can still build unsigned without signing material.
+  ProGuard/R8 plus resource shrinking. The first private release was version `0.1`
+  (`versionCode 1`); the current release is `1.0` (`versionCode 2`), committed as
+  `app/release/Receptari-1.0.apk`. Contributors and CI can still build unsigned without signing material.
 
 ---
 

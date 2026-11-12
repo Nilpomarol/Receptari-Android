@@ -14,9 +14,10 @@
   Android · Kotlin · Jetpack Compose · Catalan / Spanish / English
 </p>
 
-> **Status:** Working Android app in active development. The core recipe book, import,
-> translation, cooking, backup, and private transfer flows are implemented. Accessibility
-> and release polish are still in progress; there is no Play Store release yet.
+> **Status:** Version **1.0** is out. The core recipe book, import, translation, cooking,
+> backup, and private transfer flows are implemented. There is no Play Store release;
+> install the signed APK directly: [`Receptari-1.0.apk`](app/release/Receptari-1.0.apk)
+> (Android 13+).
 
 ## Take a look
 
@@ -25,7 +26,7 @@ These are captures of the real app running with fictional sample recipes and
 
 | Library | Recipe | Edit |
 |:---:|:---:|:---:|
-| <img src="Docs/screenshots/library.png" alt="Recipe library with search, filters, and sample recipes" width="240"> | <img src="Docs/screenshots/recipe.png" alt="Recipe detail with ingredients and cooking steps" width="240"> | <img src="Docs/screenshots/editor.png" alt="Recipe editor with structured fields" width="240"> |
+| <img src="Docs/screenshots/library.png" alt="Recipe library with search, filters, and sample recipes" width="240"> | <img src="Docs/screenshots/recipe.png" alt="Recipe detail with ingredient sections and a serving stepper" width="240"> | <img src="Docs/screenshots/editor.png" alt="Recipe editor with structured fields" width="240"> |
 
 | Import | Cook mode |
 |:---:|:---:|
@@ -52,9 +53,10 @@ fully parsed. Receptari keeps the approved original line and derives structured 
 only where it can. Serving scaling changes what is displayed, never the stored recipe.
 
 AI helps extract and translate recipes, but an extracted import is **never saved without
-review**. You supply your own Claude API key in Settings for AI features; the key is
-encrypted on the device. Manual recipes and websites with usable recipe metadata work
-without one. Photos or text are sent to the API only when you request an AI operation.
+review**. Import extraction uses Claude Haiku 5.5 and translation uses OpenAI GPT-6 Luna;
+you supply your own Claude and OpenAI API keys in Settings, and both are encrypted on the
+device. Manual recipes and websites with usable recipe metadata work without either key.
+Photos or text are sent to a provider only when you request an AI operation.
 
 ## Try it
 
@@ -75,12 +77,14 @@ Build and run the checks from a terminal:
 ./gradlew build
 ```
 
-You can create and use manual recipes immediately. To try AI extraction or translation,
-enter your own Anthropic API key in **Settings**. The project does not ship with a key.
+You can create and use manual recipes immediately. To try AI extraction, enter your own
+Anthropic API key in **Settings**; for translation, an OpenAI API key. The project does not
+ship with any key.
 
 ## Signed release APK
 
-The first private release is version `0.1` (`versionCode 1`). Release builds enable R8
+The current release is version `1.0` (`versionCode 2`), committed as
+[`app/release/Receptari-1.0.apk`](app/release/Receptari-1.0.apk). Release builds enable R8
 and resource shrinking. To sign a release, create a release keystore using Android Studio's
 **Build > Generate Signed Bundle/APK**, then copy `keystore.properties.example` to
 `keystore.properties` and fill in the keystore path, alias, and passwords. The keystore
@@ -97,7 +101,7 @@ future updates must use the same signing key and a higher `versionCode`.
 
 The app is a single Android module organized into `ui`, `domain`, and `data` layers.
 Its main tools are Kotlin, Jetpack Compose and Material 3, Room, Hilt, DataStore,
-Coroutines/Flow, Jsoup, OkHttp, and the Anthropic SDK. The visual design uses a fixed
+Coroutines/Flow, Jsoup, OkHttp, the Anthropic SDK, and the OpenAI Responses API. The visual design uses a fixed
 printed-book palette and bundled open-licensed fonts rather than dynamic system colours.
 
 The test suite covers ingredient parsing and scaling, import and transfer logic, ViewModels,
